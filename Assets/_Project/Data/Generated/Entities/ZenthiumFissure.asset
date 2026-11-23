@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 060ed1b4ea05b3443b4821a7d8f026eb, type: 3}
+  m_Name: ZenthiumFissure
+  m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.EntityData
+  id: Zenthium Fissure
+  faction: {fileID: 11400000, guid: 2071b6e76cc2b644a9cad79380dcf63c, type: 2}
+  rankTier: 1
+  hasMinRank: 1
+  minRank: 1
+  hasBudgetCost: 0
+  budgetCost: 0
+  values:
+    values:
+    - key: hp_x_champion
+      kind: 0
+      number: 5
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}

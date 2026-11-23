@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b89510750de8d2e4698f716d8dd56126, type: 3}
+  m_Name: WaterCannon
+  m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.ModuleData
+  id: Water Cannon
+  category: 3
+  hasStat: 1
+  stat: 0
+  hasCooldown: 0
+  cooldownSeconds: 0
+  hasResourceCost: 1
+  resource: 3
+  resourceCost: 5
+  damageTier:
+    word: Light
+    value: 0.5
+  utilityTier:
+    word: Strong
+    value: 0.25
+  durationTier:
+    word: 
+    value: 0
+  radiusTier:
+    word: 
+    value: 0
+  knockbackTier:
+    word: Huge
+    value: 15
+  rangeTier:
+    word: Medium
+    value: 15
+  values:
+    values: []

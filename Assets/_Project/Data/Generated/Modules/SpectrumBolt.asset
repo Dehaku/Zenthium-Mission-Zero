@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b89510750de8d2e4698f716d8dd56126, type: 3}
+  m_Name: SpectrumBolt
+  m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.ModuleData
+  id: Spectrum Bolt
+  category: 1
+  hasStat: 1
+  stat: 2
+  hasCooldown: 0
+  cooldownSeconds: 0
+  hasResourceCost: 1
+  resource: 2
+  resourceCost: 10
+  damageTier:
+    word: Heavy
+    value: 2
+  utilityTier:
+    word: Some
+    value: 0.5
+  durationTier:
+    word: 
+    value: 0
+  radiusTier:
+    word: Small
+    value: 3
+  knockbackTier:
+    word: 
+    value: 0
+  rangeTier:
+    word: Medium
+    value: 15
+  values:
+    values:
+    - key: burn_damage
+      kind: 0
+      number: 12
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: burn_s
+      kind: 0
+      number: 4
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: stun_chance
+      kind: 0
+      number: 0.25
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: stun_s
+      kind: 0
+      number: 1
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}

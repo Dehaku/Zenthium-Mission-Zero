@@ -1,0 +1,53 @@
+# Text files: normalize line endings in the repo.
+* text=auto
+
+# Unity YAML: let Smart Merge (UnityYAMLMerge) handle scenes and prefabs if it's set up as a merge tool.
+*.unity    text merge=unityyamlmerge
+*.prefab   text merge=unityyamlmerge
+*.asset    text merge=unityyamlmerge
+*.meta     text
+*.mat      text merge=unityyamlmerge
+*.anim     text merge=unityyamlmerge
+*.controller text merge=unityyamlmerge
+*.overrideController text merge=unityyamlmerge
+*.physicMaterial text merge=unityyamlmerge
+*.mask     text merge=unityyamlmerge
+
+# Binary assets: stored with Git LFS.
+# Images
+*.png  filter=lfs diff=lfs merge=lfs -text
+*.jpg  filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.gif  filter=lfs diff=lfs merge=lfs -text
+*.psd  filter=lfs diff=lfs merge=lfs -text
+*.psb  filter=lfs diff=lfs merge=lfs -text
+*.tga  filter=lfs diff=lfs merge=lfs -text
+*.tif  filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.exr  filter=lfs diff=lfs merge=lfs -text
+*.hdr  filter=lfs diff=lfs merge=lfs -text
+*.aseprite filter=lfs diff=lfs merge=lfs -text
+# Audio
+*.wav  filter=lfs diff=lfs merge=lfs -text
+*.mp3  filter=lfs diff=lfs merge=lfs -text
+*.ogg  filter=lfs diff=lfs merge=lfs -text
+*.aif  filter=lfs diff=lfs merge=lfs -text
+*.aiff filter=lfs diff=lfs merge=lfs -text
+# Video
+*.mp4  filter=lfs diff=lfs merge=lfs -text
+*.mov  filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
+# 3D models
+*.fbx  filter=lfs diff=lfs merge=lfs -text
+*.obj  filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+# Fonts
+*.ttf  filter=lfs diff=lfs merge=lfs -text
+*.otf  filter=lfs diff=lfs merge=lfs -text
+# Other binaries
+*.dll  filter=lfs diff=lfs merge=lfs -text
+*.so   filter=lfs diff=lfs merge=lfs -text
+*.a    filter=lfs diff=lfs merge=lfs -text
+*.zip  filter=lfs diff=lfs merge=lfs -text
+*.pdf  filter=lfs diff=lfs merge=lfs -text
+*.unitypackage filter=lfs diff=lfs merge=lfs -text

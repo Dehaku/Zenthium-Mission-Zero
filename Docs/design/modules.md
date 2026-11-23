@@ -1,0 +1,205 @@
+# Modules
+
+"Module" is the code name for active powers, passive powers and gear. Players see the names Powers and Gear.
+
+## Entity model
+- Heroes, enemies and civilians are all the same **Entity**.
+- Special abilities come entirely from slotted modules. Everything is data-driven.
+- Enemies use fixed module lists from the same data.
+
+## Schema
+| Field | Notes |
+|---|---|
+| ID | Unique |
+| Category | Base action, Active, Passive, Gear (active or passive). On-hit effects are Passives with an on-hit trigger |
+| Tags | See below |
+| Triggers | See below |
+| Effects | |
+| Stat formula | Unique per module. Examples: one stat at 3x; two stats at 2x each; raw Intelligence plus 3x the bonuses from magic gear such as spell books |
+| Resources | The resource it spends, or the capacity and regen it grants (`combat.md`) |
+| Damage type | Physical, Magic or Energy (`combat.md`) |
+| Cooldown | In real seconds (`time.md`) |
+
+- Every module takes 1 slot.
+- Gear can have actives, passives or both. Gear actives have their own buttons (`controls.md`).
+- Magic modules and items generally use Intelligence and Will; each module decides how.
+- **Module tags (examples):** `Melee`, `Ranged`, `Time`, `Buff`, `Debuff`, `Summon`, `Resist:<Stat>`, `KnockbackResistant`, `CannotBeDisabled`, `Telegraph`, `Ignites`, `Extinguish` (`world.md`), `NoRegen:<Resource>` (`combat.md`), `NotRandom` (never drawn at random: modules that need another module, or only make sense for heroes, `factions.md`). Shared tags let modules change secondary stats without hard-coded pairings.
+- **Entity tags** go on entities, not modules: `Hackable`, `Coward` (`enemies.md`), `LootDestination:<place>` (`world.md`). See `factions.md`.
+- **Triggers (examples):** always-on, on hit, on damage taken, on Defiance proc, on timer, on activation, on approach.
+- **Presentation:** every module needs an icon, a visual flash, a sound cue and optional comic callout text ("POW!").
+
+## Module info
+- Holding the "more info" button shows the module's formula with live numbers. Values in square brackets are the summed totals of the matching bonuses.
+- Format example: `Damage = Strength([Strength])x2 + Gear([GearBonus]), Attack Speed = Finesse([Finesse])x3 + Gear([GearBonus])`
+
+## Buying, tiers and upgrades
+- Bought with Zenny at HQ: powers in the Zen Garden, gear in the Research Lab (`hq.md`).
+- Tiers are separate modules shown as one, with up and down arrows to cycle through the versions. Higher tiers cost more Gem Zenny (`economy.md`).
+- Upgrading a module means buying its next tier.
+
+## Catalog
+Defiance is a core Will rule, not a module (`stats.md`). Faction entities are described in `Factions/`. Owner lists the factions and Recruit starters that carry a module; preset hero kits are in `heroes.md`. Any module can also go on presets and Recruits. "Unassigned" modules have no owner yet but are in the pool (for example, for Infinity Anarchous).
+
+| Module | Category | Owner | Tags | Mechanics |
+|---|---|---|---|---|
+| Kick | Base action | All heroes | `Melee` | Normal damage, scaling with Strength, and Normal knockback. The reference module (`balance.md`) |
+| Drag | Base action | All heroes, Grey, Strongman | | Grab a target and pull it behind you. Checks for citizens first, then Valuables (the player picks these up instantly; `world.md`), then Incapacitated (0 HP) enemies, then props (Strength limits in `world.md`). Carry capacity grows with Strength. You can fight while dragging and aren't slowed, except by Stubborn citizens (`missions.md`). Dragged targets can't be hurt |
+| Sprint | Base action | All heroes | | Toggle. Faster movement, no stamina cost. Enemies and civilians don't sprint |
+| Uppercut | Active | Hero | `Melee` | Like Kick, with Huge knockback. Costs Stamina |
+| Speed Punch | Active | Hero | `Melee` | Attacks much faster than Kick, with full Kick damage per hit and no knockback. Meant to be stronger than Kick. Pairs well with time powers |
+| Power Throw | Active | Hero | `NotRandom` | Uses Strength. Throw anything and anyone you're dragging |
+| Time Slow | Active | Hero | `Time` | See `time.md` |
+| Time Stop | Active | Recruits only (for now) | `Time` | See `time.md` |
+| Phase Shift | Active | Recruits (starter) | `NotRandom` | Briefly Intangible: walk through walls, doors, props and entities |
+| Scorch Gaze | Active | Recruits (starter) | `Ranged`, `Ignites` | A beam from your eyes that deals Energy damage and sets things on fire |
+| Shadow Step | Active | Recruits (starter) | | Teleports you behind the nearest enemy within Long range. No line of sight needed |
+| Hypnotic Gaze | Active | Recruits (starter) | `Debuff`, `Resist:Will`, `NotRandom` | One enemy is Hypnotized: it fights on your side for a while |
+| Anchor | Passive | Recruits (starter) | | While you stand still, you can't be knocked back and take less damage |
+| Last Laugh | Passive | Recruits (starter) | | When Defiance triggers, you explode, damaging and knocking back everything around you |
+| Size Shift | Active | Hero | `KnockbackResistant` | Grow giant for a while: much stronger and immune to knockback, but slower |
+| Sonic Scream | Active | Hero | | A cone that knocks enemies back and instantly shatters Glass and Wood walls and doors |
+| Adaptive Skin | Passive | Hero | | After taking Physical, Magic or Energy damage, you take less of that type for a while |
+| Mirror Skin | Passive | Hero | | Part of the ranged damage you take is reflected back at the shooter |
+| Super Lucky | Passive | Hero | `Debuff`, `Resist:Toughness` | Things just go your way. **Fortunate Accidents:** every so often, something falls on the nearest enemy (a flowerpot, a sign, an anvil): Heavy damage and a Short Stun, with a "BONK!" callout. **Charmed Life:** part of the incoming hits simply miss, on top of your dodge chance. Inspired by Domino. Implementation note: Fortunate Accidents is a timed auto-attack on the nearest enemy, using the existing timer trigger, targeting, damage and Stun. The falling object is only an effect (a sprite dropping onto the target, with a shadow), never a real prop, and ignores the surroundings. It can share the drop effect with Mothership Strike |
+| Deathly Rage | Passive | Any | `Buff` | On Defiance proc, grants the Deathly Rage buff: greatly boosts Strength and Toughness; the extra HP is added to current HP too. Does not stack. Lasts until the mission ends. Also raises your Defiance chance enough to guarantee one proc |
+| Soulful | Passive | Hero | `CannotBeDisabled` | Boosts spell damage, and grants a large Mana pool with good regen |
+| High-Capacity Battery | Passive | Hero | `CannotBeDisabled` | A large Charge pool with slow regen |
+| Quick-Charge Battery | Passive | Hero | `CannotBeDisabled` | A small Charge pool with fast regen |
+| Reaper Battery | Passive | Hero | `CannotBeDisabled`, `NoRegen:Charge`, `NotRandom` | A medium Charge pool with no regen. Defeating an enemy refills it to full |
+| Sprinter | Passive | Hero | | A Stamina pool with regen, and a bigger Sprint bonus. Sprinting never costs Stamina; Stamina is spent by other modules |
+| Weather the Storm | Passive | Hero | | When hit, spends a little Stamina (if you have it) for no knockback and less damage from that hit |
+| Charming | Passive | Hero | `NotRandom` | On approach: a chance to turn a Stubborn citizen Scared, and a small chance to convert a goon to your side. A converted goon hands you its Valuables. Each target rolls once; a hidden Charmed debuff marks it |
+| Ink Beast | Active | Rune | `Summon` | Summons an Ink Beast: a goon-tier summon that fights alongside him with Ink Lash |
+| Ink Lash | Active | Ink Beast | `Melee` | A melee lash. Scales with Rune's Will |
+| Glyph Trap | Active | Rune | `Debuff`, `Resist:Will` | Places a glyph. Enemies who step on it are rooted in place |
+| Spectrum Bolt | Active | Prism | `Ranged`, `Debuff`, `Resist:Toughness`, `Resist:Will` | Magic bolt that costs Charge. Each cast cycles color: Red implodes, pulling nearby enemies toward the impact and then bursting outward to knock them back; Blue burns (DoT, resisted by Toughness), Purple may stun (resisted by Will) |
+| Card Throw | Active | Madame Tarot | `Ranged`, `Debuff`, `Resist:Will` | Homing cards that deal Magic damage. Each card draws one of 10 tarot effects at random, all good, and shows its name in small text above the target for a second: **The Tower** (Brief Stun), **The Magician** (Hex), **The Sun** (Burn), **Death** (Heavy bonus damage on a target at low HP), **The Fool** (bounces to a second nearby enemy), **The Lovers** (Hypnotized for a Short time), **The Moon** (the target loses track of you), **The Hermit** (Tarot heals a little), **The Hanged Man** (Short Root), **The Joker** (two other random effects at once) |
+| Mirage | Active | Madame Tarot | | Creates decoys that draw enemy attention, and lowers her Detectability while they last |
+| Dash | Active | Hero, Acrobat | | A quick burst of movement in your facing direction. Costs Stamina. Invulnerable during the dash |
+| Telekinetic Throw | Active | Hero | `NotRandom` | Throw what you're dragging with telekinesis. Uses Will in place of Strength, both for damage and for the prop size you can throw (`world.md`) |
+| Goo Punch | Active | Hero | `Melee`, `Debuff`, `Resist:Strength` | A goo punch that splashes, applying Gooed (a slow) to enemies in a Small radius |
+| Telekinetic Grab | Active | Hero | `NotRandom` | Instant Drag at range: grabs a citizen, Valuable, prop or Incapacitated enemy from a distance |
+| Shockwave Stomp | Active | Hero | | Knocks back everything around you, sending enemies into walls |
+| Ooze Through | Passive | Hero | | Slip through locked doors as a puddle instead of breaking them (`world.md`) |
+| Evac Balloon | Gear (active) | Hero | `NotRandom` | Attach to a citizen or Incapacitated enemy and it floats them away. Counts as rescued or captured |
+| Six-Shooter | Gear (active) | Hero | `Ranged` | Physical damage. A few shots, then reloads |
+| Padded Suit | Gear (passive) | Hero | | Flat Armor. A lot early on, not much later |
+| Force Spell Tome | Gear (passive) | Hero | | Extra Magic damage on your magic hits and your summons' hits |
+| Fire Spell Tome | Gear (passive) | Hero | `Debuff`, `Resist:Toughness` | Extra Magic damage on your magic hits and your summons' hits, plus Burn (`statuses.md`) |
+| Electric Spell Tome | Gear (passive) | Hero | | Extra Magic damage on your magic hits and your summons' hits, plus a chain that jumps to several nearby enemies |
+| First Aid Spray | Gear (active) | Hero | | Heals you for part of your max HP. Used on an Incapacitated citizen, it costs nothing, has no cooldown, and gets them up as Scared |
+| Water Cannon | Gear (active) | Hero | `Ranged`, `Extinguish` | A Medium-range water jet with intense knockback. Uses Ammo |
+| Gel Coat | Active | Hero | `Extinguish` | Coat yourself, an ally, a citizen or a building in goo. Removes Burn and blocks new Burns for a few seconds; a coated building's fire goes out |
+| Fireproof Body | Passive | Hero | `Extinguish` | You can't be Burned. Anything you're dragging is put out and can't be Burned |
+| Smoke Bomb | Gear (active) | Hero | `Debuff`, `Resist:Toughness` | A smoke cloud that blocks line of sight and resets nearby enemies' awareness bars. Enemies inside are stunned for as long as they stay in it |
+| Repulsor Blast | Gear (active) | Hero | `Ranged` | Energy beam that costs Charge, scales with Intelligence, and knocks targets back |
+| Grappling Hook | Gear (active) | Hero | | Long range. Zip to a wall, or yank an enemy to you |
+| Bandolier | Gear (passive) | Hero | `NotRandom` | More Ammo capacity and faster reloads for every gun |
+| Breaching Charge | Gear (active) | Hero | | Place a charge. A red circle shows its blast radius and a small red number counts down. Then it explodes for high damage in the area and blows open locked doors and walls |
+| Stasis Cuffs | Gear (active) | Hero | `NotRandom` | Captures an Incapacitated enemy on the spot, no exit needed |
+| Megaphone | Gear (active) | Hero | `Debuff`, `Resist:Toughness`, `NotRandom` | Turns nearby Stubborn citizens Scared, sends Scared citizens running for the nearest exit, and stuns nearby enemies |
+| Barrier Shield | Active | Hero | | A crescent shield in front of you that blocks projectiles for a Short time. Costs Mana. Enemies that touch it are knocked back with Kick's force |
+| Stealth Suit | Gear (passive) | Hero | | Lowers Detectability, plus a flat dodge chance bonus |
+| Energy Shield | Active | Hero | | Like Barrier Shield, but costs Charge instead of Mana |
+| Taunt | Active | Hero | `Debuff`, `Resist:Will` | "COME AT ME!" Every enemy that can see you must target you for a while, and is Marked: it deals less damage and takes more. While taunting, you take less damage, and every enemy that hits you is knocked back with Kick's force. Long cooldown |
+| Express Delivery | Passive | Hero | `NotRandom` | Extra Drag capacity for citizens |
+| Mind over Matter | Passive | Hero | `NotRandom` | Anything you throw or kick (props, Valuables) deals more damage. Thrown props take less damage |
+| Quick Draw | Passive | Hero | `NotRandom` | The first shot after reloading deals bonus damage |
+| Ricochet | Passive | Hero | `NotRandom` | Your shots bounce to a nearby enemy for reduced damage |
+| Overclocked | Passive | Hero | `NotRandom` | Bonus damage while your Charge is nearly full |
+| Reactive Plating | Passive | Hero | | Gain Armor each time you're hit, up to a cap. Resets after a few seconds without being hit |
+| Sticky Body | Passive | Hero | `Debuff`, `Resist:Strength` | Enemies who hit you in melee get Gooed (`statuses.md`) |
+| Absorbent | Passive | Hero | | A chance that a ranged hit is absorbed: you take the damage, then heal more than it dealt |
+| Living Ink | Passive | Hero | `NotRandom` | Ink Beast summons a second beast |
+| Fresh Ink | Passive | Hero | | Each enemy you defeat heals you a little |
+| Stacked Deck | Passive | Hero | `NotRandom` | Ace up the Sleeve: every few Card Throws, you throw a fan of cards, each drawing its own effect |
+| Crystal Hunger | Passive | Hero | `NotRandom` | Zenthium creatures ignore you until you attack them. Each entity defeated near you gives a stack of Soul Shard: more max Charge per stack, for the rest of the mission |
+| Glow Up | Passive | Hero | | At low HP: bonus Magic damage, and Night Time doesn't halve your vision (`difficulty.md`) |
+| Second Wind | Passive | Hero | | When Defiance triggers, fully heals you |
+| Hex | Active | Hexer, Cyberdoc | `Debuff`, `Resist:Will` | Spell. Disables a random active power slot for a while |
+| Numbing Toxin | Passive | Cyberdoc | `Debuff`, `Resist:Toughness` | On hit: poison. Disables a random passive power slot for a while |
+| Outbreak | Active | Dr. Edd | `Debuff`, `Resist:Toughness`, `Telegraph` | An area burst that applies Infected to everyone nearby |
+| Tentacle Sweep | Active | Dr. Edd | `Melee` | A melee area attack with knockback |
+| Mutate | Passive | Dr. Edd | `Buff`, `KnockbackResistant` | At low HP he grows bigger: stronger in every stat, and can't be knocked back |
+| Bite | Active | Zombie | `Melee` | A melee attack. Triggers Infectious Bite |
+| Shamble | Passive | Zombie | `NotRandom` | Slower movement |
+| Undying | Passive | Zombie | | When Incapacitated, gets back up with some HP after a random delay. Can't get back up if Burn defeated it |
+| Smash | Active | Breaker | `Melee` | A melee attack. Triggers Broken Limb |
+| Acid Spit | Active | Spitter | `Ranged`, `Debuff`, `Resist:Toughness` | A ranged spit that applies Infected |
+| Lay Egg | Active | Brood Mother | `NotRandom` | Places a horror egg, a small prop that hatches a Zombie after a short delay unless smashed |
+| Meat Slap | Active | Dr. Edd | `Ranged` | Ranged attack |
+| Regeneration | Passive | Dr. Edd | | HP regen |
+| Engulf | Active | Dr. Edd, Brood Mother | `Telegraph` | Grabs and holds the target |
+| Bone Spike | Active | Stalker | `Ranged` | Ranged attack |
+| Half-Invisible | Passive | Stalker | | Partly transparent. Uses Detectability rules |
+| Durability | Passive | Breaker, Abomination | | Damage Reduction |
+| Broken Limb | Passive | Breaker, Kneecapper | `Debuff`, `Resist:Toughness` | On hit: applies Broken Limb, a slow |
+| Infectious Bite | Passive | Zombie | `Debuff`, `Resist:Toughness` | On hit: applies Infected, a DoT |
+| Turn on Death | Passive | Zombie | `NotRandom` | Any entity reduced to 0 HP while Infected rises as a zombie on the spot, civilians included (`statuses.md`) |
+| Treads | Passive | Tank | | Slower movement, more HP |
+| Cannons | Active | Tank | `Ranged`, `Telegraph` | Ranged attack |
+| Turrets | Active | Hacker | `Summon` | Summons Mini Turrets, which are `Hackable` |
+| Repossess | Active | GleebPeep, Auditor | `Debuff`, `Resist:Intelligence` | "REPOSSESSED!" Takes a random gear slot for a while, applying Slot Disable (`statuses.md`) |
+| Final Notice | Active | GleebPeep | `Debuff`, `Resist:Will` | Applies Marked for a while: the target deals less damage and takes more (`statuses.md`) |
+| Tablet Slap | Active | GleebPeep | `Melee` | A melee attack with knockback |
+| Call for Backup | Active | GleebPeep | `Summon` | Summons a few goons and Champions, using the faction's arrival tag (`enemies.md`) |
+| Audit | Active | Auditor | | Reveals the player to every enemy within Long range, making them aware at once |
+| Notarized | Passive | Notary | `Buff` | Allies in a Large radius get Damage Reduction |
+| Tow Beam | Active | Tow Saucer, Drone Courier, Familiar | | Grabs a prop, citizen or Valuable from range and flies it to the entity's loot destination (`world.md`) |
+| Reprogram | Active | Hacker | `Resist:Intelligence` | Takes over a target with the `Hackable` tag, such as a Heavy Turret, which then fights for the Hacker's side. Any entity with Reprogram uses it first on a Hackable target in view |
+| Heavy Gun | Active | Heavy Turret | `Ranged` | Ranged attack |
+| Slot Disable | Passive | Hacker | `Debuff`, `Resist:Intelligence` | On hit: disables a random gear slot for a while. Hits from the Hacker's turrets don't count |
+| Chrome Body | Passive | Kingping | | Damage Reduction |
+| Gold-Plated Chrome | Passive | Kingping | `Buff` | Toughness and Damage Reduction for each Valuable he holds. Each bonus is one source that adds up per Valuable and multiplies with his other sources. The extra HP from Toughness is added to current HP too |
+| Gatling Arm | Active | Kingping | `Ranged`, `Telegraph` | A ranged spray |
+| Hush Money | Active | Kingping | | Bribes nearby Scared citizens into becoming Stubborn (`missions.md`) |
+| Chrome Fist | Active | Kingping | `Melee` | A melee hit with heavy knockback |
+| Overdrive | Passive | Kingping | `Buff` | At low HP: bonus damage and move speed |
+| Ram | Active | Tank, Abomination | `Melee`, `Telegraph` | Charges at a target, slamming it into walls |
+| Chrome Pipe | Active | Kneecapper | `Melee` | A melee swing with knockback |
+| Machine Gun | Active | Mafioso | `Ranged` | Ranged attack |
+| Blade Arms | Active | Mafioso | `Melee` | Melee attack |
+| Shard Bite | Active | Zen Creature | `Melee` | A crystal bite |
+| Blood Thirst | Passive | Zen Creature | | Heals part of the damage it deals |
+| Crystal Lance | Active | Zen Soldier | `Ranged` | A volley of crystal shards |
+| Red Pulse | Active | Zen Soldier | | An implosion that pulls nearby targets in, like Spectrum Bolt's red cast |
+| Gravity Well | Active | Zen Commander | `Telegraph` | Pulls everything nearby toward it |
+| Soul Drain | Active | Zen Commander | | Drains part of the target's resources and heals itself |
+| Shard Storm | Active | Zen Commander | `Ranged` | A ranged area attack |
+| Crystal Carapace | Passive | Zen Commander | | Damage Reduction |
+| Chill Punch | Active | Chad | `Melee` | A lazy, heavy melee hit with big knockback |
+| Vibe Check | Active | Chad | | An area shove that knocks back everyone around him |
+| Lean Back | Passive | Chad | | Every third hit he takes deals no damage. "Eh." |
+| No Big Deal | Passive | Chad | | The first time he drops to low HP, he cleanses all debuffs and becomes Invulnerable for a moment |
+| Super Stats | Passive | Chad | | A huge boost to all SWIFT stats |
+| Super Speed | Passive | Chad | | A huge boost to base move speed |
+| Chad Adjacent | Passive | Infinity Anarchous Champions | | A boost to all SWIFT stats |
+| Tractor Beam | Active | GleebPeep | | Beam that pulls every entity and prop in its path toward GleebPeep |
+| Tractor Pull | Active | Tractor Drone | | Pulls a hero or citizen toward the nearest Repo Agency crop circle (`Factions/GalacticRepoAgency.md`) |
+| Immovable | Passive | Shield Bearer, Strongman, Tank, Abomination | `KnockbackResistant` | Can't be knocked back |
+| Energy Blaster | Active | Shield Bearer, Grey | `Ranged` | Ranged attack, Energy damage |
+| Spotlight | Active | The Ringmaster | `Buff`, `NotRandom` | A large spotlight centered on him. Circus entities inside get a boost to all stats |
+| Hoop of Fire | Active | The Ringmaster | `Debuff`, `Resist:Toughness` | A flaming hoop lands around the player. Anyone crossing it gains Burn (`statuses.md`) |
+| Whip Crack | Active | The Ringmaster, Lion Tamer | `Melee` | A short-range whip with knockback |
+| Grand Finale | Passive | The Ringmaster | `Buff`, `NotRandom` | At very low HP, Spotlight's radius grows |
+| Haymaker | Active | Strongman | `Melee` | A heavy punch |
+| Flying Kick | Active | Acrobat | `Melee` | A leaping kick with knockback |
+| Summon Lion | Active | Lion Tamer | `Summon` | Summons a Lion: a melee beast with Lion Maul |
+| Lion Maul | Active | Lion | `Melee` | A melee attack |
+| Bowling Ball | Active | Juggler | `Ranged` | A thrown bowling ball with heavy knockback |
+| Torch Toss | Active | Juggler | `Ranged`, `Ignites` | A thrown flaming torch |
+| Cannonball Launch | Active | Human Cannonball | `Melee`, `Telegraph` | Launches at a target for huge knockback |
+| Cream Pie | Active | Clown | `Ranged`, `Debuff`, `Resist:Will` | Thrown pie. On hit, applies "Pied": smears part of the player's screen, fading out over a few seconds. Pies stack, so many can cover the screen quickly (`statuses.md`) |
+| Summon Imps | Active | Summoner | `Summon` | Summons Imps: small melee entities with Imp Claw |
+| Fire Wand | Active | Acolyte, Pyromancer | `Ranged`, `Ignites` | Magic fire attack |
+| Shush! | Active | Vex | `Debuff`, `Resist:Will` | "SHHH!" Heroes nearby are Silenced: all their active power slots stop working for a few seconds (`statuses.md`) |
+| Book Barrage | Active | Vex | `Ranged`, `Telegraph` | Flying books: a ranged Magic attack |
+| Late Fee | Active | Vex | | Pulls Valuables off the player and onto Vex. If the player carries none, it drains most of their resources (Stamina, Mana, Charge, Ammo) instead |
+| Portal Step | Active | Vex | `Telegraph` | When badly hurt: a portal opens under her with a clear windup, then she steps through to a random socket. Makes it obvious she escaped, not died |
+| Hex Bolt | Active | Hexer, Summoner, Archivist | `Ranged` | A basic ranged Magic attack |
+| Imp Claw | Active | Imp | `Melee` | A small melee attack |
+| Fire Ring | Active | Pyromancer | `Debuff`, `Resist:Toughness`, `Ignites` | A ring of fire around the target area: applies Burn and lights buildings |
+| Reanimate | Active | Archivist | `NotRandom` | Brings one Incapacitated Coven entity back to its feet. Once per target |
+
+## Open
+- (none)

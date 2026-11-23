@@ -1,0 +1,68 @@
+# Unity-generated folders
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Never ignore Asset meta data
+!/[Aa]ssets/**/*.meta
+
+# Asset Store tools
+/[Aa]ssets/AssetStoreTools*
+
+# Addressables build output
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# IDE and generated project files
+.vs/
+.vscode/
+.idea/
+.gradle/
+.consulo/
+ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Builds and packages
+*.apk
+*.aab
+*.app
+*.unitypackage
+sysinfo.txt
+crashlytics-build.properties
+~UnityDirMonSyncFile~*
+
+# Old Unity Version Control (Plastic SCM) workspace files
+/.plastic/
+/ignore.conf
+
+# OS files
+.DS_Store*
+Thumbs.db
+Desktop.ini
+
+# Local Claude Code settings
+/.claude/settings.local.json

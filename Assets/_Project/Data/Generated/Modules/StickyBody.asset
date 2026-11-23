@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b89510750de8d2e4698f716d8dd56126, type: 3}
+  m_Name: StickyBody
+  m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.ModuleData
+  id: Sticky Body
+  category: 2
+  hasStat: 0
+  stat: 0
+  hasCooldown: 0
+  cooldownSeconds: 0
+  hasResourceCost: 0
+  resource: 0
+  resourceCost: 0
+  damageTier:
+    word: 
+    value: 0
+  utilityTier:
+    word: 
+    value: 0
+  durationTier:
+    word: Short
+    value: 3
+  radiusTier:
+    word: 
+    value: 0
+  knockbackTier:
+    word: 
+    value: 0
+  rangeTier:
+    word: 
+    value: 0
+  values:
+    values:
+    - key: gooed_slow
+      kind: 0
+      number: 0.3
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
