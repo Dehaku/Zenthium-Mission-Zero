@@ -40,6 +40,22 @@ namespace Zenthium.Data
         /// <summary>HP and damage bonus added per difficulty rank above D.</summary>
         public float HpDamageBonusPerRank => hpDamageBonusPerRank;
 
+        /// <summary>
+        /// The difficulty stat bonus as a fraction. It adds to the innate boost rather than multiplying (stats.md).
+        /// </summary>
+        /// <param name="difficultyLevel">Ranks above D: 0 at D, 4 at S, 5 at S2.</param>
+        public float StatBonus(int difficultyLevel)
+        {
+            return difficultyLevel * statBonusPerRank;
+        }
+
+        /// <summary>The difficulty HP and damage bonus as a fraction.</summary>
+        /// <param name="difficultyLevel">Ranks above D: 0 at D, 4 at S, 5 at S2.</param>
+        public float HpDamageBonus(int difficultyLevel)
+        {
+            return difficultyLevel * hpDamageBonusPerRank;
+        }
+
         /// <summary>The innate stat boost of a rank tier, as a fraction (1 is +100%).</summary>
         public float InnateBoost(RankTier tier)
         {

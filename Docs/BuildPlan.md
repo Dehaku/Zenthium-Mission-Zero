@@ -133,8 +133,8 @@ Milestones 0-9 are the vertical slice. Stop for a user playtest after 9 and afte
 - [ ] A small debug panel (uGUI) for `Sandbox_Combat` to damage, heal and change a dummy's stats, with Editor steps.
 
 **You check**
-- [ ] The tests pass.
-- [ ] In `Sandbox_Combat`, the debug panel changes a dummy's HP, Armor and Defiance chance as expected.
+- [x] The tests pass.
+- [x] In `Sandbox_Combat`, the debug panel changes a dummy's HP, Armor and Defiance chance as expected.
 
 ---
 
@@ -177,7 +177,7 @@ Milestones 0-9 are the vertical slice. Stop for a user playtest after 9 and afte
 **You check**
 - [ ] Each of the 3 heroes' modules does what its row in `design/modules.md` says, against dummies.
 - [ ] Time Stop freezes enemies and projectiles while you keep moving.
-- [ ] The tests pass.
+- [x] The tests pass.
 
 ---
 
@@ -198,7 +198,7 @@ Milestones 0-9 are the vertical slice. Stop for a user playtest after 9 and afte
 
 **You check**
 - [ ] Break each wall material, throw a car into a wall, set a building on fire and put it out, and carry and launch Valuables.
-- [ ] The tests pass.
+- [x] The tests pass.
 
 ---
 
@@ -221,7 +221,7 @@ Milestones 0-9 are the vertical slice. Stop for a user playtest after 9 and afte
 
 **You check**
 - [ ] In `Sandbox_AI`, a squad patrols, notices you, chain-alerts, fights, loses you behind a building and searches, loots while you're out of range, and runs below 20% HP.
-- [ ] The tests pass.
+- [x] The tests pass.
 
 ---
 

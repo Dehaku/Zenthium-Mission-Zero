@@ -29,6 +29,14 @@ MonoBehaviour:
     enemyDefaultDamageTier:
       word: Light
       value: 0.5
+  entityConstants:
+    baseStat: 10
+    baseMoveSpeed: 6
+    defianceChancePerWill: 0.001
+    defianceRollCost: 1
+    defianceInvulnerablePlayer: 5
+    defianceInvulnerableOther: 1
+    resourceRegenPerSecond: 1
   rankScaling:
     innateBoostGoon: 0
     innateBoostChampion: 1

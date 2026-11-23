@@ -79,6 +79,13 @@ namespace Zenthium.Data
         Utility,
     }
 
+    public enum DamageType
+    {
+        Physical,
+        Magic,
+        Energy,
+    }
+
     public enum DataValueKind
     {
         Number,

@@ -13,6 +13,13 @@ formula,awareness_instant_range,10,Meters
 formula,awareness_max_time,10,Seconds to fill at vision_range
 formula,resource_seconds_per_point,1,1 resource point = this many seconds of cooldown
 formula,enemy_default_damage_tier,Light,Provisional (balance.md)
+formula,base_stat,10,Every entity starts at this in every stat (stats.md)
+formula,base_move_speed,6,Meters per second (combat.md)
+formula,defiance_chance_per_will,0.001,Defiance proc chance per point of Will: 1% per 10 Will (stats.md)
+formula,defiance_roll_cost,1,Proc chance removed per Defiance Roll stack (stats.md)
+formula,defiance_invulnerable_player,5,Seconds Invulnerable after a Defiance proc (stats.md)
+formula,defiance_invulnerable_other,1,Seconds. Everyone except the player
+formula,resource_regen_per_second,1,Baseline regen of every resource pool (combat.md)
 mirror,innate_boost_goon,0,Mirror of factions.md. Keep in sync
 mirror,innate_boost_champion,1,Mirror of factions.md. Keep in sync
 mirror,innate_boost_leader,2,Mirror of factions.md. Keep in sync

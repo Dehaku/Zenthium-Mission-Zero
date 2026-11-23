@@ -5,7 +5,7 @@ using Zenthium.Data;
 namespace Zenthium.Editor.DataImport
 {
     /// <summary>
-    /// Reads constants.csv into the formula, rank scaling and economy constants and the tier tables.
+    /// Reads constants.csv into the formula, entity, rank scaling and economy constants and the tier tables.
     /// Every constant the game uses must be present, and every name must be one it knows,
     /// so a typo can't go unnoticed.
     /// </summary>
@@ -91,6 +91,14 @@ namespace Zenthium.Editor.DataImport
                 awarenessMaxTime: reader.Float("awareness_max_time"),
                 resourceSecondsPerPoint: reader.Float("resource_seconds_per_point"),
                 enemyDefaultDamageTier: reader.Tier("enemy_default_damage_tier", TierScale.Damage, tiers));
+            data.Entity = new EntityConstants(
+                baseStat: reader.Float("base_stat"),
+                baseMoveSpeed: reader.Float("base_move_speed"),
+                defianceChancePerWill: reader.Float("defiance_chance_per_will"),
+                defianceRollCost: reader.Float("defiance_roll_cost"),
+                defianceInvulnerablePlayer: reader.Float("defiance_invulnerable_player"),
+                defianceInvulnerableOther: reader.Float("defiance_invulnerable_other"),
+                resourceRegenPerSecond: reader.Float("resource_regen_per_second"));
             data.RankScaling = new RankScalingConstants(
                 innateBoostGoon: reader.Float("innate_boost_goon"),
                 innateBoostChampion: reader.Float("innate_boost_champion"),

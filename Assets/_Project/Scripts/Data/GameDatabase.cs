@@ -10,6 +10,7 @@ namespace Zenthium.Data
     public sealed class GameDatabase : ScriptableObject
     {
         [SerializeField] private FormulaConstants formulaConstants = new FormulaConstants();
+        [SerializeField] private EntityConstants entityConstants = new EntityConstants();
         [SerializeField] private RankScalingConstants rankScaling = new RankScalingConstants();
         [SerializeField] private EconomyConstants economy = new EconomyConstants();
         [SerializeField] private TierTables tiers = new TierTables();
@@ -23,6 +24,7 @@ namespace Zenthium.Data
         [System.NonSerialized] private BalanceFormulas formulas;
 
         public FormulaConstants FormulaConstants => formulaConstants;
+        public EntityConstants EntityConstants => entityConstants;
         public RankScalingConstants RankScaling => rankScaling;
         public EconomyConstants Economy => economy;
         public TierTables Tiers => tiers;
@@ -48,6 +50,7 @@ namespace Zenthium.Data
 
         internal void Populate(
             FormulaConstants newFormulaConstants,
+            EntityConstants newEntityConstants,
             RankScalingConstants newRankScaling,
             EconomyConstants newEconomy,
             TierTables newTiers,
@@ -59,6 +62,7 @@ namespace Zenthium.Data
             List<PriceData> newPrices)
         {
             formulaConstants = newFormulaConstants;
+            entityConstants = newEntityConstants;
             rankScaling = newRankScaling;
             economy = newEconomy;
             tiers = newTiers;

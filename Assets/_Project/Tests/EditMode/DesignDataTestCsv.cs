@@ -24,6 +24,13 @@ namespace Zenthium.Tests.EditMode
             "formula,awareness_max_time,10,\n" +
             "formula,resource_seconds_per_point,1,\n" +
             "formula,enemy_default_damage_tier,Light,\n" +
+            "formula,base_stat,10,\n" +
+            "formula,base_move_speed,6,\n" +
+            "formula,defiance_chance_per_will,0.001,\n" +
+            "formula,defiance_roll_cost,1,\n" +
+            "formula,defiance_invulnerable_player,5,\n" +
+            "formula,defiance_invulnerable_other,1,\n" +
+            "formula,resource_regen_per_second,1,\n" +
             "mirror,innate_boost_goon,0,\n" +
             "mirror,innate_boost_champion,1,\n" +
             "mirror,innate_boost_leader,2,\n" +

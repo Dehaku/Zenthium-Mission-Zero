@@ -7,7 +7,10 @@
         "Zenthium.Core",
         "Zenthium.Data",
         "Zenthium.Editor",
-        "Zenthium.Player"
+        "Zenthium.Player",
+        "Zenthium.Time",
+        "Zenthium.Entities",
+        "Zenthium.Combat"
     ],
     "includePlatforms": [
         "Editor"

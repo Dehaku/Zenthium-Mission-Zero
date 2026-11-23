@@ -1,0 +1,22 @@
+{
+    "name": "Zenthium.Sandbox",
+    "rootNamespace": "Zenthium.Sandbox",
+    "references": [
+        "Zenthium.Core",
+        "Zenthium.Data",
+        "Zenthium.Time",
+        "Zenthium.Entities",
+        "Zenthium.Combat",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

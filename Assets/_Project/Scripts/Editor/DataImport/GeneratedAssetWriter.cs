@@ -13,7 +13,7 @@ namespace Zenthium.Editor.DataImport
     internal static class GeneratedAssetWriter
     {
         private const string RootFolder = "Assets/_Project/Data/Generated";
-        private const string DatabasePath = RootFolder + "/GameDatabase.asset";
+        internal const string DatabasePath = RootFolder + "/GameDatabase.asset";
         private const string ModulesFolder = RootFolder + "/Modules";
         private const string FactionsFolder = RootFolder + "/Factions";
         private const string EntitiesFolder = RootFolder + "/Entities";
@@ -85,6 +85,7 @@ namespace Zenthium.Editor.DataImport
             GameDatabase database = LoadOrCreateDatabase();
             database.Populate(
                 data.Formula,
+                data.Entity,
                 data.RankScaling,
                 data.Economy,
                 data.Tiers,

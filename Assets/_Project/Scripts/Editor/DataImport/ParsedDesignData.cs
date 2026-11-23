@@ -9,6 +9,7 @@ namespace Zenthium.Editor.DataImport
     public sealed class ParsedDesignData
     {
         public FormulaConstants Formula { get; internal set; }
+        public EntityConstants Entity { get; internal set; }
         public RankScalingConstants RankScaling { get; internal set; }
         public EconomyConstants Economy { get; internal set; }
         public TierTables Tiers { get; internal set; }

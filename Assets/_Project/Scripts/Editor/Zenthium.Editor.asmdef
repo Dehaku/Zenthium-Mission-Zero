@@ -4,7 +4,14 @@
     "references": [
         "Zenthium.Core",
         "Zenthium.Data",
-        "Zenthium.Player"
+        "Zenthium.Player",
+        "Zenthium.Time",
+        "Zenthium.Entities",
+        "Zenthium.Combat",
+        "Zenthium.Sandbox",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"
