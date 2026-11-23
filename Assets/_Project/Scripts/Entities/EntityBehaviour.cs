@@ -31,8 +31,14 @@ namespace Zenthium.Entities
         [Tooltip("Stand-in for module slots until Milestone 4: these only grant resources for now.")]
         [SerializeField] private List<ModuleData> modules = new List<ModuleData>();
 
+        [Tooltip("Stand-in until Milestone 4: the tags this entity's modules would give it, such as KnockbackResistant.")]
+        [SerializeField] private List<ModuleTag> moduleTags = new List<ModuleTag>();
+
         /// <summary>Null until Awake, or if the setup is invalid.</summary>
         public Entity Entity { get; private set; }
+
+        /// <summary>The scene's clock, which this entity's other components run on.</summary>
+        public GameClockDriver ClockDriver => clock;
 
         /// <summary>Raised when the entity is created or replaced by <see cref="ResetEntity"/>.</summary>
         public event Action<Entity> OnEntityCreated;
@@ -91,6 +97,8 @@ namespace Zenthium.Entities
                     setup.Modules.Add(module);
                 }
             }
+
+            setup.ModuleTags.AddRange(moduleTags);
 
             Entity = new Entity(setup, EntityRules.From(database), SharedRandom);
             OnEntityCreated?.Invoke(Entity);

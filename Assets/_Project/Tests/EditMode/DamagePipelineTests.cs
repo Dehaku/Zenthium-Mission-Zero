@@ -146,5 +146,30 @@ namespace Zenthium.Tests.EditMode
             Assert.That(result.Outcome, Is.EqualTo(DamageOutcome.NotAllowed));
             Assert.That(target.Health.Current, Is.EqualTo(100f).Within(Tolerance));
         }
+
+        [Test]
+        public void Apply_DraggedTarget_IsBlocked()
+        {
+            Entity target = CombatTestSetup.CreateEntity(Team.Civilian);
+            target.SetDraggedBy(CombatTestSetup.CreateEntity(Team.Player));
+
+            DamageEvent result = CombatTestSetup.CreatePipeline().Apply(CombatTestSetup.Environmental(50f), target);
+
+            Assert.That(result.Outcome, Is.EqualTo(DamageOutcome.Blocked));
+            Assert.That(target.Health.Current, Is.EqualTo(100f).Within(Tolerance));
+        }
+
+        [Test]
+        public void Apply_ReleasedTarget_TakesDamageAgain()
+        {
+            Entity target = CombatTestSetup.CreateEntity(Team.Civilian);
+            target.SetDraggedBy(CombatTestSetup.CreateEntity(Team.Player));
+            target.SetDraggedBy(null);
+
+            DamageEvent result = CombatTestSetup.CreatePipeline().Apply(CombatTestSetup.Environmental(50f), target);
+
+            Assert.That(result.Outcome, Is.EqualTo(DamageOutcome.Dealt));
+            Assert.That(target.Health.Current, Is.EqualTo(55f).Within(Tolerance));
+        }
     }
 }

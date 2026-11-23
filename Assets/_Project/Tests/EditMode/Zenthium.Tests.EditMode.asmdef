@@ -10,7 +10,9 @@
         "Zenthium.Player",
         "Zenthium.Time",
         "Zenthium.Entities",
-        "Zenthium.Combat"
+        "Zenthium.Combat",
+        "Zenthium.Movement",
+        "Zenthium.Modules"
     ],
     "includePlatforms": [
         "Editor"

@@ -43,7 +43,7 @@ Defiance is a core Will rule, not a module (`stats.md`). Faction entities are de
 | Module | Category | Owner | Tags | Mechanics |
 |---|---|---|---|---|
 | Kick | Base action | All heroes | `Melee` | Normal damage, scaling with Strength, and Normal knockback. The reference module (`balance.md`) |
-| Drag | Base action | All heroes, Grey, Strongman | | Grab a target and pull it behind you. Checks for citizens first, then Valuables (the player picks these up instantly; `world.md`), then Incapacitated (0 HP) enemies, then props (Strength limits in `world.md`). Carry capacity grows with Strength. You can fight while dragging and aren't slowed, except by Stubborn citizens (`missions.md`). Dragged targets can't be hurt |
+| Drag | Base action | All heroes, Grey, Strongman | | Grab a target and pull it behind you. Checks for citizens first, then Valuables (the player picks these up instantly; `world.md`), then any other Incapacitated (0 HP) entity, allies and neutrals included, then props (Strength limits in `world.md`). Carry capacity grows with Strength. You can fight while dragging and aren't slowed, except by Stubborn citizens (`missions.md`). Dragged targets can't be hurt |
 | Sprint | Base action | All heroes | | Toggle. Faster movement, no stamina cost. Enemies and civilians don't sprint |
 | Uppercut | Active | Hero | `Melee` | Like Kick, with Huge knockback. Costs Stamina |
 | Speed Punch | Active | Hero | `Melee` | Attacks much faster than Kick, with full Kick damage per hit and no knockback. Meant to be stronger than Kick. Pairs well with time powers |
@@ -78,7 +78,7 @@ Defiance is a core Will rule, not a module (`stats.md`). Faction entities are de
 | Dash | Active | Hero, Acrobat | | A quick burst of movement in your facing direction. Costs Stamina. Invulnerable during the dash |
 | Telekinetic Throw | Active | Hero | `NotRandom` | Throw what you're dragging with telekinesis. Uses Will in place of Strength, both for damage and for the prop size you can throw (`world.md`) |
 | Goo Punch | Active | Hero | `Melee`, `Debuff`, `Resist:Strength` | A goo punch that splashes, applying Gooed (a slow) to enemies in a Small radius |
-| Telekinetic Grab | Active | Hero | `NotRandom` | Instant Drag at range: grabs a citizen, Valuable, prop or Incapacitated enemy from a distance |
+| Telekinetic Grab | Active | Hero | `NotRandom` | Instant Drag at range: grabs a citizen, Valuable, prop or Incapacitated entity from a distance |
 | Shockwave Stomp | Active | Hero | | Knocks back everything around you, sending enemies into walls |
 | Ooze Through | Passive | Hero | | Slip through locked doors as a puddle instead of breaking them (`world.md`) |
 | Evac Balloon | Gear (active) | Hero | `NotRandom` | Attach to a citizen or Incapacitated enemy and it floats them away. Counts as rescued or captured |

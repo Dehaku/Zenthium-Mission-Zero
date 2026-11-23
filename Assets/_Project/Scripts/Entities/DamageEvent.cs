@@ -10,7 +10,7 @@ namespace Zenthium.Entities
         /// <summary>The target dodged the hit.</summary>
         Dodged,
 
-        /// <summary>The target was Invulnerable.</summary>
+        /// <summary>The target was Invulnerable, or being dragged.</summary>
         Blocked,
 
         /// <summary>Friendly fire rules forbid it, or the target is Incapacitated. No event is raised.</summary>

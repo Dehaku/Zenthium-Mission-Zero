@@ -19,6 +19,7 @@ namespace Zenthium.Entities
         private readonly EntityRules rules;
         private readonly IRandomSource random;
         private readonly HashSet<EntityTag> tags;
+        private readonly HashSet<ModuleTag> moduleTags;
         private readonly List<ModuleData> modules;
         private readonly bool isLeader;
         private readonly float hpDamageBonus;
@@ -36,6 +37,7 @@ namespace Zenthium.Entities
             Team = setup.Team;
             RankTier = setup.RankTier;
             tags = new HashSet<EntityTag>(setup.Tags);
+            moduleTags = new HashSet<ModuleTag>(setup.ModuleTags);
             modules = new List<ModuleData>(setup.Modules);
             isLeader = setup.RankTier == Zenthium.Data.RankTier.Leader;
             hpDamageBonus = rules.RankScaling.HpDamageBonus(setup.DifficultyLevel);
@@ -84,6 +86,11 @@ namespace Zenthium.Entities
         public bool IsIncapacitated => Health.IsIncapacitated;
         public bool IsInvulnerable => Invulnerability.IsActive;
 
+        /// <summary>The entity dragging this one, or null. Dragged targets can't be hurt (modules.md, Drag).</summary>
+        public Entity DraggedBy { get; private set; }
+
+        public bool IsBeingDragged => DraggedBy != null;
+
         /// <summary>Time Slow and Time Stop don't affect the player (time.md).</summary>
         public bool IsExemptFromTimePowers => Team == Team.Player;
 
@@ -93,6 +100,22 @@ namespace Zenthium.Entities
         public bool HasTag(EntityTag tag)
         {
             return tags.Contains(tag);
+        }
+
+        public bool HasModuleTag(ModuleTag tag)
+        {
+            return moduleTags.Contains(tag);
+        }
+
+        /// <param name="carrier">The entity dragging this one; null when it lets go.</param>
+        public void SetDraggedBy(Entity carrier)
+        {
+            if (carrier == this)
+            {
+                throw new ArgumentException("An entity can't drag itself.", nameof(carrier));
+            }
+
+            DraggedBy = carrier;
         }
 
         /// <summary>Hooks up the status system's cleanse. Without one, a Defiance proc cleanses nothing.</summary>

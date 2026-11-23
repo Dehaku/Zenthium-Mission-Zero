@@ -29,7 +29,7 @@ Milestones for Claude Code to build the game in this Unity project.
 | Area | Rule |
 |---|---|
 | Target | WebGL. No threads, no runtime `System.IO`, no blocking web requests, low per-frame allocations |
-| Space | 2D gameplay on the XZ plane, Y up, overhead camera. 3D physics only; rigidbodies freeze Y position and X and Z rotation. Sprites lie flat; height is visual only |
+| Space | 2D gameplay on the XZ plane, Y up, overhead camera. 3D physics only; rigidbodies freeze Y position and all rotation. Sprites lie flat; height is visual only |
 | Pathfinding | AI Navigation NavMesh, with NavMeshObstacle carving for destructible walls and doors |
 | Rendering | URP 3D Universal Renderer, as set up now |
 | UI | uGUI with TextMeshPro |

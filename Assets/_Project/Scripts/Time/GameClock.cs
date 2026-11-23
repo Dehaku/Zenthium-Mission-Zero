@@ -57,6 +57,20 @@ namespace Zenthium.Timing
             return exemptFromTimePowers ? GlobalScale : GlobalScale * TimePowerScale;
         }
 
+        /// <summary>
+        /// The factor for a rigidbody velocity. Physics already runs at Unity's timescale, which holds the pause and
+        /// the global scale, so only the time-power scale is left to apply.
+        /// </summary>
+        public float VelocityScale(bool exemptFromTimePowers)
+        {
+            if (IsPaused)
+            {
+                return 0f;
+            }
+
+            return exemptFromTimePowers ? 1f : TimePowerScale;
+        }
+
         /// <summary>Game seconds that pass for an entity: for movement, status durations, DoT ticks and timers.</summary>
         public float GameDelta(float realDelta, bool exemptFromTimePowers)
         {

@@ -61,6 +61,34 @@ namespace Zenthium.Tests.EditMode
             Assert.That(clock.UnityTimeScale, Is.EqualTo(0f));
         }
 
+        [TestCase(false, 0.25f, TestName = "VelocityScale_TimeSlow_SlowsEveryoneElse")]
+        [TestCase(true, 1f, TestName = "VelocityScale_TimeSlow_PlayerUnaffected")]
+        public void VelocityScale_TimeSlow(bool exempt, float expected)
+        {
+            var clock = new GameClock();
+            clock.SetTimePowerScale(0.25f);
+
+            Assert.That(clock.VelocityScale(exempt), Is.EqualTo(expected).Within(Tolerance));
+        }
+
+        [Test]
+        public void VelocityScale_LeavesTheGlobalScaleToPhysics()
+        {
+            var clock = new GameClock();
+            clock.SetGlobalScale(0.5f);
+
+            Assert.That(clock.VelocityScale(exemptFromTimePowers: false), Is.EqualTo(1f).Within(Tolerance));
+        }
+
+        [Test]
+        public void VelocityScale_Paused_IsZero()
+        {
+            var clock = new GameClock();
+            clock.SetPaused(true);
+
+            Assert.That(clock.VelocityScale(exemptFromTimePowers: true), Is.EqualTo(0f));
+        }
+
         [Test]
         public void UnityTimeScale_FollowsTheGlobalScaleButNotTimePowers()
         {

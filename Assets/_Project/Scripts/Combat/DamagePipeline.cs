@@ -10,7 +10,7 @@ namespace Zenthium.Combat
     /// <list type="number">
     /// <item>Friendly fire rules; an Incapacitated target takes nothing.</item>
     /// <item>The source's rank damage bonus.</item>
-    /// <item>Invulnerable blocks it.</item>
+    /// <item>Invulnerable, or being dragged (modules.md, Drag), blocks it.</item>
     /// <item>Dodge, for direct hits with a source only.</item>
     /// <item>Armor, then Damage Reduction, with at least a minimum fraction of the damage dealt. DoTs skip this.</item>
     /// <item>The target's HP, where Defiance may save it.</item>
@@ -43,7 +43,7 @@ namespace Zenthium.Combat
 
             float incoming = hit.IsEnvironmental ? hit.BaseDamage : hit.BaseDamage * hit.Source.OutgoingDamageMultiplier;
             DamageEvent result;
-            if (target.IsInvulnerable)
+            if (target.IsInvulnerable || target.IsBeingDragged)
             {
                 result = Result(hit, target, DamageOutcome.Blocked, 0f);
             }

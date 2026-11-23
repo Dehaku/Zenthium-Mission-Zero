@@ -261,3 +261,129 @@ The kick counts need Milestone 2's damage pipeline, so their tests come then. Mi
 ### Deferred
 - Slows, statuses, the real cleanse, revives and module slots: Milestone 4.
 - Kick knockback, the friendly fire button and the dummy with movement: Milestone 3.
+
+---
+
+## Milestone 3: Player controller (checked by the user, 2026-11-23)
+
+### Done
+- **New assemblies** (approved):
+
+  | Assembly | Folder | References |
+  |---|---|---|
+  | `Zenthium.Movement` | `Scripts/Movement/` | Time, Entities |
+  | `Zenthium.Modules` | `Scripts/Modules/` | Core, Data, Time, Entities, Combat, Movement |
+
+  - `Zenthium.Player` now also references Data, Time, Entities, Combat, Movement and Modules.
+  - `Zenthium.Editor` and `Zenthium.Tests.EditMode` now also reference Movement and Modules.
+  - Kick, Drag and knockback are shared rules, not player code: Grey and Strongman have Drag, and Taunt and Barrier Shield knock back with Kick's force. The Player assembly only turns input into calls on them.
+- **Data:** no CSV changes. Kick uses its row's stat (Strength), damage tier (Normal), `cooldown_s` (3), knockback tier (Normal, 4 m) and range tier (Melee, 2 m). Drag uses its range tier and `capacity_base` / `capacity_per_strength`. Sprint uses `speed_bonus` (0.5).
+- **Entities:**
+  - `ModuleTag` (`KnockbackResistant`), a stand-in until Milestone 4's modules carry tags: `EntitySetup.ModuleTags`, `Entity.HasModuleTag`, and a **Module Tags** list on `EntityBehaviour`.
+  - Dragged state: `Entity.DraggedBy`, `IsBeingDragged`, `SetDraggedBy`.
+  - `EntityBehaviour.ClockDriver`, so an entity's other components share its clock.
+- **Combat:**
+  - `DamagePipeline`: a dragged target can't be hurt (outcome Blocked, like Invulnerable).
+  - `KnockbackResolver` (owned by `CombatRulesBehaviour.Knockback`): the tier's distance when the hit lands. Dodged and blocked hits don't knock back. An Incapacitated target still flies if friendly fire would let the source hurt it (missions.md, Capture). `KnockbackResistant` and dragged targets never move.
+- **Time:** `GameClock.VelocityScale(exempt)`. Physics already runs at `Time.timeScale` (pause and the global scale), so velocities only add the time-power scale.
+- **Movement:**
+  - `KnockbackMotion` (plain C#): a fixed distance over several steps. Each step is told how far the path is clear and never goes further, so a knockback can't tunnel.
+  - `EntityMotor` (MonoBehaviour): the only writer of an entity's `linearVelocity`. Its modes are carried, then knocked back, then walking. It capsule-casts ahead during knockback, and anything the body would physically collide with stops it, other entities included. Raises `OnKnockbackObstacleHit` (`KnockbackObstacleHit`: collider, point, unused distance) for Milestone 5's wall damage.
+- **Modules:**
+  - `ModuleCooldown`: real seconds via `GameClock.CooldownDelta`.
+  - `MeleeArc`: an in-front test on XZ.
+  - `SprintToggle`: adds and removes Sprint's bonus on `MoveSpeed`.
+  - `DragRules`: capacity is `floor(capacity_base + capacity_per_strength x Strength)` (1 at Strength 20, 2 at 100). Targets are picked by kind (citizen, Valuable, any other Incapacitated entity, prop), then by distance. Valuables don't use capacity.
+  - `IDragTarget`, `DragTargetKind`, `DragCandidate`, and `EntityDragTarget` (any Incapacitated entity is draggable; see the fix below).
+  - `KickAction`: every valid entity within Kick's range and a 60° half-angle arc (a feel value) takes Physical damage from Strength and the damage tier, then is knocked back away from the kicker.
+  - `DragAction`: Drag grabs the best target in reach if there's capacity; otherwise it lets go of everything. Targets trail behind like beads on a rope, 1.5 m apart (a feel value). The carrier keeps full speed and can still Kick.
+- **Player:**
+  - `PlayerController`: owns the generated `InputSystem_Actions` and passes on move, aim, the Sprint toggle, Kick, Drag and the friendly-fire hold (it sets `FriendlyFireRules.IsPlayerFriendlyFireHeld` every frame).
+  - `PlayerAim`: casts the mouse onto a flat plane at the player's height, or uses the right stick. The last one used wins, and the aim keeps its direction when the stick is let go.
+  - `AimIndicatorView`: turns an arrow to the aim (presentation only).
+- **Editor:**
+  - `PlayerSandboxSceneCreator`: menu **Zenthium > Setup > Create Player Sandbox Scene**.
+  - The serialized-field helpers moved from `CombatSandboxSceneCreator` into `SerializedWiring` so both commands share them. `CombatSandboxSceneCreator.CreateEventSystem`, `CreateDebugPanel`, `EntityFields` and `CombatRulesFields` are now internal for the same reason. Its behavior is unchanged.
+- **Tests (EditMode):**
+  - New: `KnockbackMotionTests`, `KnockbackResolverTests`, `DragRulesTests`, `ModuleCooldownTests`, `SprintToggleTests` and `MeleeArcTests`.
+  - Added cases (no assertions changed): `DamagePipelineTests` (dragged is blocked, released takes damage) and `GameClockTests` (`VelocityScale`).
+
+### Decisions (approved by the user)
+- Kick hits every valid target in its arc. The half-angle is a serialized feel value on `KickAction`, starting at 60°.
+- Knockback speed is a serialized feel value on `EntityMotor` (20 m/s, so Normal's 4 m takes 0.2 s).
+- Anything the body physically collides with stops a knockback, including other entities, since entities collide normally.
+- Drag capacity is a target count: `floor(1 + 0.01 x Strength)`.
+- Drag button: grab if a target is in reach and there's room; otherwise release everything.
+- Stubborn citizens: only the hook now (`IDragTarget.CarrierSlow`, `GrabSeconds`, both 0). The numbers and the slow come in Milestone 6 (for example `stubborn_slow` and `stubborn_grab_s` in Drag's `values`), with `MoveSpeed`'s multiplied slows.
+- Kick's damage type is Physical.
+- Sprint is a pure toggle: it stays on, even standing still, until pressed again.
+- The sandbox and prefabs are built by a menu command.
+
+### Choices made in code (not asked)
+- A Kick that hits nothing still starts the cooldown.
+- Kick passes over dragged targets entirely (no Blocked event).
+- Knockback pushes away from the kicker, or along the aim if the two overlap.
+- A dragged body follows its carrier even under Time Slow (the carrier moves it). Walking and knockback follow Time Slow and Time Stop unless the entity is exempt.
+- The carrier and what it drags don't collide with each other.
+- The carrier lets go of everything when it's Incapacitated or reset. A dragged entity that's reset or disabled is let go.
+- Draggable entities: first only Incapacitated `Team.Enemy` entities, now any Incapacitated entity (see the fixes below). An Incapacitated civilian counts as a citizen. Grabbing citizens who are still standing comes in Milestone 6.
+- Input is ignored while the clock is paused. Sprint starts off again after an entity reset.
+
+### Stubs
+- `ModuleTag` and `EntitySetup.ModuleTags` / the **Module Tags** Inspector list: stand-ins until Milestone 4's modules carry tags.
+- `IDragTarget.CarrierSlow` and `GrabSeconds`: Stubborn citizens' hooks, unused until Milestone 6.
+- `EntityMotor.OnKnockbackObstacleHit`: nothing listens yet. Milestone 5 adds wall damage.
+- `DragTargetKind.Citizen`, `Valuable` and `Prop`: no implementations until Milestones 5 and 6.
+
+### Editor steps for the user
+1. **Let Unity compile.** Expect only the existing warning that `Zenthium.Tests.PlayMode` has no scripts. No data re-import is needed.
+2. **Run Zenthium > Setup > Create Player Sandbox Scene.** It asks before replacing anything, and asks to save open scene changes. It creates:
+   - `Assets/_Project/Prefabs/Player.prefab`: a capsule with Rigidbody (Y position and X/Z rotation frozen, interpolated, continuous dynamic), Entity Behaviour (Rush Hour, Player), Entity Motor, Kick Action, Drag Action, Player Aim, Player Controller, and Aim Indicator View with an `Aim Pivot/Aim Arrow` child (no collider).
+   - `Assets/_Project/Prefabs/TrainingDummy.prefab`: a capsule with the same Rigidbody settings, Entity Behaviour (Grey, Enemy, rank D), Entity Motor and Entity Drag Target. No AI.
+   - `Assets/_Project/Scenes/Sandbox_Player.unity` (not in the build list): a 30 m walled room with two pillars, the camera following the player, Game Clock, Combat Rules, the player, 3 dummies, and the combat debug panel bound to the first dummy, with the player as attacker.
+   - The scene references a prefab can't hold are set on the scene instances: the clock on every entity; Combat Rules on Kick Action and Player Controller; and the camera on Player Aim and the camera rig's target.
+3. **Press Play in `Sandbox_Player`.**
+
+### What to check
+- [x] The Console has no errors after compiling and running the command.
+- [x] Run the whole EditMode suite, since shared code changed (`Entity`, `DamagePipeline`, `GameClock`). The new classes are `KnockbackMotionTests`, `KnockbackResolverTests`, `DragRulesTests`, `ModuleCooldownTests`, `SprintToggleTests` and `MeleeArcTests`. `DamagePipelineTests` and `GameClockTests` have new cases.
+- [x] **Move and aim:** WASD and the left stick walk. Left Shift or L3 toggles a visibly faster Sprint. The arrow follows the mouse; the right stick takes over, and moving the mouse takes it back.
+- [x] **Kick (Space or A):** a dummy in front within 2 m takes 45 (debug panel) and flies 4 m. It stops at walls, pillars and other dummies, never passes through them. 3 Kicks incapacitate it (the balance anchor). Kick works again only after 3 s. A dummy beside or behind you isn't hit.
+- [x] **Kick an incapacitated dummy:** it flies without taking damage.
+- [x] **Drag (F or X)** next to an incapacitated dummy: it trails behind you, you keep full speed, and you can still Kick other dummies. Kicks pass over the dragged one. Rush Hour (Strength 20) can drag only one, so F next to a second one lets go instead.
+- [x] **Friendly fire (Left Ctrl or B):** set one dummy's Team to Ally in the Inspector before Play. Kicks don't hurt or move it, unless the button is held.
+- [x] **KnockbackResistant:** add it to a dummy's Module Tags before Play. It takes damage but doesn't move.
+- [x] **Reset dummy** in the panel restores the first dummy, and the carrier lets go of it if it was being dragged.
+- [x] **Gamepad:** every input works on a controller.
+
+### Open questions and findings
+- **Scene references on prefabs:** a prefab can't hold the scene's Game Clock, Combat Rules or camera, so the command sets them on the instances. Milestone 9's spawner needs another way to hand them over, such as a scene service the entities look up once. Decide when spawning exists.
+- **Damage types aren't in modules.csv** (Milestone 1 finding). Kick's Physical is a code constant until they get a data home.
+- **Reading `Logs/Editor.log`:** reading it through a shell command was refused by the permission check, but Claude's own file-reading and search tools can read it.
+- **Dragging Incapacitated allies** (found by the user; resolved 2026-11-23): see the fixes below.
+
+### Fixes after the first compile (2026-11-23)
+- **`Zenthium.Combat` didn't compile:** "The type or namespace name 'KnockbackRules' could not be found".
+  - **Cause:** the same as Milestone 2. `KnockbackRules.cs` had a `.meta` file but was missing from the assembly's compile inputs, probably because it was created while Unity was compiling.
+  - **Fix:** the class was recreated in a new file, as `KnockbackResolver` (`Combat/KnockbackResolver.cs`), and the old file and its `.meta` were deleted. The test class is now `KnockbackResolverTests`, with the same tests. `CombatRulesBehaviour.Knockback` keeps its name.
+- **First play (checked by the user):** the scene builds, all tests pass, and there are no errors. Move, aim, Sprint, Kick (knockback stops at walls) and Drag work.
+- **The player kept spinning when no aim input was held.**
+  - **Cause:** the Rigidbody's Y rotation was free. Bumps left the body turning, and the aim arrow, a child of the body, turned with it until an aim input set it again.
+  - **Fix:** the command now freezes all rotation, as well as Y position. Entities face by aim, not physics. `CLAUDE.md` (Space and physics) and the BuildPlan summary now say rigidbodies freeze Y position and all rotation (approved by the user).
+- **Entity info was hard to read** (asked by the user): `Sandbox/EntityDebugLabel` (Sandbox assembly) is a small world-space uGUI label over each entity. It shows team, HP, and Incapacitated, Dragged or Invulnerable. The command adds it to the scene instances only, so the prefabs stay free of sandbox parts. It's a test tool; Milestone 10 builds the real HUD.
+- **Editor step:** run **Zenthium > Setup > Create Player Sandbox Scene** again and choose Replace. It rebuilds both prefabs and the scene, so Inspector changes made to them are lost.
+- **Any Incapacitated entity can be dragged** (the user's decision, 2026-11-23), allies and neutrals included.
+  - **Design docs (local edit, at the user's request):**
+    - `modules.md`: the Drag row now says "then any other Incapacitated (0 HP) entity, allies and neutrals included", and Telekinetic Grab grabs an "Incapacitated entity".
+    - `statuses.md`: the Incapacitated row says any Incapacitated entity can be Dragged.
+  - **Code:**
+    - `EntityDragTarget` no longer checks the team.
+    - `DragTargetKind.IncapacitatedEnemy` is renamed `IncapacitatedEntity` (`DragRulesTests` updated for the rename only).
+    - An Incapacitated civilian counts as `Citizen`, so Drag picks it first.
+  - **To check:** set a dummy's Team to Ally or Neutral, defeat it (hold friendly fire for an Ally), and press F next to it.
+  - Like the Milestone 2 edits, these design changes are only in the local mirror, not on the design branch.
+
+### Deferred
+- Kick throwing a dragged prop and launching Valuables; prop Strength limits; wall damage from knockback: Milestone 5.
+- Citizens, Stubborn's slow and grab time: Milestone 6.
+- Module tags from data, slows, Sprinter's bigger bonus: Milestone 4.

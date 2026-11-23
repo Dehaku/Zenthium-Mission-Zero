@@ -5,7 +5,7 @@ using Zenthium.Data;
 namespace Zenthium.Combat
 {
     /// <summary>
-    /// Owns the scene's damage pipeline and friendly fire rules.
+    /// Owns the scene's damage pipeline, friendly fire rules and knockback rules.
     /// </summary>
     public sealed class CombatRulesBehaviour : MonoBehaviour
     {
@@ -20,6 +20,9 @@ namespace Zenthium.Combat
         /// <summary>Null until Awake.</summary>
         public FriendlyFireRules FriendlyFire { get; private set; }
 
+        /// <summary>Null until Awake.</summary>
+        public KnockbackResolver Knockback { get; private set; }
+
         private void Awake()
         {
             if (database == null)
@@ -31,6 +34,7 @@ namespace Zenthium.Combat
 
             FriendlyFire = new FriendlyFireRules { IsEnemyFriendlyFireEnabled = enemyFriendlyFire };
             Pipeline = new DamagePipeline(database.FormulaConstants, FriendlyFire, new UnityRandomSource());
+            Knockback = new KnockbackResolver(FriendlyFire);
         }
 
         private void OnValidate()

@@ -3,6 +3,12 @@
     "rootNamespace": "Zenthium.Player",
     "references": [
         "Zenthium.Core",
+        "Zenthium.Data",
+        "Zenthium.Time",
+        "Zenthium.Entities",
+        "Zenthium.Combat",
+        "Zenthium.Movement",
+        "Zenthium.Modules",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

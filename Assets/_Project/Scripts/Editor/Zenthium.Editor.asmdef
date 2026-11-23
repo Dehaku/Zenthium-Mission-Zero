@@ -8,6 +8,8 @@
         "Zenthium.Time",
         "Zenthium.Entities",
         "Zenthium.Combat",
+        "Zenthium.Movement",
+        "Zenthium.Modules",
         "Zenthium.Sandbox",
         "UnityEngine.UI",
         "Unity.TextMeshPro",

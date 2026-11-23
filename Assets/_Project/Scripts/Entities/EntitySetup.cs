@@ -34,6 +34,9 @@ namespace Zenthium.Entities
 
         public List<EntityTag> Tags { get; } = new List<EntityTag>();
 
+        /// <summary>The tags the entity's modules give it. A stand-in until Milestone 4's modules carry tags.</summary>
+        public List<ModuleTag> ModuleTags { get; } = new List<ModuleTag>();
+
         /// <summary>A preset hero, with its own stats and no rank scaling.</summary>
         public static EntitySetup ForHero(HeroData hero, Team team)
         {

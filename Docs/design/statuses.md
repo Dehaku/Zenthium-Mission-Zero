@@ -47,7 +47,7 @@ Buffs, debuffs, hidden markers and states. Module durations and amounts live wit
 | Soul Shard | Buff | More max Charge per stack | Intensity (per defeat) | Crystal Hunger |
 | Defiance Roll | Hidden marker | Lowers the Defiance proc chance (`stats.md`) | Intensity (per proc) | Defiance |
 | Charmed | Hidden marker | Charming has already rolled on this target | Permanent | Charming |
-| Incapacitated | State | At 0 HP. Can't act. Enemies can be Dragged and captured; civilians are only downed, and can be Dragged out to safety | | 0 HP |
+| Incapacitated | State | At 0 HP. Can't act. Any Incapacitated entity can be Dragged, allies and neutrals included. Enemies can also be captured; civilians are only downed, and can be Dragged out to safety | | 0 HP |
 | Dragged | State | Can't be hurt | | Drag |
 | Intangible | State | Passes through walls, doors, props and entities | | Phase Shift |
 | Invulnerable | State | Takes no damage | | Defiance, Dash, No Big Deal |

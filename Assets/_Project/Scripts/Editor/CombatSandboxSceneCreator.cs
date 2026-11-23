@@ -14,6 +14,7 @@ using Zenthium.Entities;
 using Zenthium.Player;
 using Zenthium.Sandbox;
 using Zenthium.Timing;
+using static Zenthium.Editor.SerializedWiring;
 
 namespace Zenthium.Editor
 {
@@ -48,7 +49,7 @@ namespace Zenthium.Editor
         private const string MaskSprite = "UI/Skin/UIMask.psd";
 
         // Serialized field names, which SerializedObject needs as strings. Keep them in sync with the components.
-        private static class EntityFields
+        internal static class EntityFields
         {
             public const string Database = "database";
             public const string Clock = "clock";
@@ -57,7 +58,7 @@ namespace Zenthium.Editor
             public const string Team = "team";
         }
 
-        private static class CombatRulesFields
+        internal static class CombatRulesFields
         {
             public const string Database = "database";
         }
@@ -192,14 +193,14 @@ namespace Zenthium.Editor
             return entity;
         }
 
-        private static void CreateEventSystem()
+        internal static void CreateEventSystem()
         {
             // The Input System's module: the legacy StandaloneInputModule throws, since only the Input System is on.
             var eventSystem = new GameObject("EventSystem", typeof(EventSystem));
             eventSystem.AddComponent<InputSystemUIInputModule>();
         }
 
-        private static void CreateDebugPanel(GameDatabase database, CombatRulesBehaviour combatRules,
+        internal static void CreateDebugPanel(GameDatabase database, CombatRulesBehaviour combatRules,
             EntityBehaviour dummy, EntityBehaviour attacker)
         {
             var canvasObject = new GameObject("Debug Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -402,31 +403,6 @@ namespace Zenthium.Editor
         private static Sprite BuiltinSprite(string path)
         {
             return AssetDatabase.GetBuiltinExtraResource<Sprite>(path);
-        }
-
-        private static void Wire(Object component, System.Action<SerializedObject> assign)
-        {
-            var serialized = new SerializedObject(component);
-            assign(serialized);
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void SetReference(SerializedObject serialized, string field, Object value)
-        {
-            Find(serialized, field).objectReferenceValue = value;
-        }
-
-        private static SerializedProperty Find(SerializedObject serialized, string field)
-        {
-            SerializedProperty property = serialized.FindProperty(field);
-            if (property == null)
-            {
-                throw new System.InvalidOperationException(
-                    $"{serialized.targetObject.GetType().Name} has no serialized field '{field}'. "
-                    + $"Update {nameof(CombatSandboxSceneCreator)} to match it.");
-            }
-
-            return property;
         }
     }
 }
