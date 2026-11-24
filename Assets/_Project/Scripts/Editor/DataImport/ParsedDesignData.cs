@@ -10,6 +10,7 @@ namespace Zenthium.Editor.DataImport
     {
         public FormulaConstants Formula { get; internal set; }
         public EntityConstants Entity { get; internal set; }
+        public ModuleConstants ModuleConstants { get; internal set; }
         public RankScalingConstants RankScaling { get; internal set; }
         public EconomyConstants Economy { get; internal set; }
         public TierTables Tiers { get; internal set; }
@@ -67,6 +68,10 @@ namespace Zenthium.Editor.DataImport
         public TierValue KnockbackTier { get; internal set; }
         public TierValue RangeTier { get; internal set; }
         public List<ValueRecord> Values { get; internal set; }
+        public DamageType? DamageType { get; internal set; }
+        public List<ModuleTag> Tags { get; internal set; }
+        public List<Stat> ResistStats { get; internal set; }
+        public List<ResourceType> NoRegenResources { get; internal set; }
     }
 
     public sealed class EntityRecord
@@ -88,6 +93,14 @@ namespace Zenthium.Editor.DataImport
         public int Finesse { get; internal set; }
         public int Toughness { get; internal set; }
         public bool IsStarter { get; internal set; }
+
+        /// <summary>Kit module ids per slot type, in slot order.</summary>
+        public List<string> ActiveIds { get; internal set; }
+        public List<string> PassiveIds { get; internal set; }
+        public List<string> GearIds { get; internal set; }
+
+        /// <summary>The file and line it came from, for error messages.</summary>
+        public string Location { get; internal set; }
     }
 
     public sealed class PropRecord

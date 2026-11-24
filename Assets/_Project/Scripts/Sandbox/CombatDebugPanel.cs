@@ -153,18 +153,18 @@ namespace Zenthium.Sandbox
             combatRules.Pipeline.Apply(new Hit(source, amount, type, damageOverTimeToggle.isOn), boundDummy);
         }
 
-        /// <summary>A Kick from the attacker: Kick's damage tier with the attacker's Strength.</summary>
+        /// <summary>A Kick's damage from the attacker: Kick's damage tier and type with the attacker's Strength.</summary>
         private void ApplyKick()
         {
             if (boundDummy == null || attacker.Entity == null
                 || !database.Modules.TryGet(DataIds.Modules.Kick, out ModuleData kick)
-                || !kick.TryGetStat(out Stat stat))
+                || !kick.TryGetStat(out Stat stat) || !kick.TryGetDamageType(out DamageType type))
             {
                 return;
             }
 
             float damage = database.Formulas.TierDamage(attacker.Entity.Stats.Get(stat), kick.DamageTier);
-            combatRules.Pipeline.Apply(new Hit(attacker.Entity, damage, DamageType.Physical), boundDummy);
+            combatRules.Pipeline.Apply(new Hit(attacker.Entity, damage, type), boundDummy);
         }
 
         private void HealDummy()

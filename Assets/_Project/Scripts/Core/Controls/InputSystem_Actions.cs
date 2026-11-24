@@ -1278,6 +1278,35 @@ namespace Zenthium.Core.Controls
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Sandbox"",
+            ""id"": ""6b1f3a52-9c4e-4f0d-8e27-3d5a1c9b7e41"",
+            ""actions"": [
+                {
+                    ""name"": ""ToggleChecklist"",
+                    ""type"": ""Button"",
+                    ""id"": ""a3c8e5f1-2b7d-4e96-b0a4-8f1d6c2e9b53"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""e7d24b9a-5f13-4c8e-9a6b-1c0f3e8d2a75"",
+                    ""path"": ""<Keyboard>/capsLock"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""ToggleChecklist"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -1340,12 +1369,16 @@ namespace Zenthium.Core.Controls
             m_UI_RightClick = m_UI.FindAction("RightClick", throwIfNotFound: true);
             m_UI_MiddleClick = m_UI.FindAction("MiddleClick", throwIfNotFound: true);
             m_UI_ScrollWheel = m_UI.FindAction("ScrollWheel", throwIfNotFound: true);
+            // Sandbox
+            m_Sandbox = asset.FindActionMap("Sandbox", throwIfNotFound: true);
+            m_Sandbox_ToggleChecklist = m_Sandbox.FindAction("ToggleChecklist", throwIfNotFound: true);
         }
 
         ~@InputSystem_Actions()
         {
             UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, InputSystem_Actions.Player.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, InputSystem_Actions.UI.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_Sandbox.enabled, "This will cause a leak and performance issues, InputSystem_Actions.Sandbox.Disable() has not been called.");
         }
 
         /// <summary>
@@ -1873,6 +1906,102 @@ namespace Zenthium.Core.Controls
         /// Provides a new <see cref="UIActions" /> instance referencing this action map.
         /// </summary>
         public UIActions @UI => new UIActions(this);
+
+        // Sandbox
+        private readonly InputActionMap m_Sandbox;
+        private List<ISandboxActions> m_SandboxActionsCallbackInterfaces = new List<ISandboxActions>();
+        private readonly InputAction m_Sandbox_ToggleChecklist;
+        /// <summary>
+        /// Provides access to input actions defined in input action map "Sandbox".
+        /// </summary>
+        public struct SandboxActions
+        {
+            private @InputSystem_Actions m_Wrapper;
+
+            /// <summary>
+            /// Construct a new instance of the input action map wrapper class.
+            /// </summary>
+            public SandboxActions(@InputSystem_Actions wrapper) { m_Wrapper = wrapper; }
+            /// <summary>
+            /// Provides access to the underlying input action "Sandbox/ToggleChecklist".
+            /// </summary>
+            public InputAction @ToggleChecklist => m_Wrapper.m_Sandbox_ToggleChecklist;
+            /// <summary>
+            /// Provides access to the underlying input action map instance.
+            /// </summary>
+            public InputActionMap Get() { return m_Wrapper.m_Sandbox; }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+            public void Enable() { Get().Enable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+            public void Disable() { Get().Disable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+            public bool enabled => Get().enabled;
+            /// <summary>
+            /// Implicitly converts an <see ref="SandboxActions" /> to an <see ref="InputActionMap" /> instance.
+            /// </summary>
+            public static implicit operator InputActionMap(SandboxActions set) { return set.Get(); }
+            /// <summary>
+            /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <param name="instance">Callback instance.</param>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+            /// </remarks>
+            /// <seealso cref="SandboxActions" />
+            public void AddCallbacks(ISandboxActions instance)
+            {
+                if (instance == null || m_Wrapper.m_SandboxActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_SandboxActionsCallbackInterfaces.Add(instance);
+                @ToggleChecklist.started += instance.OnToggleChecklist;
+                @ToggleChecklist.performed += instance.OnToggleChecklist;
+                @ToggleChecklist.canceled += instance.OnToggleChecklist;
+            }
+
+            /// <summary>
+            /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <remarks>
+            /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+            /// </remarks>
+            /// <seealso cref="SandboxActions" />
+            private void UnregisterCallbacks(ISandboxActions instance)
+            {
+                @ToggleChecklist.started -= instance.OnToggleChecklist;
+                @ToggleChecklist.performed -= instance.OnToggleChecklist;
+                @ToggleChecklist.canceled -= instance.OnToggleChecklist;
+            }
+
+            /// <summary>
+            /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="SandboxActions.UnregisterCallbacks(ISandboxActions)" />.
+            /// </summary>
+            /// <seealso cref="SandboxActions.UnregisterCallbacks(ISandboxActions)" />
+            public void RemoveCallbacks(ISandboxActions instance)
+            {
+                if (m_Wrapper.m_SandboxActionsCallbackInterfaces.Remove(instance))
+                    UnregisterCallbacks(instance);
+            }
+
+            /// <summary>
+            /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+            /// </summary>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+            /// </remarks>
+            /// <seealso cref="SandboxActions.AddCallbacks(ISandboxActions)" />
+            /// <seealso cref="SandboxActions.RemoveCallbacks(ISandboxActions)" />
+            /// <seealso cref="SandboxActions.UnregisterCallbacks(ISandboxActions)" />
+            public void SetCallbacks(ISandboxActions instance)
+            {
+                foreach (var item in m_Wrapper.m_SandboxActionsCallbackInterfaces)
+                    UnregisterCallbacks(item);
+                m_Wrapper.m_SandboxActionsCallbackInterfaces.Clear();
+                AddCallbacks(instance);
+            }
+        }
+        /// <summary>
+        /// Provides a new <see cref="SandboxActions" /> instance referencing this action map.
+        /// </summary>
+        public SandboxActions @Sandbox => new SandboxActions(this);
         private int m_KeyboardMouseSchemeIndex = -1;
         /// <summary>
         /// Provides access to the input control scheme.
@@ -2096,6 +2225,21 @@ namespace Zenthium.Core.Controls
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnScrollWheel(InputAction.CallbackContext context);
+        }
+        /// <summary>
+        /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Sandbox" which allows adding and removing callbacks.
+        /// </summary>
+        /// <seealso cref="SandboxActions.AddCallbacks(ISandboxActions)" />
+        /// <seealso cref="SandboxActions.RemoveCallbacks(ISandboxActions)" />
+        public interface ISandboxActions
+        {
+            /// <summary>
+            /// Method invoked when associated input action "ToggleChecklist" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnToggleChecklist(InputAction.CallbackContext context);
         }
     }
 }

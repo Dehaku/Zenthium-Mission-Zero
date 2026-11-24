@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEditor;
@@ -20,8 +21,8 @@ namespace Zenthium.Editor
 {
     /// <summary>
     /// Builds Sandbox_Player: a walled room with a Rush Hour player and Grey training dummies, each with a debug label,
-    /// plus the combat debug panel. Saves the Player and TrainingDummy prefabs first, then places them and wires
-    /// their scene references.
+    /// plus the combat debug panel. Saves the Player, TrainingDummy and Projectile prefabs first, then places them and
+    /// wires their scene references. <see cref="ModulesSandboxSceneCreator"/> builds on the same room.
     /// Sandbox scenes stay out of the build's scene list.
     /// </summary>
     internal static class PlayerSandboxSceneCreator
@@ -34,6 +35,7 @@ namespace Zenthium.Editor
         private const string PrefabFolder = ProjectFolder + "/" + PrefabFolderName;
         private const string PlayerPrefabPath = PrefabFolder + "/Player.prefab";
         private const string DummyPrefabPath = PrefabFolder + "/TrainingDummy.prefab";
+        private const string ProjectilePrefabPath = PrefabFolder + "/Projectile.prefab";
 
         private const float CameraHeight = 30f;
 
@@ -45,7 +47,9 @@ namespace Zenthium.Editor
         private const float PillarSize = 2f;
 
         // The Capsule primitive is 2 m tall, so its center sits 1 m above the ground.
-        private const float CapsuleHalfHeight = 1f;
+        internal const float CapsuleHalfHeight = 1f;
+
+        private const float ProjectileSize = 0.4f;
 
         // The aim arrow floats just above the capsule's top, so the overhead camera sees it.
         private static readonly Vector3 AimPivotPosition = new Vector3(0f, 1.05f, 0f);
@@ -83,6 +87,19 @@ namespace Zenthium.Editor
             public const string CombatRules = "combatRules";
         }
 
+        private static class ModulesFields
+        {
+            public const string World = "world";
+        }
+
+        private static class WorldFields
+        {
+            public const string Database = "database";
+            public const string CombatRules = "combatRules";
+            public const string Clock = "clock";
+            public const string ProjectilePrefab = "projectilePrefab";
+        }
+
         private static class AimFields
         {
             public const string AimCamera = "aimCamera";
@@ -105,33 +122,62 @@ namespace Zenthium.Editor
             public const string Label = "label";
         }
 
+        /// <summary>What <see cref="TryBuildRoom"/> made, for commands that add to it.</summary>
+        internal sealed class Room
+        {
+            public Scene Scene;
+            public GameDatabase Database;
+            public GameClockDriver Clock;
+            public CombatRulesBehaviour CombatRules;
+            public ModuleWorld World;
+            public EntityBehaviour Player;
+            public GameObject DummyPrefab;
+            public readonly List<EntityBehaviour> Dummies = new List<EntityBehaviour>();
+        }
+
         [MenuItem(MenuPath)]
         private static void CreateSandboxPlayer()
         {
+            if (TryBuildRoom(ScenePath, out Room room))
+            {
+                EditorSceneManager.SaveScene(room.Scene, ScenePath);
+                Debug.Log($"Created {ScenePath}, {PlayerPrefabPath}, {DummyPrefabPath} and {ProjectilePrefabPath}.");
+            }
+        }
+
+        /// <summary>
+        /// Asks before replacing anything, then opens a new scene with the room, the rebuilt prefabs, the scene
+        /// services, the player, 3 dummies and the combat debug panel. The caller saves the scene.
+        /// </summary>
+        internal static bool TryBuildRoom(string scenePath, out Room room)
+        {
+            room = null;
             if (TMP_Settings.instance == null || TMP_Settings.defaultFontAsset == null)
             {
                 EditorUtility.DisplayDialog("TextMesh Pro resources missing",
                     "Import them first: Window > TextMeshPro > Import TMP Essential Resources.", "OK");
-                return;
+                return false;
             }
 
             if (!TryLoadSandboxData(out _, out _, out _))
             {
                 EditorUtility.DisplayDialog("Game data missing",
                     "Run Zenthium > Data > Import Design CSVs first.", "OK");
-                return;
+                return false;
             }
 
-            bool anyExists = File.Exists(ScenePath) || File.Exists(PlayerPrefabPath) || File.Exists(DummyPrefabPath);
-            if (anyExists && !EditorUtility.DisplayDialog("Sandbox_Player already exists",
-                    $"Replace {ScenePath}, {PlayerPrefabPath} and {DummyPrefabPath} with fresh ones?", "Replace", "Cancel"))
+            bool anyExists = File.Exists(scenePath) || File.Exists(PlayerPrefabPath) || File.Exists(DummyPrefabPath)
+                || File.Exists(ProjectilePrefabPath);
+            if (anyExists && !EditorUtility.DisplayDialog($"{Path.GetFileNameWithoutExtension(scenePath)} already exists",
+                    $"Replace {scenePath} and the Player, TrainingDummy and Projectile prefabs with fresh ones? "
+                    + "Other sandbox scenes use the same prefabs.", "Replace", "Cancel"))
             {
-                return;
+                return false;
             }
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
-                return;
+                return false;
             }
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
@@ -140,8 +186,8 @@ namespace Zenthium.Editor
             // before it are dead and would be saved as empty references.
             if (!TryLoadSandboxData(out GameDatabase database, out EntityData grey, out HeroData rushHour))
             {
-                Debug.LogError($"Couldn't reload the game data after opening a new scene; {ScenePath} wasn't written.");
-                return;
+                Debug.LogError($"Couldn't reload the game data after opening a new scene; {scenePath} wasn't written.");
+                return false;
             }
 
             if (!AssetDatabase.IsValidFolder(PrefabFolder))
@@ -149,36 +195,55 @@ namespace Zenthium.Editor
                 AssetDatabase.CreateFolder(ProjectFolder, PrefabFolderName);
             }
 
+            // Built in a local: lambdas can't capture the out parameter.
+            var built = new Room { Scene = scene, Database = database };
             GameObject playerPrefab = SaveAsPrefab(BuildPlayer(database, rushHour), PlayerPrefabPath);
-            GameObject dummyPrefab = SaveAsPrefab(BuildDummy(database, grey), DummyPrefabPath);
+            built.DummyPrefab = SaveAsPrefab(BuildDummy(database, grey), DummyPrefabPath);
+            GameObject projectilePrefab = SaveAsPrefab(BuildProjectile(), ProjectilePrefabPath);
 
             Camera camera = SetUpCamera(scene);
             CreateRoom();
 
-            var clock = new GameObject("Game Clock").AddComponent<GameClockDriver>();
-            var combatRules = new GameObject("Combat Rules").AddComponent<CombatRulesBehaviour>();
-            Wire(combatRules, so => SetReference(so, CombatSandboxSceneCreator.CombatRulesFields.Database, database));
+            built.Clock = new GameObject("Game Clock").AddComponent<GameClockDriver>();
+            built.CombatRules = new GameObject("Combat Rules").AddComponent<CombatRulesBehaviour>();
+            Wire(built.CombatRules,
+                so => SetReference(so, CombatSandboxSceneCreator.CombatRulesFields.Database, database));
 
-            GameObject player = PlacePlayer(playerPrefab, clock, combatRules, camera);
+            built.World = new GameObject("Module World").AddComponent<ModuleWorld>();
+            Wire(built.World, so =>
+            {
+                SetReference(so, WorldFields.Database, database);
+                SetReference(so, WorldFields.CombatRules, built.CombatRules);
+                SetReference(so, WorldFields.Clock, built.Clock);
+                SetReference(so, WorldFields.ProjectilePrefab, projectilePrefab.GetComponent<Projectile>());
+            });
+
+            built.Player = PlacePlayer(playerPrefab, built, camera);
             Wire(camera.GetComponent<OverheadCameraRig>(),
-                so => SetReference(so, CameraRigFields.Target, player.transform));
+                so => SetReference(so, CameraRigFields.Target, built.Player.transform));
 
-            EntityBehaviour firstDummy = null;
             foreach (Vector3 position in DummyPositions)
             {
-                EntityBehaviour dummy = PlaceEntity(dummyPrefab, position, clock);
-                if (firstDummy == null)
-                {
-                    firstDummy = dummy;
-                }
+                built.Dummies.Add(PlaceEntity(built.DummyPrefab, position, built));
             }
 
             CombatSandboxSceneCreator.CreateEventSystem();
-            CombatSandboxSceneCreator.CreateDebugPanel(
-                database, combatRules, firstDummy, player.GetComponent<EntityBehaviour>());
+            CombatSandboxSceneCreator.CreateDebugPanel(database, built.CombatRules, built.Dummies[0], built.Player);
+            SandboxHudSetup.Create(built.Player.GetComponent<PlayerController>());
+            room = built;
+            return true;
+        }
 
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            Debug.Log($"Created {ScenePath}, {PlayerPrefabPath} and {DummyPrefabPath}.");
+        /// <summary>Places an entity and sets the references a prefab can't hold: the scene's clock and Module World.</summary>
+        internal static EntityBehaviour PlaceEntity(GameObject prefab, Vector3 position, Room room)
+        {
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            instance.transform.position = position;
+            var entity = instance.GetComponent<EntityBehaviour>();
+            Wire(entity, so => SetReference(so, CombatSandboxSceneCreator.EntityFields.Clock, room.Clock));
+            Wire(instance.GetComponent<EntityModules>(), so => SetReference(so, ModulesFields.World, room.World));
+            AddDebugLabel(entity);
+            return entity;
         }
 
         private static bool TryLoadSandboxData(out GameDatabase database, out EntityData grey, out HeroData rushHour)
@@ -194,7 +259,6 @@ namespace Zenthium.Editor
         private static GameObject BuildPlayer(GameDatabase database, HeroData rushHour)
         {
             GameObject player = BuildEntityBody("Player", database, rushHour, null, Team.Player);
-            Wire(player.AddComponent<KickAction>(), so => SetReference(so, ActionFields.Database, database));
             Wire(player.AddComponent<DragAction>(), so => SetReference(so, ActionFields.Database, database));
             var aim = player.AddComponent<PlayerAim>();
             Wire(player.AddComponent<PlayerController>(), so => SetReference(so, ActionFields.Database, database));
@@ -248,7 +312,20 @@ namespace Zenthium.Editor
                 Find(so, CombatSandboxSceneCreator.EntityFields.Team).enumValueIndex = (int)team;
             });
             body.AddComponent<EntityMotor>();
+            body.AddComponent<EntityModules>();
             return body;
+        }
+
+        private static GameObject BuildProjectile()
+        {
+            GameObject projectile = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            projectile.name = "Projectile";
+
+            // Projectiles find hits by sweeping; a collider would get in the way of knockback and other sweeps.
+            Object.DestroyImmediate(projectile.GetComponent<SphereCollider>());
+            projectile.transform.localScale = Vector3.one * ProjectileSize;
+            projectile.AddComponent<Projectile>();
+            return projectile;
         }
 
         private static GameObject SaveAsPrefab(GameObject built, string path)
@@ -259,24 +336,13 @@ namespace Zenthium.Editor
         }
 
         /// <summary>Places the player and sets the references a prefab can't hold: scene objects.</summary>
-        private static GameObject PlacePlayer(
-            GameObject prefab, GameClockDriver clock, CombatRulesBehaviour combatRules, Camera camera)
+        private static EntityBehaviour PlacePlayer(GameObject prefab, Room room, Camera camera)
         {
-            EntityBehaviour player = PlaceEntity(prefab, PlayerPosition, clock);
-            Wire(player.GetComponent<KickAction>(), so => SetReference(so, ActionFields.CombatRules, combatRules));
-            Wire(player.GetComponent<PlayerController>(), so => SetReference(so, ActionFields.CombatRules, combatRules));
+            EntityBehaviour player = PlaceEntity(prefab, PlayerPosition, room);
+            Wire(player.GetComponent<PlayerController>(),
+                so => SetReference(so, ActionFields.CombatRules, room.CombatRules));
             Wire(player.GetComponent<PlayerAim>(), so => SetReference(so, AimFields.AimCamera, camera));
-            return player.gameObject;
-        }
-
-        private static EntityBehaviour PlaceEntity(GameObject prefab, Vector3 position, GameClockDriver clock)
-        {
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            instance.transform.position = position;
-            var entity = instance.GetComponent<EntityBehaviour>();
-            Wire(entity, so => SetReference(so, CombatSandboxSceneCreator.EntityFields.Clock, clock));
-            AddDebugLabel(entity);
-            return entity;
+            return player;
         }
 
         /// <summary>

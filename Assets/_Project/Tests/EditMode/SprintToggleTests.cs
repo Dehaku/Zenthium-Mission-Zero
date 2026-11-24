@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Zenthium.Data;
 using Zenthium.Entities;
 using Zenthium.Modules;
 
@@ -62,6 +63,18 @@ namespace Zenthium.Tests.EditMode
             sprint.Toggle();
 
             Assert.That(hero.MoveSpeed.Current, Is.EqualTo(7.5f).Within(Tolerance));
+        }
+
+        // Sprinter's sprint_bonus=1.0 replaces Sprint's 0.5.
+        [TestCase(1, 1f, TestName = "BonusFor_SprinterEquipped_UsesItsBiggerBonus")]
+        [TestCase(0, 0.5f, TestName = "BonusFor_SprinterLocked_KeepsSprintsBonus")]
+        public void BonusFor_TakesTheLargestEquippedBonus(int unlockedSlots, float expected)
+        {
+            ModuleData sprinter = TestModules.Create("Sprinter", ModuleCategory.Passive,
+                values: new[] { (SprintToggle.SprinterBonusKey, 1f) });
+            Entity hero = CombatTestSetup.CreateEntityWithModules(Team.Player, unlockedSlots, sprinter);
+
+            Assert.That(SprintToggle.BonusFor(SprintBonus, hero.Slots), Is.EqualTo(expected).Within(Tolerance));
         }
     }
 }

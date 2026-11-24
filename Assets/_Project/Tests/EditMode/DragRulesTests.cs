@@ -1,4 +1,6 @@
 using NUnit.Framework;
+using Zenthium.Data;
+using Zenthium.Entities;
 using Zenthium.Modules;
 
 namespace Zenthium.Tests.EditMode
@@ -23,6 +25,49 @@ namespace Zenthium.Tests.EditMode
         public void Capacity_IsTheWholePartOfTheFormula(float strength, int expected)
         {
             Assert.That(CreateRules().Capacity(strength), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void SelectTarget_NoGeneralCapacity_CitizenCapacityStillTakesACitizen()
+        {
+            var candidates = new[]
+            {
+                new DragCandidate(DragTargetKind.IncapacitatedEntity, 0.5f, true),
+                new DragCandidate(DragTargetKind.Citizen, 1.5f, true),
+            };
+
+            Assert.That(DragRules.SelectTarget(candidates, capacityLeft: 0, citizenCapacityLeft: 1), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void SelectTarget_OnlyCitizenCapacity_SkipsOtherKinds()
+        {
+            var candidates = new[] { new DragCandidate(DragTargetKind.IncapacitatedEntity, 0.5f, true) };
+
+            Assert.That(DragRules.SelectTarget(candidates, capacityLeft: 0, citizenCapacityLeft: 1), Is.EqualTo(-1));
+        }
+
+        // Express Delivery: citizen_capacity=1, on top of Strength 20's capacity of 1.
+        [TestCase(1, 0, 1, 0, TestName = "CapacityLeft_OneCitizen_UsesTheCitizenCapacityFirst")]
+        [TestCase(2, 0, 0, 0, TestName = "CapacityLeft_TwoCitizens_FillBoth")]
+        [TestCase(0, 1, 0, 1, TestName = "CapacityLeft_OneDowned_LeavesTheCitizenCapacity")]
+        public void CapacityLeft_CitizensFillTheirOwnCapacityFirst(
+            int carriedCitizens, int carriedOthers, int expectedLeft, int expectedCitizenLeft)
+        {
+            int left = DragRules.CapacityLeft(1, 1, carriedCitizens, carriedOthers, out int citizenLeft);
+
+            Assert.That(left, Is.EqualTo(expectedLeft));
+            Assert.That(citizenLeft, Is.EqualTo(expectedCitizenLeft));
+        }
+
+        [Test]
+        public void CitizenCapacity_AddsEquippedModulesValues()
+        {
+            Entity hero = CombatTestSetup.CreateEntityWithModules(Team.Player, 1,
+                TestModules.Create("Express Delivery", ModuleCategory.Passive,
+                    values: new[] { (DragRules.CitizenCapacityKey, 1f) }));
+
+            Assert.That(DragRules.CitizenCapacity(hero.Slots), Is.EqualTo(1));
         }
 
         [Test]

@@ -131,5 +131,63 @@ namespace Zenthium.Tests.EditMode
 
             AssertFailsWithOneErrorMentioning(result, "hp_per_tuffness");
         }
+
+        [Test]
+        public void Parse_TagsAndDamageType_AreRead()
+        {
+            string row = DesignDataTestCsv.ModuleRow("Spectrum Bolt", "Active", "Intelligence", "Light", "3", "", "",
+                "", "", "", "", "", "", "Magic", "Ranged; Debuff; Resist:Toughness; Resist:Will");
+
+            DesignDataParseResult result = DesignDataTestCsv.Parse(row);
+
+            Assert.That(result.Errors, Is.Empty);
+            ModuleRecord bolt = result.Data.Modules.Find(m => m.Id == "Spectrum Bolt");
+            Assert.That(bolt.DamageType, Is.EqualTo(DamageType.Magic));
+            Assert.That(bolt.Tags, Is.EquivalentTo(new[] { ModuleTag.Ranged, ModuleTag.Debuff }));
+            Assert.That(bolt.ResistStats, Is.EqualTo(new[] { Stat.Toughness, Stat.Will }));
+        }
+
+        [Test]
+        public void Parse_NoRegenTag_NamesTheResource()
+        {
+            string row = DesignDataTestCsv.ModuleRow("Reaper Battery", "Passive", "", "", "", "", "", "", "", "", "",
+                "", "", "", "CannotBeDisabled; NoRegen:Charge");
+
+            DesignDataParseResult result = DesignDataTestCsv.Parse(row);
+
+            Assert.That(result.Errors, Is.Empty);
+            ModuleRecord battery = result.Data.Modules.Find(m => m.Id == "Reaper Battery");
+            Assert.That(battery.Tags, Is.EqualTo(new[] { ModuleTag.CannotBeDisabled }));
+            Assert.That(battery.NoRegenResources, Is.EqualTo(new[] { ResourceType.Charge }));
+        }
+
+        [TestCase("Sneaky", TestName = "Parse_UnknownTag_Fails")]
+        [TestCase("Resist:Luck", TestName = "Parse_ResistWithAnUnknownStat_Fails")]
+        public void Parse_BadTag_Fails(string tag)
+        {
+            string row = DesignDataTestCsv.ModuleRow("Odd Module", "Passive", "", "", "", "", "", "", "", "", "",
+                "", "", "", tag);
+
+            AssertFailsWithOneErrorMentioning(DesignDataTestCsv.Parse(row), tag);
+        }
+
+        [Test]
+        public void Parse_HeroKit_ListsModulesBySlotType()
+        {
+            DesignDataParseResult result = DesignDataTestCsv.Parse(extraHeroRows: "Rune,20,20,10,10,10,,Ink Lash,,,\n");
+
+            Assert.That(result.Errors, Is.Empty);
+            HeroRecord rune = result.Data.Heroes.Find(h => h.Id == "Rune");
+            Assert.That(rune.ActiveIds, Is.EqualTo(new[] { "Ink Lash" }));
+            Assert.That(rune.PassiveIds, Is.Empty);
+        }
+
+        [TestCase("Rune,20,20,10,10,10,,Ink Lassh,,,\n", "Ink Lassh", TestName = "Parse_HeroKit_UnknownModule_Fails")]
+        [TestCase("Rune,20,20,10,10,10,,,Ink Lash,,\n", "Ink Lash", TestName = "Parse_HeroKit_WrongSlotType_Fails")]
+        [TestCase("Rune,20,20,10,10,10,,Ink Lash; Ink Lash,,,\n", "twice", TestName = "Parse_HeroKit_Duplicate_Fails")]
+        public void Parse_BadHeroKit_Fails(string heroRow, string mentioned)
+        {
+            AssertFailsWithOneErrorMentioning(DesignDataTestCsv.Parse(extraHeroRows: heroRow), mentioned);
+        }
     }
 }

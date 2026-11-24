@@ -387,3 +387,230 @@ The kick counts need Milestone 2's damage pipeline, so their tests come then. Mi
 - Kick throwing a dragged prop and launching Valuables; prop Strength limits; wall damage from knockback: Milestone 5.
 - Citizens, Stubborn's slow and grab time: Milestone 6.
 - Module tags from data, slows, Sprinter's bigger bonus: Milestone 4.
+
+---
+
+## Milestone 4a: Modules and statuses, shared parts and Rush Hour (implemented, not yet checked, 2026-11-23)
+
+Milestone 4 is split, as approved. **4a** (this entry) builds the shared module parts, statuses, slots, time powers, MoreInfo, Rush Hour's kit and the hero select sandbox. **4b** builds Major Overclock's and Rune's kits.
+
+### Done
+- **Data (local edits, approved; the design branch isn't updated):**
+  - `modules.csv`: new `damage_type` and `tags` columns after `values`.
+    - Tags for all 158 rows come from `modules.md`'s Tags column, written like `Ranged; Debuff; Resist:Will`.
+    - Damage types are set where the docs state one, plus the approved choices: Kick, Speed Punch, Uppercut, Shockwave Stomp and Breaching Charge are Physical; Ink Lash is Magic.
+  - `heroes.csv`: new `actives`, `passives` and `gear` columns, holding each hero's kit from `heroes.md` in unlock order, `;`-separated.
+  - `constants.csv`: `slots_per_type` (4), `preset_slots_unlocked` (1), `cc_duration_multiplier` (0.5), `cc_pulse_on_s` and `cc_pulse_off_s` (0.5 each).
+- **Data assembly:**
+  - `ModuleTag` moved from Entities to Data (with its `.meta`) and lists every plain tag. `Resist:<Stat>` and `NoRegen:<Resource>` are read as `ModuleData.ResistStats` and `NoRegenResources`.
+  - `ModuleData`: `TryGetDamageType`, `HasTag`, `TryGetSlotType`. `HeroData.GetKit(SlotType)`. New `SlotType`, `ModuleCategories` and `ModuleConstants` (`GameDatabase.ModuleConstants`).
+  - `Zenthium.Tests.EditMode` can see Data's internals (an approved exception to `writing-tests.md`), so tests build module data with the importer's `Populate`.
+- **Importer:**
+  - `ModuleTagParser` reads the tags.
+  - Hero kits are checked: each module exists, fits its column's slot type and appears once, and each column lists no more than `slots_per_type`.
+- **Entities:**
+  - **`ModuleSlots`** replaces the `Entity.Modules` stand-in:
+    - 4 slots per type, filled in order, locked or unlocked, no duplicates; base actions stay outside.
+    - Only unlocked modules grant resources and tags.
+    - Disables switch single slots off; `CannotBeDisabled` modules are skipped.
+  - **Setup:** `EntitySetup.ForHero(hero, team, unlockedSlotsPerType)` adds the kit. `UnlockedSlotsPerType` defaults to all, for faction entities.
+  - **Module tags:** the `ModuleTags` stand-in and the **Module Tags** Inspector list are gone. `Entity.HasModuleTag` reads the equipped modules.
+  - **Resources:** `ResourcePools.GrantForModule` also adds resource passives' `<resource>` and `<resource>_regen` values (on top of the +1) and the `NoRegen` tags.
+  - **Other additions:**
+    - `MoveSpeed.AddSlow`: slows multiply after bonuses add.
+    - `DamageModifiers`: dealt and taken, multiplied.
+    - `Invulnerability` holds, for Dash.
+    - On `Entity`: `Revive`, `OnRevived`, `OnHitDealt`, `OnDefeatedTarget`, and incoming hit handlers (`IIncomingHitHandler`).
+  - `IDefianceCleanse` is removed: a Defiance proc now cleanses through the statuses.
+- **Statuses** (`Scripts/Statuses/`, compiled into `Zenthium.Entities` by `Statuses.asmref`, approved):
+  - `StatusType` (statuses.md's catalog minus its States), `StatusCatalog` (kind, stacking, hostile, what it stops, which slot it disables), `StatusApplication` and `StatusModifier`.
+  - **`StatusEffects`** on every entity:
+    - Refresh, Intensity (layers with a cap, modifiers scaled by layers) and Independent stacking.
+    - Durations on game time.
+    - Half-length crowd control on Leaders and the player, and "while inside" areas that pulse on them.
+    - Invulnerable blocks hostile statuses; Defiance cleanses them.
+    - Disables, Stun and Root (`CanMove`, `CanAct`, `IsSilenced`).
+  - `ResistRules` and `CrowdControlPulse`.
+- **Combat:**
+  - The pipeline applies dealt and taken modifiers with the rank bonus, before Armor.
+  - It runs incoming hit handlers on direct hits, and raises the source's hit and defeat events.
+  - `DamageEvent.KnockbackPrevented`, which `KnockbackResolver` respects.
+- **Movement:** `EntityMotor` doesn't walk while Stunned or Rooted. It has a dash mode (`TryDash`, `OnDashEnded`) that stops at walls like a knockback; the dash speed is serialized (30 m/s, a feel value).
+- **Time:** `TimePowers`, owned by `GameClockDriver`: several time powers can run at once, the slowest wins, and durations are real seconds that stop while paused.
+- **Modules (the shared parts):**
+  - `ModuleActivation`: the gate every activated module shares (can act, slot usable, cooldown in real seconds, cost).
+  - `ModuleBehaviour`: the base for behaviors, with the triggers (on hit, on damage taken, on Defiance proc, on defeat, timer tick) and enable/disable for slot disables.
+  - `ModuleCatalog`: links module ids to behaviors and reports missing data.
+  - `StatFormula`: damage from stat and tier, and the MoreInfo text with live numbers.
+  - `HitEffects`: damage, knockback, then a status with its resist roll, shared by every delivery.
+  - Deliveries:
+    - `MeleeStrikeModule` and `AreaStrikeModule`.
+    - `ProjectileModule` with `Projectile`: it sweeps, so it can't tunnel, and freezes with no collision under Time Stop.
+  - **`EntityModules`** (MonoBehaviour) replaces `KickAction`, which is deleted. It runs Kick and each equipped slot, ticks cooldowns and timers, forwards trigger events, and turns modules off while their slot is disabled.
+  - `ModuleWorld` (scene service): data, combat rules, clock, entity queries, projectile spawning and extraction.
+  - `ModuleInfoText`: the MoreInfo text.
+- **Kits:**
+  - **Rush Hour:** Speed Punch and Uppercut (melee strikes), Dash, Time Slow, Sprinter, Weather the Storm, Express Delivery, Charming (partly), First Aid Spray, Evac Balloon (partly), Padded Suit, Megaphone (partly).
+  - **Also:** Kick (now built from the shared parts), Time Stop, Energy Blaster (for the sandbox turret) and Immovable (tag only).
+  - **Sprinter and Express Delivery:** Sprint's bonus comes from `SprintToggle.BonusFor`, where Sprinter's `sprint_bonus` replaces Sprint's. Drag's citizen-only capacity comes from `DragRules.CitizenCapacity`.
+- **Player:** `PlayerController` uses Power 1-4 (active slots), Gear 1-4 (gear actives) and Kick through `EntityModules`, and exposes `IsMoreInfoHeld`.
+- **Sandbox** (its asmdef now also references Movement, Modules and Player, approved):
+  - New: `HeroSelectPanel`, `ModuleInfoView` and `SandboxAutoCaster`.
+  - `EntityDebugLabel` lists statuses, hidden markers included.
+  - `CombatDebugPanel`'s Kick uses Kick's data damage type.
+- **Editor:**
+  - `PlayerSandboxSceneCreator` builds the room through `TryBuildRoom`, shared by both commands. It adds `EntityModules` to both prefabs, plus a Projectile prefab and a Module World.
+  - New **Zenthium > Setup > Create Modules Sandbox Scene** (`ModulesSandboxSceneCreator`).
+  - Some `CombatSandboxSceneCreator` UI helpers are now internal so the commands can share them.
+- **Tests (EditMode):**
+  - **New classes:** `StatusEffectsTests`, `ResistRulesTests`, `ModuleSlotsTests`, `ModuleActivationTests`, `TimePowersTests`, `StatFormulaTests`, `MoveSpeedTests`, and the helper `TestModules`.
+  - **New cases (no assertions changed):**
+    - `DamagePipelineTests`: dealt and taken modifiers, the incoming hit handler (DoTs skip it), hit and defeat events.
+    - `KnockbackResolverTests`: cancelled knockback.
+    - `DragRulesTests`: citizen capacity.
+    - `SprintToggleTests`: Sprinter.
+    - `ResourcePoolsTests`: resource passives and NoRegen.
+    - `DesignDataParserTests`: tags, damage type and kits.
+  - **Changed for a removed stand-in:** `KnockbackResolverTests.TryGetDistance_KnockbackResistant_DoesNotMove` now gets the tag from an equipped module.
+  - **Deleted:** `DefianceTests.Proc_CallsTheCleanse`, which tested the removed `IDefianceCleanse` stub. `StatusEffectsTests.DefianceProc_CleansesDebuffs_KeepsCarryingTreasureAndHiddenMarkers` covers the real cleanse.
+  - **Fixtures:** `CombatTestSetup` builds the module constants and has `CreateEntityWithModules`; `DesignDataTestCsv` has the new columns and constants.
+
+### Decisions (approved by the user)
+- The split into 4a and 4b; the data columns, constants, `.asmref` and asmdef changes; the damage types above.
+- Ink Beast gets a placeholder brain until Milestone 6 (4b).
+- Glyph Trap lasts until triggered, roots every enemy in its radius once, and one is out at a time (4b).
+- Energy Blaster's projectile speed is a feel value on the Projectile prefab (15 m/s) until projectile modules carry their own.
+- Tests may use Data's internals to build module data.
+- **Accepted assumptions** (most are for 4b's modules):
+  - Taunt's `duration_s` covers Taunted, Marked and the self Damage Reduction.
+  - Marked and Overclocked apply before Armor, with the rank bonus.
+  - Sprinter's bonus replaces Sprint's.
+  - Battery regen adds to the +1.
+  - Repulsor Blast is an instant beam.
+  - Power Throw throws dragged entities 15 m, with no damage until props exist.
+  - First Aid Spray revives a citizen at 25% of max HP.
+  - Fresh Ink counts the user's own defeats.
+  - Deathly Rage's x3 is +200%.
+  - Reactive Plating stacks on hits that land.
+  - Breaching Charge's fuse runs on game time.
+
+### Choices made in code (not asked)
+- **Statuses:**
+  - A refresh never shortens the time left: the timer becomes the longer of what's left and the new duration. Intensity does the same and adds a layer, up to its cap.
+  - Only hostile statuses (debuffs, DoTs, crowd control, disables, Pied) are blocked by Invulnerable and cleansed by Defiance. Carrying Treasure and hidden markers aren't hostile.
+  - Disables pick a random equipped slot that isn't disabled yet; with none left, the application doesn't take. Disabled modules keep their tags and the resources they granted.
+  - A status from a hit applies only if the hit lands (not dodged or blocked). A module with no damage, such as Megaphone, reaches whoever the user could hurt.
+- **Rush Hour's modules:**
+  - Weather the Storm's extra reduction multiplies with the target's Damage Reduction; the 5% minimum still applies.
+  - First Aid Spray next to a downed citizen needs the slot usable and the user able to act, but spends nothing and starts no cooldown.
+  - Evac Balloon isn't used (no cooldown) when nothing is in reach. It floats the target up for 1.5 s at 3 m/s (feel values on Module World), then deactivates it.
+  - Charming rolls only for enemy goons for now; citizens wait for Stubborn in Milestone 6.
+  - Dash needs the user able to move. A knockback, being carried or a reset ends it and its Invulnerable.
+- **Other:**
+  - Every entity with `EntityModules` gets Kick; enemies won't use it until they have AI.
+  - The sandbox's test module replaces the last module of its slot type, or fills the next slot.
+  - Projectiles pass through entities their shooter can't hurt, and through Incapacitated and dragged ones.
+
+### Stubs
+- **Charming:** `ICharmable` is the conversion hook, for Milestone 6's AI. Stubborn citizens' roll also comes in Milestone 6.
+- **Rescue and capture count:** `ModuleWorld.OnExtracted` is Evac Balloon's hook, for Milestone 9.
+- **Citizens (Milestone 6):** Evac Balloon on standing citizens, First Aid Spray making revived citizens Scared, and Megaphone's citizen effects.
+- **DoT ticking:** the status system holds DoTs, but ticks need an interval that isn't in the data yet. It comes with the first DoT module (Burn, in 4b or Milestone 5).
+- **Taunted and Hypnotized:** applied and shown on the label, but only AI reads them (Milestone 6).
+
+### Editor steps for the user
+1. **Let Unity compile.** If the Console says a type is missing although its file exists, it was skipped (the known issue). Tell Claude, which recreates it under a new file name.
+2. **Run Zenthium > Data > Import Design CSVs.** Expect 158 modules, 9 factions, 50 entities, 8 heroes, 5 props, 10 prices, 0 warnings.
+3. **Run Zenthium > Setup > Create Player Sandbox Scene** and choose Replace. The Player prefab still holds the deleted Kick Action, so it must be rebuilt. This also creates `Prefabs/Projectile.prefab`.
+4. **Run Zenthium > Setup > Create Modules Sandbox Scene.** It creates `Assets/_Project/Scenes/Sandbox_Modules.unity` (not in the build list), with:
+   - the Player sandbox's room;
+   - a turret dummy (Grey with Energy Blaster) that fires at the player every 2 s, in the top-right corner;
+   - a civilian dummy in the bottom-left corner;
+   - the hero select panel at the top right, and the MoreInfo panel at the right.
+5. **Press Play in `Sandbox_Modules`.**
+
+### What to check
+- [ ] The Console has no errors after compiling, importing and running both commands.
+- [ ] Run the whole EditMode suite, since shared code changed (`Entity`, `DamagePipeline`, `EntityRules`, the importer).
+  - New classes: `StatusEffectsTests`, `ResistRulesTests`, `ModuleSlotsTests`, `ModuleActivationTests`, `TimePowersTests`, `StatFormulaTests`, `MoveSpeedTests`.
+  - Changed classes: `DamagePipelineTests`, `KnockbackResolverTests`, `DragRulesTests`, `SprintToggleTests`, `ResourcePoolsTests`, `DesignDataParserTests`, `DefianceTests`.
+- [ ] **Hero select:** pick Rush Hour with "Unlock all slots" on, and press Apply.
+  - Hold MoreInfo (`controls.md`): every module is listed, with Kick's `Damage = (10 + Strength(20) x 2) x Normal(1) = 50`.
+  - Untick "Unlock all slots" and press Apply: only Speed Punch, Sprinter and First Aid Spray are unlocked.
+- [ ] **Power 1 (Speed Punch):** 45 damage to a dummy (50 minus its 5 Armor), no knockback, 1 s cooldown.
+- [ ] **Power 4 (Uppercut):** the same damage; the dummy flies 15 m; it costs 15 Stamina.
+- [ ] **Power 2 (Dash):** 8 m along the aim, stops at walls, and you're Invulnerable during it.
+- [ ] **Power 3 (Time Slow):** for 10 s the dummies, the turret's shots and its firing run at half speed, but you don't. The cooldown is 30 s in real time.
+- [ ] **Time Stop:** pick it as the test module and Apply.
+  - The turret's shots freeze in the air, and you can walk through them.
+  - Frozen dummies still take Kick damage, and fly when time resumes.
+- [ ] **Turret:** it fires within 15 m (Energy Blaster's range), so walk toward it. Its shots can also hit dummies in the way (enemy friendly fire, the dev toggle).
+- [ ] **Sprinter:** Sprint (Left Shift) is +100% instead of +50%.
+- [ ] **Weather the Storm:** each turret hit spends 5 Stamina (if you have it), does 25% less damage, and doesn't push you.
+- [ ] **Gear 1 (First Aid Spray):** heals 25% of max HP, with a 20 s cooldown. Next to the defeated civilian dummy, it gets it up at 25% HP, free.
+- [ ] **Gear 2 (Evac Balloon):** next to a defeated dummy or the defeated civilian, it floats them away.
+- [ ] **Gear 3 (Padded Suit):** Armor +30 (shown in MoreInfo).
+- [ ] **Gear 4 (Megaphone):** dummies within 10 m are Stunned for 3 s (on their labels), or resist it, about half the time at equal Toughness.
+- [ ] **Express Delivery:** you can drag the defeated civilian plus one defeated dummy. Strength 20 alone allows one.
+- [ ] **Charming:** walking within 8 m of a dummy marks it Charmed on its label, once.
+- [ ] **Major Overclock and Rune:** most of their modules show "(not built yet)" in MoreInfo and warn once in the Console. Those come in 4b.
+
+### Open questions and findings
+- **Design mirror:** `modules.csv`, `heroes.csv` and `constants.csv` now differ further from the design branch. Push them when you're ready.
+- **DoT tick interval:** not in the data. It's needed before Burn or Infected can deal damage.
+- **Shell reads of `Logs/`** are still refused; Claude reads the Editor log with its search tool.
+
+### First run (read by Claude from the log and test results, 2026-11-24)
+- The code compiled. The import, both scene commands and Play ran with no errors or exceptions in the log.
+- The EditMode suite: 242 tests, all passed (`TestResults.xml`).
+- The only warnings are the expected "doesn't work yet" ones for Major Overclock's and Rune's modules.
+- **Finding:** Claude can read test results: the Test Runner saves the last run to `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Zenthium-Mission-Zero/TestResults.xml`. `Docs/BuildPlan.md` step 9 now says so.
+
+### Additions after the first run (asked by the user, 2026-11-24)
+The sandbox was hard to test without knowing the powers, cooldowns and controls, and the real HUD only comes in Milestone 10. So:
+- **Sandbox HUD** (`Sandbox/SandboxHud`, bottom left), a plain-text test tool. It shows:
+  - HP and each resource (current / max and regen);
+  - Kick, Drag, Sprint (on or off) and every slot, each with its keyboard / gamepad button, read from the input actions;
+  - each module's state: READY, seconds of cooldown left, locked, disabled, Silenced, Stunned, not enough resource, or not built yet;
+  - each module's cooldown and cost, and the MoreInfo, friendly fire and checklist keys.
+- **Test checklist overlay** (`Sandbox/SandboxChecklistView`, center), toggled with **Caps Lock**. It shows `Assets/_Project/Sandbox/MilestoneChecklist.txt`, which now holds this milestone's tests. From now on, every milestone rewrites that file: `BuildPlan.md` step 8 (added at the user's request, so the later steps are renumbered).
+- **Input:** a new **Sandbox** action map with **ToggleChecklist** on Caps Lock (keyboard only), in `InputSystem_Actions.inputactions`. Unity regenerates `InputSystem_Actions.cs` from it.
+- `PlayerController.IsSprintOn`. The Sandbox asmdef now references `Unity.InputSystem`.
+- **Editor:** `SandboxHudSetup` adds both overlays; `PlayerSandboxSceneCreator.TryBuildRoom` calls it, so `Sandbox_Player` and `Sandbox_Modules` both get them.
+
+### Editor steps (for the additions)
+1. **Let Unity compile.** If the Console says `PlayerActions` or `InputSystem_Actions` has no `Sandbox`, the input class hasn't regenerated yet: select `Assets/InputSystem_Actions.inputactions` and choose **Reimport**.
+2. **Run Zenthium > Setup > Create Modules Sandbox Scene** again and choose Replace. Run **Create Player Sandbox Scene** too if you use that scene.
+3. **Press Play in `Sandbox_Modules`.** The checklist shows in the middle of the screen; Caps Lock hides it and shows it again.
+
+### Second run: the user's checklist results (2026-11-24)
+- **Passed:** 1-6, 8, 10, 13, 14 and 16. Item 12 also passed: Padded Suit cut turret shots from 10 to 1, the 5% minimum.
+- **Item 7 (Weather the Storm): the checklist was wrong.**
+  - Energy Blaster has no knockback tier, so turret shots never push anyone.
+  - With every slot unlocked, Padded Suit's 30 Armor floors each shot at the 5% minimum, which hides Weather's 25%.
+  - It did spend 5 Stamina per hit.
+- **Item 9 (Charming): expected behavior.**
+  - The three dummies start within 8 m of the player, so they're marked at once.
+  - The Charmed mark records that a goon rolled, so every goon in range gets it. The 5% conversion has no visible effect until Milestone 6.
+- **Item 11 (Evac Balloon):** it works, but from the overhead camera only the shadow seems to move.
+- **Item 15 (turret): the checklist was wrong.** The turret fires every 2 s wherever the player is; the 15 m is how far each shot flies.
+- **UI:** the debug panel, HUD, checklist, hero select and MoreInfo panels overlapped and were hard to read.
+
+### Fixes after the second run (2026-11-24)
+- **Layout:**
+  - Nothing overlaps at the 1920 x 1080 reference. The left column (500 wide) holds the combat debug panel at the top and the HUD at the bottom. The right column (500 wide) holds hero select at the top and MoreInfo below it. The checklist sits in the middle.
+  - Smaller text: 15 pt on the panels and HUD, 17 pt on the checklist.
+  - Every sandbox canvas scales with **Shrink**, so the whole layout fits any Game view aspect (it overflowed at the bottom before).
+  - The combat debug panel's smaller size also applies to `Sandbox_Combat` the next time it's built.
+- **Hero select:** the "Unlock all slots" toggle is now an **Unlocked slots** dropdown, 1 to 4, starting at 4. It feeds `EntityBehaviour.SetHero(hero, unlockedSlots, testModule)`. The Inspector field is now **Unlocked Slots** (0 means the preset's starting slots).
+- **Turret:** it Kicks the target when it's within Kick's range, and otherwise fires Energy Blaster. That gives a knockback to test Weather the Storm against.
+- **Evac Balloon:** the body also shrinks to 20% while it floats away (a feel value on Module World).
+- **Checklist:** items 7, 9, 11, 12, 14 and 15 are rewritten to match the above.
+
+### Editor steps
+1. Let Unity compile.
+2. Run **Zenthium > Setup > Create Modules Sandbox Scene** and choose Replace, then press Play.
+
+### Third run (2026-11-24)
+- Items 7, 9 and 11 passed.
+- **Evac Balloon (asked by the user):** a shrinking body reads as moving away from an overhead camera, so it now grows to 2x as it rises toward the camera (`extractionEndScale`, a feel value from 1 to 5 on Module World). The scene saved the old 0.2, so rebuild `Sandbox_Modules` or set **Extraction End Scale** to 2 on Module World.

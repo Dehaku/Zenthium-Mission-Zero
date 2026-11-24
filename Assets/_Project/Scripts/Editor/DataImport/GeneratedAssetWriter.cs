@@ -47,7 +47,11 @@ namespace Zenthium.Editor.DataImport
                     record.RadiusTier,
                     record.KnockbackTier,
                     record.RangeTier,
-                    BuildValues(record.Values, modules));
+                    BuildValues(record.Values, modules),
+                    record.DamageType,
+                    new List<ModuleTag>(record.Tags),
+                    new List<Stat>(record.ResistStats),
+                    new List<ResourceType>(record.NoRegenResources));
                 EditorUtility.SetDirty(asset);
             }
 
@@ -63,7 +67,8 @@ namespace Zenthium.Editor.DataImport
             {
                 HeroData asset = heroes[record.Id];
                 asset.Populate(record.Strength, record.Will, record.Intelligence, record.Finesse, record.Toughness,
-                    record.IsStarter);
+                    record.IsStarter, Resolve(record.ActiveIds, modules), Resolve(record.PassiveIds, modules),
+                    Resolve(record.GearIds, modules));
                 EditorUtility.SetDirty(asset);
             }
 
@@ -86,6 +91,7 @@ namespace Zenthium.Editor.DataImport
             database.Populate(
                 data.Formula,
                 data.Entity,
+                data.ModuleConstants,
                 data.RankScaling,
                 data.Economy,
                 data.Tiers,
@@ -193,6 +199,17 @@ namespace Zenthium.Editor.DataImport
             }
 
             return new DataValueList(values);
+        }
+
+        private static List<ModuleData> Resolve(List<string> ids, Dictionary<string, ModuleData> modules)
+        {
+            var resolved = new List<ModuleData>(ids.Count);
+            foreach (string id in ids)
+            {
+                resolved.Add(modules[id]);
+            }
+
+            return resolved;
         }
 
         private static List<T> InFileOrder<TRecord, T>(List<TRecord> records, Func<TRecord, string> getId, Dictionary<string, T> assets)

@@ -10,9 +10,10 @@ namespace Zenthium.Movement
     /// <list type="number">
     /// <item>Carried: following a point behind whoever drags it.</item>
     /// <item>Knocked back: a fixed distance, swept ahead each step so it stops at obstacles instead of tunneling.</item>
-    /// <item>Walking: the move input at the entity's move speed. Incapacitated entities don't walk.</item>
+    /// <item>Dashing: like a knockback, but self-propelled at the dash speed (Dash).</item>
+    /// <item>Walking: the move input at the entity's move speed. Incapacitated, Stunned and Rooted entities don't walk.</item>
     /// </list>
-    /// Walking and knockback follow Time Slow and Time Stop unless the entity is exempt.
+    /// Walking, knockback and dashing follow Time Slow and Time Stop unless the entity is exempt.
     /// </summary>
     [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider), typeof(EntityBehaviour))]
     public sealed class EntityMotor : MonoBehaviour
@@ -23,6 +24,9 @@ namespace Zenthium.Movement
         [Tooltip("Meters per second a knockback travels. The distance comes from the module's knockback tier.")]
         [SerializeField, Min(0.1f)] private float knockbackSpeed = 20f;
 
+        [Tooltip("Meters per second a dash travels. The distance comes from the module's range tier.")]
+        [SerializeField, Min(0.1f)] private float dashSpeed = 30f;
+
         [Tooltip("How fast a dragged body closes the gap to its place behind the carrier: the fraction of the gap per second.")]
         [SerializeField, Min(0.1f)] private float carryFollowRate = 12f;
 
@@ -31,17 +35,24 @@ namespace Zenthium.Movement
 
         private readonly RaycastHit[] obstacleHits = new RaycastHit[MaxObstacleHits];
         private readonly KnockbackMotion knockback = new KnockbackMotion();
+        private readonly KnockbackMotion dash = new KnockbackMotion();
         private Rigidbody body;
         private CapsuleCollider capsule;
         private EntityBehaviour entityBehaviour;
         private Entity entity;
         private Vector3 moveInput;
         private Vector3 knockbackDirection;
+        private Vector3 dashDirection;
         private Vector3 carryPoint;
         private bool isCarried;
 
         /// <summary>A knockback ended early against something solid.</summary>
         public event Action<KnockbackObstacleHit> OnKnockbackObstacleHit;
+
+        /// <summary>A dash finished, hit something, or was cut short by a knockback or being carried.</summary>
+        public event Action OnDashEnded;
+
+        public bool IsDashing => dash.IsActive;
 
         /// <param name="input">Screen-space direction: x is world X, y is world Z. Longer than 1 is clamped.</param>
         public void SetMoveInput(Vector2 input)
@@ -49,7 +60,7 @@ namespace Zenthium.Movement
             moveInput = Vector3.ClampMagnitude(new Vector3(input.x, 0f, input.y), 1f);
         }
 
-        /// <summary>Starts a knockback, replacing any in progress. Ignored while carried.</summary>
+        /// <summary>Starts a knockback, replacing any in progress and ending a dash. Ignored while carried.</summary>
         public void ApplyKnockback(Vector3 direction, float distance)
         {
             direction.y = 0f;
@@ -58,8 +69,24 @@ namespace Zenthium.Movement
                 return;
             }
 
+            EndDash();
             knockbackDirection = direction.normalized;
             knockback.Start(distance);
+        }
+
+        /// <summary>Starts a dash. Ignored while carried, knocked back or already dashing.</summary>
+        /// <returns>True if the dash started; <see cref="OnDashEnded"/> follows when it ends.</returns>
+        public bool TryDash(Vector3 direction, float distance)
+        {
+            direction.y = 0f;
+            if (isCarried || knockback.IsActive || dash.IsActive || distance <= 0f || direction.sqrMagnitude <= 0f)
+            {
+                return false;
+            }
+
+            dashDirection = direction.normalized;
+            dash.Start(distance);
+            return true;
         }
 
         public void BeginCarried()
@@ -67,6 +94,7 @@ namespace Zenthium.Movement
             isCarried = true;
             carryPoint = body.position;
             knockback.Cancel();
+            EndDash();
         }
 
         /// <summary>Where the carrier wants this body this step.</summary>
@@ -106,6 +134,7 @@ namespace Zenthium.Movement
             entityBehaviour.OnEntityCreated -= Bind;
             entity = null;
             knockback.Cancel();
+            EndDash();
             isCarried = false;
         }
 
@@ -125,9 +154,17 @@ namespace Zenthium.Movement
             }
             else if (knockback.IsActive)
             {
-                velocity = KnockbackVelocity(scale);
+                velocity = SweptVelocity(knockback, knockbackDirection, knockbackSpeed, scale, true);
             }
-            else if (entity.IsIncapacitated)
+            else if (dash.IsActive)
+            {
+                velocity = SweptVelocity(dash, dashDirection, dashSpeed, scale, false);
+                if (!dash.IsActive)
+                {
+                    OnDashEnded?.Invoke();
+                }
+            }
+            else if (entity.IsIncapacitated || !entity.Statuses.CanMove)
             {
                 velocity = Vector3.zero;
             }
@@ -143,26 +180,38 @@ namespace Zenthium.Movement
         {
             entity = newEntity;
             knockback.Cancel();
+            EndDash();
         }
 
-        private Vector3 KnockbackVelocity(float scale)
+        private void EndDash()
+        {
+            if (dash.IsActive)
+            {
+                dash.Cancel();
+                OnDashEnded?.Invoke();
+            }
+        }
+
+        /// <param name="reportObstacle">Raise <see cref="OnKnockbackObstacleHit"/> if it stops early.</param>
+        private Vector3 SweptVelocity(
+            KnockbackMotion motion, Vector3 direction, float speed, float scale, bool reportObstacle)
         {
             float deltaTime = Time.fixedDeltaTime;
-            float travel = knockbackSpeed * scale * deltaTime;
+            float travel = speed * scale * deltaTime;
             if (travel <= 0f)
             {
                 return Vector3.zero;
             }
 
-            float clearDistance = ClearDistance(knockbackDirection, travel + obstacleSkin, out RaycastHit obstacle);
-            KnockbackStep step = knockback.Step(travel, clearDistance);
-            if (step.HitObstacle)
+            float clearDistance = ClearDistance(direction, travel + obstacleSkin, out RaycastHit obstacle);
+            KnockbackStep step = motion.Step(travel, clearDistance);
+            if (step.HitObstacle && reportObstacle)
             {
                 OnKnockbackObstacleHit?.Invoke(new KnockbackObstacleHit(obstacle.collider, obstacle.point, step.UnusedDistance));
             }
 
             // Covers exactly the step's distance in one physics step.
-            return knockbackDirection * (step.Distance / deltaTime);
+            return direction * (step.Distance / deltaTime);
         }
 
         /// <returns>Meters this body can move before touching something solid; positive infinity if nothing.</returns>

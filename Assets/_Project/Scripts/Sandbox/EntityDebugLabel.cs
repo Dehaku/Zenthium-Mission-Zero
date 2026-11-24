@@ -1,13 +1,16 @@
+using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using Zenthium.Entities;
+using Zenthium.Statuses;
 
 namespace Zenthium.Sandbox
 {
     /// <summary>
-    /// A small in-world label over an entity for sandbox scenes: its team, HP, and whether it's Incapacitated,
-    /// dragged or Invulnerable. Test tool only; the real HUD comes in Milestone 10.
+    /// A small in-world label over an entity for sandbox scenes: its team, HP, whether it's Incapacitated,
+    /// dragged or Invulnerable, and its statuses (hidden markers included). Test tool only; the real HUD comes in
+    /// Milestone 10.
     /// </summary>
     public sealed class EntityDebugLabel : MonoBehaviour
     {
@@ -15,6 +18,7 @@ namespace Zenthium.Sandbox
         [SerializeField] private TMP_Text label;
 
         private readonly StringBuilder text = new StringBuilder();
+        private readonly List<StatusType> statuses = new List<StatusType>();
         private Entity entity;
         private bool isDirty;
         private bool shownDragged;
@@ -59,6 +63,7 @@ namespace Zenthium.Sandbox
             Unbind();
             entity = newEntity;
             entity.Health.OnHealthChanged += MarkDirty;
+            entity.Statuses.OnStatusesChanged += MarkStatusesDirty;
             isDirty = true;
         }
 
@@ -67,11 +72,17 @@ namespace Zenthium.Sandbox
             if (entity != null)
             {
                 entity.Health.OnHealthChanged -= MarkDirty;
+                entity.Statuses.OnStatusesChanged -= MarkStatusesDirty;
                 entity = null;
             }
         }
 
         private void MarkDirty(float current, float max)
+        {
+            isDirty = true;
+        }
+
+        private void MarkStatusesDirty()
         {
             isDirty = true;
         }
@@ -101,6 +112,12 @@ namespace Zenthium.Sandbox
             if (shownInvulnerable)
             {
                 text.Append("\nInvulnerable");
+            }
+
+            entity.Statuses.GetActive(statuses);
+            foreach (StatusType status in statuses)
+            {
+                text.Append('\n').Append(status);
             }
 
             label.SetText(text);

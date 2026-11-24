@@ -37,6 +37,12 @@ MonoBehaviour:
     defianceInvulnerablePlayer: 5
     defianceInvulnerableOther: 1
     resourceRegenPerSecond: 1
+  moduleConstants:
+    slotsPerType: 4
+    presetSlotsUnlocked: 1
+    crowdControlDurationMultiplier: 0.5
+    crowdControlPulseOnSeconds: 0.5
+    crowdControlPulseOffSeconds: 0.5
   rankScaling:
     innateBoostGoon: 0
     innateBoostChampion: 1

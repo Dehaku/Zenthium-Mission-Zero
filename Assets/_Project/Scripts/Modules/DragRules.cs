@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Zenthium.Data;
+using Zenthium.Entities;
 
 namespace Zenthium.Modules
 {
@@ -42,6 +43,9 @@ namespace Zenthium.Modules
         public const string CapacityBaseKey = "capacity_base";
         public const string CapacityPerStrengthKey = "capacity_per_strength";
 
+        // Key of a module that adds citizen-only Drag capacity, such as Express Delivery.
+        public const string CitizenCapacityKey = "citizen_capacity";
+
         // Absorbs float error, so base + per-Strength x Strength landing on a whole number isn't floored below it.
         private const float WholeNumberTolerance = 0.0001f;
 
@@ -75,15 +79,53 @@ namespace Zenthium.Modules
             return Math.Max(0, (int)Math.Floor(capacityBase + capacityPerStrength * strength + WholeNumberTolerance));
         }
 
+        /// <summary>
+        /// Extra capacity for citizens only, from equipped modules' <c>citizen_capacity</c> (Express Delivery).
+        /// </summary>
+        public static int CitizenCapacity(ModuleSlots slots)
+        {
+            float total = 0f;
+            foreach (SlotType type in (SlotType[])Enum.GetValues(typeof(SlotType)))
+            {
+                for (int index = 0; index < slots.SlotsPerType; index++)
+                {
+                    if (slots.IsEquipped(type, index)
+                        && slots.Get(type, index).Values.TryGetNumber(CitizenCapacityKey, out float extra))
+                    {
+                        total += extra;
+                    }
+                }
+            }
+
+            return Math.Max(0, (int)Math.Floor(total + WholeNumberTolerance));
+        }
+
+        /// <summary>
+        /// Free capacity, given what's carried. Citizens fill the citizen-only capacity first, then the general one.
+        /// </summary>
+        /// <param name="citizenCapacityLeft">Free citizen-only capacity.</param>
+        /// <returns>Free general capacity.</returns>
+        public static int CapacityLeft(int capacity, int citizenCapacity, int carriedCitizens, int carriedOthers,
+            out int citizenCapacityLeft)
+        {
+            int citizensInOwnCapacity = Math.Min(carriedCitizens, citizenCapacity);
+            citizenCapacityLeft = citizenCapacity - citizensInOwnCapacity;
+            return capacity - carriedOthers - (carriedCitizens - citizensInOwnCapacity);
+        }
+
         /// <param name="capacityLeft">Free capacity. Candidates that use capacity are skipped when it's 0.</param>
+        /// <param name="citizenCapacityLeft">Free capacity that only citizens can use.</param>
         /// <returns>The index of the candidate to grab, or -1 if none can be grabbed.</returns>
-        public static int SelectTarget(IReadOnlyList<DragCandidate> candidates, int capacityLeft)
+        public static int SelectTarget(IReadOnlyList<DragCandidate> candidates, int capacityLeft,
+            int citizenCapacityLeft = 0)
         {
             int best = -1;
             for (int i = 0; i < candidates.Count; i++)
             {
                 DragCandidate candidate = candidates[i];
-                if (candidate.UsesCapacity && capacityLeft <= 0)
+                bool hasRoom = capacityLeft > 0
+                    || (candidate.Kind == DragTargetKind.Citizen && citizenCapacityLeft > 0);
+                if (candidate.UsesCapacity && !hasRoom)
                 {
                     continue;
                 }

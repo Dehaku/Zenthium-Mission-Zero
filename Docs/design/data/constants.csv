@@ -20,6 +20,11 @@ formula,defiance_roll_cost,1,Proc chance removed per Defiance Roll stack (stats.
 formula,defiance_invulnerable_player,5,Seconds Invulnerable after a Defiance proc (stats.md)
 formula,defiance_invulnerable_other,1,Seconds. Everyone except the player
 formula,resource_regen_per_second,1,Baseline regen of every resource pool (combat.md)
+formula,slots_per_type,4,"Active, passive and gear slots each (heroes.md: Slots)"
+formula,preset_slots_unlocked,1,Slots of each type a preset hero starts with unlocked (heroes.md: Slots)
+formula,cc_duration_multiplier,0.5,Crowd control length on Leaders and the player (statuses.md)
+formula,cc_pulse_on_s,0.5,Seconds on per pulse of while-inside crowd control on Leaders and the player (statuses.md)
+formula,cc_pulse_off_s,0.5,Seconds off per pulse of while-inside crowd control on Leaders and the player (statuses.md)
 mirror,innate_boost_goon,0,Mirror of factions.md. Keep in sync
 mirror,innate_boost_champion,1,Mirror of factions.md. Keep in sync
 mirror,innate_boost_leader,2,Mirror of factions.md. Keep in sync

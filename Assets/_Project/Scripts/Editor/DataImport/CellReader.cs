@@ -12,6 +12,8 @@ namespace Zenthium.Editor.DataImport
     /// </summary>
     internal static class CellReader
     {
+        private const char ListSeparator = ';';
+
         /// <returns>The id, or null if the cell is blank.</returns>
         public static string Id(CsvRow row, string column, List<string> errors)
         {
@@ -98,6 +100,22 @@ namespace Zenthium.Editor.DataImport
 
             errors.Add($"{row.Location}: {column} '{word}' isn't a {scale} tier in {DesignDataSource.ConstantsFile}.");
             return default;
+        }
+
+        /// <summary>The items of a <c>;</c>-separated list cell, trimmed, with blanks left out.</summary>
+        public static List<string> ListItems(CsvRow row, string column)
+        {
+            var items = new List<string>();
+            foreach (string part in row.Get(column).Split(ListSeparator))
+            {
+                string item = part.Trim();
+                if (item.Length > 0)
+                {
+                    items.Add(item);
+                }
+            }
+
+            return items;
         }
 
         /// <summary>Invariant culture, so a comma decimal separator on this PC can't change the numbers.</summary>

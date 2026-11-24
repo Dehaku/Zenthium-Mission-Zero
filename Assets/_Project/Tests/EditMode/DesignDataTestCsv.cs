@@ -31,6 +31,11 @@ namespace Zenthium.Tests.EditMode
             "formula,defiance_invulnerable_player,5,\n" +
             "formula,defiance_invulnerable_other,1,\n" +
             "formula,resource_regen_per_second,1,\n" +
+            "formula,slots_per_type,4,\n" +
+            "formula,preset_slots_unlocked,1,\n" +
+            "formula,cc_duration_multiplier,0.5,\n" +
+            "formula,cc_pulse_on_s,0.5,\n" +
+            "formula,cc_pulse_off_s,0.5,\n" +
             "mirror,innate_boost_goon,0,\n" +
             "mirror,innate_boost_champion,1,\n" +
             "mirror,innate_boost_leader,2,\n" +
@@ -50,9 +55,9 @@ namespace Zenthium.Tests.EditMode
             "tier,utility.None,1,\n";
 
         private const string ModulesHeader =
-            "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,budget_ok,notes\n";
+            "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,damage_type,tags,budget_ok,notes\n";
 
-        private const int ModuleColumnCount = 15;
+        private const int ModuleColumnCount = 17;
 
         public static readonly string KickRow =
             ModuleRow("Kick", "Base action", "Strength", "Normal", "3", "", "", "None", "", "", "Normal", "Melee");
@@ -64,8 +69,10 @@ namespace Zenthium.Tests.EditMode
             "faction,entity,rank_tier,min_rank,budget_cost,values,notes\n" +
             "Galactic Repo Agency,Grey,Goon,D,1,,\n";
 
-        private const string HeroesHeader = "hero,strength,will,intelligence,finesse,toughness,starter,notes\n";
-        private const string RushHourRow = "Rush Hour,20,10,10,20,10,yes,\n";
+        private const string HeroesHeader =
+            "hero,strength,will,intelligence,finesse,toughness,starter,actives,passives,gear,notes\n";
+
+        private const string RushHourRow = "Rush Hour,20,10,10,20,10,yes,,,,\n";
 
         private const string PropsCsv =
             "name,size,strength_needed,hp,thrown_x_kick,armor,damage_reduction,explosion_damage,explosion_radius_m,notes\n" +
@@ -76,7 +83,7 @@ namespace Zenthium.Tests.EditMode
             "Stat point,1,basic,\n";
 
         /// <summary>A modules.csv row in column order (module, category, stat, damage_tier, cooldown_s,
-        /// resource, cost, utility, duration_tier, radius_tier, knockback_tier, range_tier, values...).
+        /// resource, cost, utility, duration_tier, radius_tier, knockback_tier, range_tier, values, damage_type, tags...).
         /// Cells left off are blank.</summary>
         public static string ModuleRow(params string[] cells)
         {

@@ -37,9 +37,9 @@ namespace Zenthium.Tests.EditMode
         [Test]
         public void TryGetDistance_KnockbackResistant_DoesNotMove()
         {
-            var setup = new EntitySetup(Team.Enemy, StatBlock.Uniform(10f));
-            setup.ModuleTags.Add(ModuleTag.KnockbackResistant);
-            var target = new Entity(setup, CombatTestSetup.CreateRules(), new FixedRandom(CombatTestSetup.RollThatMisses));
+            // Like Immovable: the tag comes from an equipped module.
+            Entity target = CombatTestSetup.CreateEntityWithModules(Team.Enemy, EntitySetup.AllSlotsUnlocked,
+                TestModules.Passive("Immovable", ModuleTag.KnockbackResistant));
 
             bool knocked = TryKnockback(CombatTestSetup.CreateEntity(Team.Player), target, out float distance);
 
@@ -97,6 +97,18 @@ namespace Zenthium.Tests.EditMode
             Entity source = CombatTestSetup.CreateEntity(Team.Player);
 
             Assert.That(TryKnockback(source, CombatTestSetup.CreateEntity(Team.Civilian), out _), Is.False);
+        }
+
+        [Test]
+        public void TryGetDistance_TargetCancelledTheKnockback_DoesNotMove()
+        {
+            Entity source = CombatTestSetup.CreateEntity(Team.Player);
+            Entity target = CombatTestSetup.CreateEntity(Team.Enemy);
+            var hit = new DamageEvent(source, target, DamageType.Physical, false, DamageOutcome.Dealt, 5f, true);
+
+            bool knocked = new KnockbackResolver(new FriendlyFireRules()).TryGetDistance(NormalKnockback, hit, out _);
+
+            Assert.That(knocked, Is.False);
         }
 
         [Test]

@@ -68,3 +68,8 @@ MonoBehaviour:
         word: 
         value: 0
       module: {fileID: 0}
+  hasDamageType: 1
+  damageType: 0
+  tags: 01000000i
+  resistStats: 
+  noRegenResources: 

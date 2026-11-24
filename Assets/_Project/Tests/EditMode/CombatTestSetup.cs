@@ -40,6 +40,12 @@ namespace Zenthium.Tests.EditMode
                     defianceInvulnerablePlayer: 5f,
                     defianceInvulnerableOther: 1f,
                     resourceRegenPerSecond: 1f),
+                new ModuleConstants(
+                    slotsPerType: 4,
+                    presetSlotsUnlocked: 1,
+                    crowdControlDurationMultiplier: 0.5f,
+                    crowdControlPulseOnSeconds: 0.5f,
+                    crowdControlPulseOffSeconds: 0.5f),
                 new RankScalingConstants(
                     innateBoostGoon: 0f,
                     innateBoostChampion: 1f,
@@ -59,6 +65,16 @@ namespace Zenthium.Tests.EditMode
         public static Entity CreateEntity(Team team, RankTier? rankTier = null, int difficultyLevel = 0)
         {
             return CreateEntity(team, StatBlock.Uniform(10f), rankTier, difficultyLevel);
+        }
+
+        /// <summary>An entity with 10 in every stat and the modules in its slots.</summary>
+        /// <param name="unlockedSlotsPerType">Slots of each type unlocked, counted from the first.</param>
+        public static Entity CreateEntityWithModules(
+            Team team, int unlockedSlotsPerType, params ModuleData[] modules)
+        {
+            var setup = new EntitySetup(team, StatBlock.Uniform(10f)) { UnlockedSlotsPerType = unlockedSlotsPerType };
+            setup.Modules.AddRange(modules);
+            return new Entity(setup, CreateRules(), new FixedRandom(RollThatMisses));
         }
 
         public static DamagePipeline CreatePipeline(float roll = RollThatMisses, FriendlyFireRules friendlyFire = null)

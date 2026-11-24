@@ -33,11 +33,11 @@ namespace Zenthium.Editor
         private const float CapsuleHalfHeight = 1f;
         private const float EntitySpacing = 3f;
         private static readonly Vector2 ReferenceResolution = new Vector2(1920f, 1080f);
-        private const float PanelWidth = 640f;
-        private const int PanelPadding = 12;
-        private const float Spacing = 6f;
-        private const float ControlHeight = 36f;
-        private const float TextSize = 20f;
+        private const float PanelWidth = 500f;
+        private const int PanelPadding = 8;
+        private const float Spacing = 4f;
+        private const float ControlHeight = 26f;
+        private const float TextSize = 15f;
 
         // Unity's built-in uGUI sprites, the ones GameObject > UI uses.
         private const string StandardSprite = "UI/Skin/UISprite.psd";
@@ -56,6 +56,8 @@ namespace Zenthium.Editor
             public const string Hero = "hero";
             public const string FactionEntity = "factionEntity";
             public const string Team = "team";
+            public const string Modules = "modules";
+            public const string UnlockedSlots = "unlockedSlots";
         }
 
         internal static class CombatRulesFields
@@ -209,6 +211,9 @@ namespace Zenthium.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = ReferenceResolution;
 
+            // Shrink: the whole reference layout always fits on screen, whatever the Game view's aspect.
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
+
             var panelObject = new GameObject("Combat Debug Panel", typeof(RectTransform), typeof(Image),
                 typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             var panelRect = (RectTransform)panelObject.transform;
@@ -285,7 +290,7 @@ namespace Zenthium.Editor
             });
         }
 
-        private static Transform CreateRow(Transform parent, string rowName)
+        internal static Transform CreateRow(Transform parent, string rowName)
         {
             var row = new GameObject(rowName, typeof(RectTransform), typeof(HorizontalLayoutGroup));
             row.transform.SetParent(parent, false);
@@ -298,7 +303,7 @@ namespace Zenthium.Editor
             return row.transform;
         }
 
-        private static TMP_Text CreateText(Transform parent, TMP_DefaultControls.Resources resources, string objectName)
+        internal static TMP_Text CreateText(Transform parent, TMP_DefaultControls.Resources resources, string objectName)
         {
             GameObject textObject = TMP_DefaultControls.CreateText(resources);
             textObject.name = objectName;
@@ -326,7 +331,7 @@ namespace Zenthium.Editor
             return input;
         }
 
-        private static TMP_Dropdown CreateDropdown(Transform parent, TMP_DefaultControls.Resources resources)
+        internal static TMP_Dropdown CreateDropdown(Transform parent, TMP_DefaultControls.Resources resources)
         {
             GameObject dropdownObject = TMP_DefaultControls.CreateDropdown(resources);
             AddToRow(dropdownObject, parent);
@@ -335,7 +340,7 @@ namespace Zenthium.Editor
             return dropdownObject.GetComponent<TMP_Dropdown>();
         }
 
-        private static Button CreateButton(Transform parent, TMP_DefaultControls.Resources resources, string label)
+        internal static Button CreateButton(Transform parent, TMP_DefaultControls.Resources resources, string label)
         {
             GameObject buttonObject = TMP_DefaultControls.CreateButton(resources);
             buttonObject.name = label + " Button";
@@ -344,7 +349,7 @@ namespace Zenthium.Editor
             return buttonObject.GetComponent<Button>();
         }
 
-        private static Toggle CreateToggle(Transform parent, DefaultControls.Resources resources, string label, bool isOn)
+        internal static Toggle CreateToggle(Transform parent, DefaultControls.Resources resources, string label, bool isOn)
         {
             GameObject toggleObject = DefaultControls.CreateToggle(resources);
             toggleObject.name = label + " Toggle";
@@ -372,7 +377,7 @@ namespace Zenthium.Editor
             element.flexibleWidth = 1f;
         }
 
-        private static TMP_DefaultControls.Resources TmpResources()
+        internal static TMP_DefaultControls.Resources TmpResources()
         {
             return new TMP_DefaultControls.Resources
             {
@@ -386,7 +391,7 @@ namespace Zenthium.Editor
             };
         }
 
-        private static DefaultControls.Resources UiResources()
+        internal static DefaultControls.Resources UiResources()
         {
             return new DefaultControls.Resources
             {

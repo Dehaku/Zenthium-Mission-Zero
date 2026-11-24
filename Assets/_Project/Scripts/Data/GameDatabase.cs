@@ -11,6 +11,7 @@ namespace Zenthium.Data
     {
         [SerializeField] private FormulaConstants formulaConstants = new FormulaConstants();
         [SerializeField] private EntityConstants entityConstants = new EntityConstants();
+        [SerializeField] private ModuleConstants moduleConstants = new ModuleConstants();
         [SerializeField] private RankScalingConstants rankScaling = new RankScalingConstants();
         [SerializeField] private EconomyConstants economy = new EconomyConstants();
         [SerializeField] private TierTables tiers = new TierTables();
@@ -25,6 +26,7 @@ namespace Zenthium.Data
 
         public FormulaConstants FormulaConstants => formulaConstants;
         public EntityConstants EntityConstants => entityConstants;
+        public ModuleConstants ModuleConstants => moduleConstants;
         public RankScalingConstants RankScaling => rankScaling;
         public EconomyConstants Economy => economy;
         public TierTables Tiers => tiers;
@@ -51,6 +53,7 @@ namespace Zenthium.Data
         internal void Populate(
             FormulaConstants newFormulaConstants,
             EntityConstants newEntityConstants,
+            ModuleConstants newModuleConstants,
             RankScalingConstants newRankScaling,
             EconomyConstants newEconomy,
             TierTables newTiers,
@@ -63,6 +66,7 @@ namespace Zenthium.Data
         {
             formulaConstants = newFormulaConstants;
             entityConstants = newEntityConstants;
+            moduleConstants = newModuleConstants;
             rankScaling = newRankScaling;
             economy = newEconomy;
             tiers = newTiers;

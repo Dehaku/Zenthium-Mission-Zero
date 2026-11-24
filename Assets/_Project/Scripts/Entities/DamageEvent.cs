@@ -23,8 +23,10 @@ namespace Zenthium.Entities
     public readonly struct DamageEvent
     {
         public DamageEvent(
-            Entity source, Entity target, DamageType type, bool isDamageOverTime, DamageOutcome outcome, float amount)
+            Entity source, Entity target, DamageType type, bool isDamageOverTime, DamageOutcome outcome, float amount,
+            bool knockbackPrevented = false)
         {
+            KnockbackPrevented = knockbackPrevented;
             Source = source;
             Target = target;
             Type = type;
@@ -43,5 +45,8 @@ namespace Zenthium.Entities
 
         /// <summary>The damage after Armor and Damage Reduction. 0 unless <see cref="Outcome"/> is Dealt.</summary>
         public float Amount { get; }
+
+        /// <summary>Something on the target, such as Weather the Storm, cancelled this hit's knockback.</summary>
+        public bool KnockbackPrevented { get; }
     }
 }

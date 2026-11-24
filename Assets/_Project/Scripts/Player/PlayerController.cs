@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Zenthium.Combat;
 using Zenthium.Core.Controls;
 using Zenthium.Data;
@@ -9,33 +10,55 @@ using Zenthium.Movement;
 namespace Zenthium.Player
 {
     /// <summary>
-    /// Turns the player's input (controls.md) into the shared actions: move, aim, the Sprint toggle, Kick, Drag and
-    /// the friendly fire hold. The actions themselves are the same ones any entity uses.
+    /// Turns the player's input (controls.md) into the shared actions: move, aim, the Sprint toggle, Kick, Drag,
+    /// Power 1-4 (active slots), Gear 1-4 (gear actives), the friendly fire hold and the MoreInfo hold. The actions
+    /// themselves are the same ones any entity uses.
     /// </summary>
     [RequireComponent(typeof(EntityBehaviour), typeof(EntityMotor), typeof(PlayerAim))]
-    [RequireComponent(typeof(KickAction), typeof(DragAction))]
+    [RequireComponent(typeof(EntityModules), typeof(DragAction))]
     public sealed class PlayerController : MonoBehaviour
     {
+        // controls.md: four Power buttons and four Gear buttons, one per slot.
+        private const int SlotButtonCount = 4;
+
         [SerializeField] private GameDatabase database;
         [SerializeField] private CombatRulesBehaviour combatRules;
+
+        private readonly InputAction[] powerButtons = new InputAction[SlotButtonCount];
+        private readonly InputAction[] gearButtons = new InputAction[SlotButtonCount];
 
         private InputSystem_Actions actions;
         private EntityBehaviour entityBehaviour;
         private EntityMotor motor;
         private PlayerAim aim;
-        private KickAction kick;
+        private EntityModules modules;
         private DragAction drag;
         private SprintToggle sprint;
         private float sprintBonus;
+
+        /// <summary>True while the MoreInfo button is held, so the module info shows.</summary>
+        public bool IsMoreInfoHeld { get; private set; }
+
+        public bool IsSprintOn => sprint != null && sprint.IsOn;
 
         private void Awake()
         {
             entityBehaviour = GetComponent<EntityBehaviour>();
             motor = GetComponent<EntityMotor>();
             aim = GetComponent<PlayerAim>();
-            kick = GetComponent<KickAction>();
+            modules = GetComponent<EntityModules>();
             drag = GetComponent<DragAction>();
             actions = new InputSystem_Actions();
+
+            InputSystem_Actions.PlayerActions player = actions.Player;
+            powerButtons[0] = player.Power1;
+            powerButtons[1] = player.Power2;
+            powerButtons[2] = player.Power3;
+            powerButtons[3] = player.Power4;
+            gearButtons[0] = player.Gear1;
+            gearButtons[1] = player.Gear2;
+            gearButtons[2] = player.Gear3;
+            gearButtons[3] = player.Gear4;
 
             if (database == null || combatRules == null
                 || !database.Modules.TryGet(DataIds.Modules.Sprint, out ModuleData sprintData)
@@ -66,6 +89,7 @@ namespace Zenthium.Player
             sprint = null;
             motor.SetMoveInput(Vector2.zero);
             SetFriendlyFireHeld(false);
+            IsMoreInfoHeld = false;
         }
 
         private void OnDestroy()
@@ -85,6 +109,7 @@ namespace Zenthium.Player
             motor.SetMoveInput(player.Move.ReadValue<Vector2>());
             aim.UpdateAim(player.AimPointer.ReadValue<Vector2>(), player.AimStick.ReadValue<Vector2>());
             SetFriendlyFireHeld(player.FriendlyFire.IsPressed());
+            IsMoreInfoHeld = player.MoreInfo.IsPressed();
 
             if (player.Sprint.WasPressedThisFrame() && sprint != null)
             {
@@ -93,19 +118,32 @@ namespace Zenthium.Player
 
             if (player.Kick.WasPressedThisFrame())
             {
-                kick.TryKick(aim.Direction);
+                modules.TryKick(aim.Direction);
             }
 
             if (player.Drag.WasPressedThisFrame())
             {
                 drag.Use();
             }
+
+            for (int i = 0; i < SlotButtonCount; i++)
+            {
+                if (powerButtons[i].WasPressedThisFrame())
+                {
+                    modules.TryActivateSlot(SlotType.Active, i, aim.Direction);
+                }
+
+                if (gearButtons[i].WasPressedThisFrame())
+                {
+                    modules.TryActivateSlot(SlotType.Gear, i, aim.Direction);
+                }
+            }
         }
 
         private void Bind(Entity entity)
         {
-            // A reset entity starts with Sprint off.
-            sprint = new SprintToggle(entity.MoveSpeed, sprintBonus);
+            // A reset entity starts with Sprint off. Sprinter's bigger bonus comes from the new entity's slots.
+            sprint = new SprintToggle(entity.MoveSpeed, SprintToggle.BonusFor(sprintBonus, entity.Slots));
         }
 
         private void SetFriendlyFireHeld(bool held)

@@ -19,3 +19,18 @@ MonoBehaviour:
   finesse: 10
   toughness: 20
   isStarter: 0
+  actives:
+  - {fileID: 11400000, guid: 0b82e2ff2d28f404280a3c15a1d51c9a, type: 2}
+  - {fileID: 11400000, guid: bc138411b6e2d194f98f747e3887c8a5, type: 2}
+  - {fileID: 11400000, guid: e500bcd4d9f6d56449abab310eefb6c7, type: 2}
+  - {fileID: 11400000, guid: 2194d40309b6b524fb3c360b70ef6f86, type: 2}
+  passives:
+  - {fileID: 11400000, guid: c1ec416b2d71342479984b562b84e2f0, type: 2}
+  - {fileID: 11400000, guid: 282716e6803cea54fbdfed592b006a2c, type: 2}
+  - {fileID: 11400000, guid: 9120dcefdff62464aa3d24f82ee5e5ba, type: 2}
+  - {fileID: 11400000, guid: 1fbb5c76ad3aeec4aac8c4ed9bb1d8e8, type: 2}
+  gear:
+  - {fileID: 11400000, guid: a1a1021a73610d64ca5e16da0f48e6ae, type: 2}
+  - {fileID: 11400000, guid: 83292f861267f0146b5def9fdf13ccc9, type: 2}
+  - {fileID: 11400000, guid: 15fa2ebac1680a242b99fc56ef78c056, type: 2}
+  - {fileID: 11400000, guid: 885ddb82e40de744c8b7c217f494c771, type: 2}

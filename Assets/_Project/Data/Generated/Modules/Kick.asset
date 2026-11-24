@@ -41,3 +41,8 @@ MonoBehaviour:
     value: 2
   values:
     values: []
+  hasDamageType: 1
+  damageType: 0
+  tags: 00000000i
+  resistStats: 
+  noRegenResources: 

@@ -93,4 +93,12 @@ namespace Zenthium.Data
         Tier,
         Module,
     }
+
+    /// <summary>The three slot types of heroes.md (Slots). Base actions are outside the slots.</summary>
+    public enum SlotType
+    {
+        Active,
+        Passive,
+        Gear,
+    }
 }

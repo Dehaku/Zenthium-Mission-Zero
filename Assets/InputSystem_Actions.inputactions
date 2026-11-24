@@ -1163,6 +1163,34 @@
                                           "isPartOfComposite":  false
                                       }
                                   ]
+                 },
+                 {
+                     "name":  "Sandbox",
+                     "id":  "6b1f3a52-9c4e-4f0d-8e27-3d5a1c9b7e41",
+                     "actions":  [
+                                     {
+                                         "name":  "ToggleChecklist",
+                                         "type":  "Button",
+                                         "id":  "a3c8e5f1-2b7d-4e96-b0a4-8f1d6c2e9b53",
+                                         "expectedControlType":  "Button",
+                                         "processors":  "",
+                                         "interactions":  "",
+                                         "initialStateCheck":  false
+                                     }
+                                 ],
+                     "bindings":  [
+                                      {
+                                          "name":  "",
+                                          "id":  "e7d24b9a-5f13-4c8e-9a6b-1c0f3e8d2a75",
+                                          "path":  "<Keyboard>/capsLock",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Keyboard&Mouse",
+                                          "action":  "ToggleChecklist",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      }
+                                  ]
                  }
              ],
     "controlSchemes":  [

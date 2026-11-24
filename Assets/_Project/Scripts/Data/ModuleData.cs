@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Zenthium.Data
 {
     /// <summary>
-    /// The numbers of one module, from a row of modules.csv. Its behavior is code, linked by <see cref="DataEntry.Id"/>.
+    /// The numbers and tags of one module, from a row of modules.csv. Its behavior is code, linked by
+    /// <see cref="DataEntry.Id"/>.
     /// </summary>
     public sealed class ModuleData : DataEntry
     {
@@ -22,6 +24,11 @@ namespace Zenthium.Data
         [SerializeField] private TierValue knockbackTier;
         [SerializeField] private TierValue rangeTier;
         [SerializeField] private DataValueList values = new DataValueList();
+        [SerializeField] private bool hasDamageType;
+        [SerializeField] private DamageType damageType;
+        [SerializeField] private List<ModuleTag> tags = new List<ModuleTag>();
+        [SerializeField] private List<Stat> resistStats = new List<Stat>();
+        [SerializeField] private List<ResourceType> noRegenResources = new List<ResourceType>();
 
         public ModuleCategory Category => category;
 
@@ -45,6 +52,23 @@ namespace Zenthium.Data
 
         public DataValueList Values => values;
 
+        /// <summary>The stats named by its <c>Resist:&lt;Stat&gt;</c> tags: what resists the debuffs it applies.</summary>
+        public IReadOnlyList<Stat> ResistStats => resistStats;
+
+        /// <summary>The resources named by its <c>NoRegen:&lt;Resource&gt;</c> tags.</summary>
+        public IReadOnlyList<ResourceType> NoRegenResources => noRegenResources;
+
+        /// <summary>Which slot type holds this module; false for base actions, which are outside the slots.</summary>
+        public bool TryGetSlotType(out SlotType slotType)
+        {
+            return ModuleCategories.TryGetSlotType(category, out slotType);
+        }
+
+        public bool HasTag(ModuleTag tag)
+        {
+            return tags.Contains(tag);
+        }
+
         /// <summary>The stat the module scales with, if it names one.</summary>
         public bool TryGetStat(out Stat scalingStat)
         {
@@ -67,6 +91,13 @@ namespace Zenthium.Data
             return hasResourceCost;
         }
 
+        /// <summary>Physical, Magic or Energy, if the design gives the module one.</summary>
+        public bool TryGetDamageType(out DamageType type)
+        {
+            type = damageType;
+            return hasDamageType;
+        }
+
         internal void Populate(
             ModuleCategory newCategory,
             Stat? newStat,
@@ -79,7 +110,11 @@ namespace Zenthium.Data
             TierValue newRadiusTier,
             TierValue newKnockbackTier,
             TierValue newRangeTier,
-            DataValueList newValues)
+            DataValueList newValues,
+            DamageType? newDamageType,
+            List<ModuleTag> newTags,
+            List<Stat> newResistStats,
+            List<ResourceType> newNoRegenResources)
         {
             category = newCategory;
             hasStat = newStat.HasValue;
@@ -96,6 +131,11 @@ namespace Zenthium.Data
             knockbackTier = newKnockbackTier;
             rangeTier = newRangeTier;
             values = newValues;
+            hasDamageType = newDamageType.HasValue;
+            damageType = newDamageType.GetValueOrDefault();
+            tags = newTags;
+            resistStats = newResistStats;
+            noRegenResources = newNoRegenResources;
         }
     }
 }

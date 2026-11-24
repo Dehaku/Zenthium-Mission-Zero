@@ -5,7 +5,7 @@ using Zenthium.Data;
 namespace Zenthium.Editor.DataImport
 {
     /// <summary>
-    /// Reads constants.csv into the formula, entity, rank scaling and economy constants and the tier tables.
+    /// Reads constants.csv into the formula, entity, module, rank scaling and economy constants and the tier tables.
     /// Every constant the game uses must be present, and every name must be one it knows,
     /// so a typo can't go unnoticed.
     /// </summary>
@@ -99,6 +99,12 @@ namespace Zenthium.Editor.DataImport
                 defianceInvulnerablePlayer: reader.Float("defiance_invulnerable_player"),
                 defianceInvulnerableOther: reader.Float("defiance_invulnerable_other"),
                 resourceRegenPerSecond: reader.Float("resource_regen_per_second"));
+            data.ModuleConstants = new ModuleConstants(
+                slotsPerType: reader.Int("slots_per_type"),
+                presetSlotsUnlocked: reader.Int("preset_slots_unlocked"),
+                crowdControlDurationMultiplier: reader.Float("cc_duration_multiplier"),
+                crowdControlPulseOnSeconds: reader.Float("cc_pulse_on_s"),
+                crowdControlPulseOffSeconds: reader.Float("cc_pulse_off_s"));
             data.RankScaling = new RankScalingConstants(
                 innateBoostGoon: reader.Float("innate_boost_goon"),
                 innateBoostChampion: reader.Float("innate_boost_champion"),
@@ -187,6 +193,13 @@ namespace Zenthium.Editor.DataImport
                 return TryTake(name, out CsvRow row)
                     ? CellReader.Float(row, ValueColumn, true, errors).GetValueOrDefault()
                     : 0f;
+            }
+
+            public int Int(string name)
+            {
+                return TryTake(name, out CsvRow row)
+                    ? CellReader.Int(row, ValueColumn, true, errors).GetValueOrDefault()
+                    : 0;
             }
 
             public TierValue Tier(string name, TierScale scale, TierTables tiers)

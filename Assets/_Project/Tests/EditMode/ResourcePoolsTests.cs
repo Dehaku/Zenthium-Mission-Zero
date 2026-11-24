@@ -96,5 +96,31 @@ namespace Zenthium.Tests.EditMode
 
             Assert.That(entity.Resources.Current(ResourceType.Ammo), Is.EqualTo(0f));
         }
+
+        [Test]
+        public void ResourcePassive_AddsCapacity_AndRegenOnTopOfTheBaseline()
+        {
+            // Sprinter: stamina=100; stamina_regen=10.
+            ModuleData sprinter = TestModules.Create("Sprinter", ModuleCategory.Passive,
+                values: new[] { ("stamina", 100f), ("stamina_regen", 10f) });
+
+            Entity hero = CombatTestSetup.CreateEntityWithModules(Team.Player, 1, sprinter);
+
+            Assert.That(hero.Resources.Max(ResourceType.Stamina), Is.EqualTo(100f));
+            Assert.That(hero.Resources.RegenPerSecond(ResourceType.Stamina), Is.EqualTo(11f));
+        }
+
+        [Test]
+        public void NoRegenTag_StopsAllRegen_EvenWithARegenValue()
+        {
+            // Reaper Battery: charge=100; charge_regen=0, tagged NoRegen:Charge.
+            ModuleData reaper = TestModules.Create("Reaper", ModuleCategory.Passive,
+                noRegen: new[] { ResourceType.Charge }, values: new[] { ("charge", 100f), ("charge_regen", 0f) });
+
+            Entity hero = CombatTestSetup.CreateEntityWithModules(Team.Player, 1, reaper);
+
+            Assert.That(hero.Resources.Max(ResourceType.Charge), Is.EqualTo(100f));
+            Assert.That(hero.Resources.RegenPerSecond(ResourceType.Charge), Is.EqualTo(0f));
+        }
     }
 }

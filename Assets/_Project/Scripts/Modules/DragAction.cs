@@ -125,7 +125,9 @@ namespace Zenthium.Modules
 
         private IDragTarget FindTarget()
         {
-            int capacityLeft = rules.Capacity(entity.Stats.Get(Stat.Strength)) - CarriedUsingCapacity();
+            CountCarried(out int carriedCitizens, out int carriedOthers);
+            int capacityLeft = DragRules.CapacityLeft(rules.Capacity(entity.Stats.Get(Stat.Strength)),
+                DragRules.CitizenCapacity(entity.Slots), carriedCitizens, carriedOthers, out int citizenCapacityLeft);
             candidates.Clear();
             candidateInfo.Clear();
 
@@ -146,22 +148,31 @@ namespace Zenthium.Modules
                 candidateInfo.Add(new DragCandidate(target.Kind, offset.magnitude, target.UsesCapacity));
             }
 
-            int index = DragRules.SelectTarget(candidateInfo, capacityLeft);
+            int index = DragRules.SelectTarget(candidateInfo, capacityLeft, citizenCapacityLeft);
             return index < 0 ? null : candidates[index];
         }
 
-        private int CarriedUsingCapacity()
+        /// <summary>Carried targets that use capacity: citizens, which can also use citizen-only capacity, and the rest.</summary>
+        private void CountCarried(out int citizens, out int others)
         {
-            int count = 0;
+            citizens = 0;
+            others = 0;
             foreach (IDragTarget target in carried)
             {
-                if (target.UsesCapacity)
+                if (!target.UsesCapacity)
                 {
-                    count++;
+                    continue;
+                }
+
+                if (target.Kind == DragTargetKind.Citizen)
+                {
+                    citizens++;
+                }
+                else
+                {
+                    others++;
                 }
             }
-
-            return count;
         }
 
         private void Grab(IDragTarget target)

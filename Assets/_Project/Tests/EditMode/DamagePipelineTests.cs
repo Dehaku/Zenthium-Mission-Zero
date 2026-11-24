@@ -171,5 +171,80 @@ namespace Zenthium.Tests.EditMode
             Assert.That(result.Outcome, Is.EqualTo(DamageOutcome.Dealt));
             Assert.That(target.Health.Current, Is.EqualTo(55f).Within(Tolerance));
         }
+
+        [Test]
+        public void Apply_SourceDealsLess_AppliesBeforeArmor()
+        {
+            // Marked: deals 30% less. 100 x 0.7 = 70, minus 5 Armor.
+            Entity source = CombatTestSetup.CreateEntity(Team.Player);
+            source.DamageModifiers.AddDealt(-0.3f);
+            Entity target = CombatTestSetup.CreateEntity(Team.Enemy);
+
+            DamageEvent result = CombatTestSetup.CreatePipeline().Apply(new Hit(source, 100f, DamageType.Physical), target);
+
+            Assert.That(result.Amount, Is.EqualTo(65f).Within(Tolerance));
+        }
+
+        [Test]
+        public void Apply_TargetTakesMore_FromAnySource()
+        {
+            // Marked: takes 25% more. 100 x 1.25 = 125, minus 5 Armor.
+            Entity target = CombatTestSetup.CreateEntity(Team.Enemy);
+            target.DamageModifiers.AddTaken(0.25f);
+
+            DamageEvent result = CombatTestSetup.CreatePipeline().Apply(CombatTestSetup.Environmental(100f), target);
+
+            Assert.That(result.Amount, Is.EqualTo(120f).Within(Tolerance));
+        }
+
+        [Test]
+        public void Apply_IncomingHitHandler_CutsTheHitAndCancelsItsKnockback()
+        {
+            Entity target = CombatTestSetup.CreateEntity(Team.Enemy);
+            target.AddIncomingHitHandler(new HalvingHandler());
+
+            DamageEvent result = CombatTestSetup.CreatePipeline().Apply(CombatTestSetup.Environmental(100f), target);
+
+            // (100 - 5 Armor) x (1 - 0.5).
+            Assert.That(result.Amount, Is.EqualTo(47.5f).Within(Tolerance));
+            Assert.That(result.KnockbackPrevented, Is.True);
+        }
+
+        [Test]
+        public void Apply_IncomingHitHandler_DoesNotSeeDoTTicks()
+        {
+            Entity target = CombatTestSetup.CreateEntity(Team.Enemy);
+            target.AddIncomingHitHandler(new HalvingHandler());
+
+            DamageEvent result = CombatTestSetup.CreatePipeline()
+                .Apply(CombatTestSetup.Environmental(20f, isDamageOverTime: true), target);
+
+            Assert.That(result.Amount, Is.EqualTo(20f).Within(Tolerance));
+        }
+
+        [Test]
+        public void Apply_HitThatIncapacitates_RaisesTheSourcesHitAndDefeatEvents()
+        {
+            Entity source = CombatTestSetup.CreateEntity(Team.Player, StatBlock.Uniform(90f));
+            Entity target = CombatTestSetup.CreateEntity(Team.Enemy, StatBlock.Uniform(10f), roll: 0.99f);
+            int hits = 0;
+            Entity defeated = null;
+            source.OnHitDealt += _ => hits++;
+            source.OnDefeatedTarget += entity => defeated = entity;
+
+            CombatTestSetup.CreatePipeline().Apply(new Hit(source, 1000f, DamageType.Physical), target);
+
+            Assert.That(hits, Is.EqualTo(1));
+            Assert.That(defeated, Is.SameAs(target));
+        }
+
+        private sealed class HalvingHandler : IIncomingHitHandler
+        {
+            public void OnIncomingHit(ref IncomingHit hit)
+            {
+                hit.ExtraDamageReduction = 0.5f;
+                hit.PreventKnockback = true;
+            }
+        }
     }
 }

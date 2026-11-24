@@ -7,8 +7,12 @@
         "Zenthium.Time",
         "Zenthium.Entities",
         "Zenthium.Combat",
+        "Zenthium.Movement",
+        "Zenthium.Modules",
+        "Zenthium.Player",
         "UnityEngine.UI",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

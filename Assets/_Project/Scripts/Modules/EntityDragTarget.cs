@@ -6,9 +6,10 @@ using Zenthium.Movement;
 namespace Zenthium.Modules
 {
     /// <summary>
-    /// Lets Drag grab this entity while it's Incapacitated, whatever its team (modules.md, Drag row). A civilian
-    /// counts as a citizen, which Drag picks first; grabbing citizens who are still on their feet comes in
-    /// Milestone 6. While dragged, the entity can't be hurt or knocked back, and its motor follows the carrier.
+    /// Lets Drag grab this entity while it's Incapacitated, whatever its team (modules.md, Drag row), and lets go if
+    /// it gets back up. A civilian counts as a citizen, which Drag picks first; grabbing citizens who are still on
+    /// their feet comes in Milestone 6. While dragged, the entity can't be hurt or knocked back, and its motor
+    /// follows the carrier.
     /// </summary>
     [RequireComponent(typeof(EntityBehaviour), typeof(EntityMotor), typeof(Rigidbody))]
     public sealed class EntityDragTarget : MonoBehaviour, IDragTarget
@@ -75,14 +76,25 @@ namespace Zenthium.Modules
         {
             entityBehaviour.OnEntityCreated -= Bind;
             BreakDragIfDragged();
-            entity = null;
+            Unbind();
         }
 
         private void Bind(Entity newEntity)
         {
             // A reset replaces the entity; the fresh one isn't dragged, so the carrier must let go.
             BreakDragIfDragged();
+            Unbind();
             entity = newEntity;
+            entity.OnRevived += BreakDragIfDragged;
+        }
+
+        private void Unbind()
+        {
+            if (entity != null)
+            {
+                entity.OnRevived -= BreakDragIfDragged;
+                entity = null;
+            }
         }
 
         private void BreakDragIfDragged()

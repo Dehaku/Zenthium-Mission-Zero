@@ -16,6 +16,7 @@ namespace Zenthium.Entities
         private readonly float[] current = new float[ResourceCount];
         private readonly float[] max = new float[ResourceCount];
         private readonly int[] noRegenSources = new int[ResourceCount];
+        private readonly float[] extraRegen = new float[ResourceCount];
 
         internal ResourcePools(EntityConstants constants)
         {
@@ -46,13 +47,48 @@ namespace Zenthium.Entities
             return noRegenSources[(int)resource] == 0;
         }
 
-        /// <summary>Adds the cost of a module that spends a resource. Modules that spend nothing grant nothing.</summary>
+        /// <summary>
+        /// Everything one equipped module grants (combat.md, Resources): enough of the resource it spends to use it
+        /// once; the extra capacity and regen of resource passives (<c>&lt;resource&gt;</c> and
+        /// <c>&lt;resource&gt;_regen</c> in its values), on top of the baseline; and its <c>NoRegen</c> tags.
+        /// </summary>
         public void GrantForModule(ModuleData module)
         {
-            if (module != null && module.TryGetResourceCost(out ResourceType resource, out float cost))
+            if (module == null)
             {
-                Grant(resource, cost);
+                return;
             }
+
+            if (module.TryGetResourceCost(out ResourceType spent, out float cost))
+            {
+                Grant(spent, cost);
+            }
+
+            for (int i = 0; i < ResourceCount; i++)
+            {
+                var resource = (ResourceType)i;
+                if (module.Values.TryGetNumber(CapacityKey(resource), out float capacity) && capacity > 0f)
+                {
+                    Grant(resource, capacity);
+                }
+
+                if (module.Values.TryGetNumber(RegenKey(resource), out float regen))
+                {
+                    extraRegen[i] += regen;
+                }
+            }
+
+            foreach (ResourceType resource in module.NoRegenResources)
+            {
+                AddNoRegen(resource);
+            }
+        }
+
+        /// <summary>Regen per real second: the baseline plus resource passives. 0 when a NoRegen module stops it.</summary>
+        public float RegenPerSecond(ResourceType resource)
+        {
+            int index = (int)resource;
+            return noRegenSources[index] > 0 ? 0f : constants.ResourceRegenPerSecond + extraRegen[index];
         }
 
         /// <summary>Raises the pool's max and fills the new space, so a fresh grant is usable at once.</summary>
@@ -105,8 +141,33 @@ namespace Zenthium.Entities
                     continue;
                 }
 
-                current[i] = Math.Min(max[i], current[i] + constants.ResourceRegenPerSecond * cooldownDelta);
+                current[i] = Math.Min(max[i], current[i] + RegenPerSecond((ResourceType)i) * cooldownDelta);
                 RaiseResourceChanged(i);
+            }
+        }
+
+        // Keys of resource passives' values in modules.csv, such as Sprinter's stamina=100; stamina_regen=10.
+        private static string CapacityKey(ResourceType resource)
+        {
+            switch (resource)
+            {
+                case ResourceType.Stamina: return "stamina";
+                case ResourceType.Mana: return "mana";
+                case ResourceType.Charge: return "charge";
+                case ResourceType.Ammo: return "ammo";
+                default: throw new ArgumentOutOfRangeException(nameof(resource), resource, null);
+            }
+        }
+
+        private static string RegenKey(ResourceType resource)
+        {
+            switch (resource)
+            {
+                case ResourceType.Stamina: return "stamina_regen";
+                case ResourceType.Mana: return "mana_regen";
+                case ResourceType.Charge: return "charge_regen";
+                case ResourceType.Ammo: return "ammo_regen";
+                default: throw new ArgumentOutOfRangeException(nameof(resource), resource, null);
             }
         }
 

@@ -23,6 +23,8 @@ namespace Zenthium.Editor.DataImport
         private const string KnockbackTierColumn = "knockback_tier";
         private const string RangeTierColumn = "range_tier";
         private const string ValuesColumn = "values";
+        private const string DamageTypeColumn = "damage_type";
+        private const string TagsColumn = "tags";
 
         private const string FactionColumn = "faction";
         private const string EntityColumn = "entity";
@@ -38,6 +40,9 @@ namespace Zenthium.Editor.DataImport
         private const string ToughnessColumn = "toughness";
         private const string StarterColumn = "starter";
         private const string StarterYes = "yes";
+        private const string ActivesColumn = "actives";
+        private const string PassivesColumn = "passives";
+        private const string GearColumn = "gear";
 
         private const string PropNameColumn = "name";
         private const string SizeColumn = "size";
@@ -79,7 +84,7 @@ namespace Zenthium.Editor.DataImport
         {
             if (table == null || !table.RequireColumns(errors, ModuleColumn, CategoryColumn, StatColumn, DamageTierColumn,
                     CooldownColumn, ResourceColumn, CostColumn, UtilityColumn, DurationTierColumn, RadiusTierColumn,
-                    KnockbackTierColumn, RangeTierColumn, ValuesColumn))
+                    KnockbackTierColumn, RangeTierColumn, ValuesColumn, DamageTypeColumn, TagsColumn))
             {
                 return;
             }
@@ -98,7 +103,7 @@ namespace Zenthium.Editor.DataImport
                     errors.Add($"{row.Location}: {ResourceColumn} and {CostColumn} must both be set or both be blank.");
                 }
 
-                data.Modules.Add(new ModuleRecord
+                var record = new ModuleRecord
                 {
                     Id = id,
                     Category = CellReader.EnumValue<ModuleCategory>(row, CategoryColumn, true, errors).GetValueOrDefault(),
@@ -113,7 +118,10 @@ namespace Zenthium.Editor.DataImport
                     KnockbackTier = CellReader.Tier(row, KnockbackTierColumn, TierScale.Knockback, tiers, errors),
                     RangeTier = CellReader.Tier(row, RangeTierColumn, TierScale.Range, tiers, errors),
                     Values = ValueParser.Parse(row, ValuesColumn, tiers, errors),
-                });
+                    DamageType = CellReader.EnumValue<DamageType>(row, DamageTypeColumn, false, errors),
+                };
+                ModuleTagParser.Parse(row, TagsColumn, record, errors);
+                data.Modules.Add(record);
             }
         }
 
@@ -156,7 +164,8 @@ namespace Zenthium.Editor.DataImport
         private static void ReadHeroes(CsvTable table, ParsedDesignData data, List<string> errors)
         {
             if (table == null || !table.RequireColumns(errors, HeroColumn, StrengthColumn, WillColumn,
-                    IntelligenceColumn, FinesseColumn, ToughnessColumn, StarterColumn))
+                    IntelligenceColumn, FinesseColumn, ToughnessColumn, StarterColumn, ActivesColumn, PassivesColumn,
+                    GearColumn))
             {
                 return;
             }
@@ -186,6 +195,10 @@ namespace Zenthium.Editor.DataImport
                     Finesse = CellReader.Int(row, FinesseColumn, true, errors).GetValueOrDefault(),
                     Toughness = CellReader.Int(row, ToughnessColumn, true, errors).GetValueOrDefault(),
                     IsStarter = isStarter,
+                    ActiveIds = CellReader.ListItems(row, ActivesColumn),
+                    PassiveIds = CellReader.ListItems(row, PassivesColumn),
+                    GearIds = CellReader.ListItems(row, GearColumn),
+                    Location = row.Location,
                 });
             }
         }
@@ -249,12 +262,13 @@ namespace Zenthium.Editor.DataImport
 
         private static void CheckModuleReferences(ParsedDesignData data, List<string> errors)
         {
-            var moduleIds = new HashSet<string>(StringComparer.Ordinal);
+            var modules = new Dictionary<string, ModuleRecord>(StringComparer.Ordinal);
             foreach (ModuleRecord module in data.Modules)
             {
-                moduleIds.Add(module.Id);
+                modules[module.Id] = module;
             }
 
+            var moduleIds = new HashSet<string>(modules.Keys, StringComparer.Ordinal);
             foreach (ModuleRecord module in data.Modules)
             {
                 CheckValues(module.Values, moduleIds, errors);
@@ -263,6 +277,48 @@ namespace Zenthium.Editor.DataImport
             foreach (EntityRecord entity in data.Entities)
             {
                 CheckValues(entity.Values, moduleIds, errors);
+            }
+
+            // Without a valid slot count (its own error), only the count check is skipped.
+            int? slotsPerType = data.ModuleConstants != null && data.ModuleConstants.SlotsPerType > 0
+                ? data.ModuleConstants.SlotsPerType
+                : (int?)null;
+            foreach (HeroRecord hero in data.Heroes)
+            {
+                var kit = new HashSet<string>(StringComparer.Ordinal);
+                CheckKit(hero, ActivesColumn, hero.ActiveIds, SlotType.Active, modules, kit, slotsPerType, errors);
+                CheckKit(hero, PassivesColumn, hero.PassiveIds, SlotType.Passive, modules, kit, slotsPerType, errors);
+                CheckKit(hero, GearColumn, hero.GearIds, SlotType.Gear, modules, kit, slotsPerType, errors);
+            }
+        }
+
+        /// <summary>Each kit module must exist, fit the column's slot type, and appear once per hero (heroes.md, Slots).</summary>
+        private static void CheckKit(HeroRecord hero, string column, List<string> ids, SlotType slotType,
+            Dictionary<string, ModuleRecord> modules, HashSet<string> kit, int? slotsPerType, List<string> errors)
+        {
+            if (slotsPerType.HasValue && ids.Count > slotsPerType.Value)
+            {
+                errors.Add($"{hero.Location}: {column} lists {ids.Count} modules, but there are only "
+                    + $"{slotsPerType.Value} slots per type.");
+            }
+
+            foreach (string id in ids)
+            {
+                if (!modules.TryGetValue(id, out ModuleRecord module))
+                {
+                    errors.Add($"{hero.Location}: {column} names the module '{id}', "
+                        + $"which isn't in {DesignDataSource.ModulesFile}.");
+                }
+                else if (!ModuleCategories.TryGetSlotType(module.Category, out SlotType fits) || fits != slotType)
+                {
+                    errors.Add($"{hero.Location}: {column} names '{id}', a {module.Category} module, "
+                        + $"which doesn't go in a {slotType} slot.");
+                }
+
+                if (!kit.Add(id))
+                {
+                    errors.Add($"{hero.Location}: the kit lists '{id}' twice; a hero can't equip two copies.");
+                }
             }
         }
 

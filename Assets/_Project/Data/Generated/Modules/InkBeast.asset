@@ -59,3 +59,8 @@ MonoBehaviour:
         word: 
         value: 0
       module: {fileID: 11400000, guid: 6543cbf40253b8444a8f5c733594720c, type: 2}
+  hasDamageType: 0
+  damageType: 0
+  tags: 05000000i
+  resistStats: 
+  noRegenResources: 

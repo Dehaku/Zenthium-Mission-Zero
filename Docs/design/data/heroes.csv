@@ -1,9 +1,9 @@
-hero,strength,will,intelligence,finesse,toughness,starter,notes
-Rush Hour,20,10,10,20,10,yes,
-Heave,10,20,20,10,10,,
-Sundown Sal,10,20,10,20,10,,
-Major Overclock,10,10,20,10,20,yes,
-Gelatina,10,20,10,10,20,,
-Rune,20,20,10,10,10,yes,
-Prism,10,10,20,10,20,,
-Madame Tarot,10,20,10,20,10,,
+hero,strength,will,intelligence,finesse,toughness,starter,actives,passives,gear,notes
+Rush Hour,20,10,10,20,10,yes,Speed Punch; Dash; Time Slow; Uppercut,Sprinter; Weather the Storm; Express Delivery; Charming,First Aid Spray; Evac Balloon; Padded Suit; Megaphone,
+Heave,10,20,20,10,10,,Telekinetic Grab; Telekinetic Throw; Shockwave Stomp; Barrier Shield,Soulful; Immovable; Mind over Matter; Regeneration,Stasis Cuffs; Megaphone; Evac Balloon; Padded Suit,
+Sundown Sal,10,20,10,20,10,,Dash; Taunt; Uppercut; Power Throw,Sprinter; Super Lucky; Quick Draw; Ricochet,Six-Shooter; Bandolier; Grappling Hook; Smoke Bomb,
+Major Overclock,10,10,20,10,20,yes,Taunt; Shockwave Stomp; Power Throw; Energy Shield,High-Capacity Battery; Immovable; Reactive Plating; Overclocked,Repulsor Blast; Padded Suit; Breaching Charge; Stasis Cuffs,
+Gelatina,10,20,10,10,20,,Goo Punch; Gel Coat; Taunt; Shockwave Stomp,Fireproof Body; Ooze Through; Sticky Body; Absorbent,Water Cannon; First Aid Spray; Evac Balloon; Megaphone,
+Rune,20,20,10,10,10,yes,Ink Beast; Glyph Trap; Speed Punch; Shockwave Stomp,Deathly Rage; Living Ink; Second Wind; Fresh Ink,Force Spell Tome; Padded Suit; Smoke Bomb; First Aid Spray,
+Prism,10,10,20,10,20,,Spectrum Bolt; Barrier Shield; Mirage; Shockwave Stomp,Reaper Battery; Soulful; Glow Up; Crystal Hunger,Electric Spell Tome; Fire Spell Tome; Force Spell Tome; First Aid Spray,
+Madame Tarot,10,20,10,20,10,,Card Throw; Mirage; Glyph Trap; Barrier Shield,Super Lucky; Soulful; Charming; Stacked Deck,Stealth Suit; Smoke Bomb; Electric Spell Tome; Evac Balloon,

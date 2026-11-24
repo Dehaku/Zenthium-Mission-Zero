@@ -9,6 +9,9 @@ namespace Zenthium.Entities
     /// </summary>
     public sealed class EntitySetup
     {
+        /// <summary>Every slot unlocked: faction entities' fixed module lists aren't gated by unlocks.</summary>
+        public const int AllSlotsUnlocked = int.MaxValue;
+
         /// <param name="rankTier">Goon, Champion or Leader. Heroes and civilians have none, so no innate boost.</param>
         /// <param name="difficultyLevel">Mission ranks above D (0 at D, 4 at S, 5 at S2), for rank scaling.</param>
         public EntitySetup(Team team, StatBlock baseStats, RankTier? rankTier = null, int difficultyLevel = 0)
@@ -29,23 +32,31 @@ namespace Zenthium.Entities
         public RankTier? RankTier { get; }
         public int DifficultyLevel { get; }
 
-        /// <summary>The entity's modules. A stand-in for Milestone 4's slots: for now they only grant resources.</summary>
+        /// <summary>
+        /// The entity's modules. Each goes in the next slot of its type, in list order (heroes.md, Slots). Base
+        /// actions are always available outside the slots, so they're skipped.
+        /// </summary>
         public List<ModuleData> Modules { get; } = new List<ModuleData>();
+
+        /// <summary>How many slots of each type are unlocked, counted from the first.</summary>
+        public int UnlockedSlotsPerType { get; set; } = AllSlotsUnlocked;
 
         public List<EntityTag> Tags { get; } = new List<EntityTag>();
 
-        /// <summary>The tags the entity's modules give it. A stand-in until Milestone 4's modules carry tags.</summary>
-        public List<ModuleTag> ModuleTags { get; } = new List<ModuleTag>();
-
-        /// <summary>A preset hero, with its own stats and no rank scaling.</summary>
-        public static EntitySetup ForHero(HeroData hero, Team team)
+        /// <summary>A preset hero: its own stats, no rank scaling, and its fixed kit in slot order.</summary>
+        /// <param name="unlockedSlotsPerType">Usually the preset's starting unlocks (<c>preset_slots_unlocked</c>).</param>
+        public static EntitySetup ForHero(HeroData hero, Team team, int unlockedSlotsPerType)
         {
             if (hero == null)
             {
                 throw new ArgumentNullException(nameof(hero));
             }
 
-            return new EntitySetup(team, StatBlock.FromHero(hero));
+            var setup = new EntitySetup(team, StatBlock.FromHero(hero)) { UnlockedSlotsPerType = unlockedSlotsPerType };
+            setup.Modules.AddRange(hero.GetKit(SlotType.Active));
+            setup.Modules.AddRange(hero.GetKit(SlotType.Passive));
+            setup.Modules.AddRange(hero.GetKit(SlotType.Gear));
+            return setup;
         }
 
         /// <summary>A faction entity: the base stat in every stat, with its rank tier and the mission's rank scaling.</summary>

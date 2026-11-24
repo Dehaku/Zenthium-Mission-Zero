@@ -8,6 +8,9 @@ namespace Zenthium.Entities
     /// </summary>
     public sealed class Health
     {
+        // A revived entity must be above 0 HP, or it would still count as Incapacitated.
+        private const float MinimumReviveHp = 1f;
+
         internal Health(float max)
         {
             Max = max;
@@ -47,6 +50,20 @@ namespace Zenthium.Entities
         {
             Current = Math.Max(0f, Math.Min(value, Max));
             RaiseHealthChanged();
+        }
+
+        /// <summary>Gets an Incapacitated entity back up with the given HP, at least 1 and at most its max.</summary>
+        /// <returns>False if it wasn't Incapacitated.</returns>
+        internal bool Revive(float hp)
+        {
+            if (!IsIncapacitated)
+            {
+                return false;
+            }
+
+            Current = Math.Max(MinimumReviveHp, Math.Min(hp, Max));
+            RaiseHealthChanged();
+            return true;
         }
 
         /// <returns>The HP actually restored. Healing doesn't revive an Incapacitated entity.</returns>

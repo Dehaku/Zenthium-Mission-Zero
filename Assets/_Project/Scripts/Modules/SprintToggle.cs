@@ -13,6 +13,9 @@ namespace Zenthium.Modules
         // Key of Sprint's values column in modules.csv.
         public const string SpeedBonusKey = "speed_bonus";
 
+        // Key of a module that gives a bigger Sprint bonus, such as Sprinter.
+        public const string SprinterBonusKey = "sprint_bonus";
+
         private readonly MoveSpeed moveSpeed;
         private readonly float bonus;
         private ModifierHandle handle;
@@ -31,6 +34,28 @@ namespace Zenthium.Modules
         {
             bonus = 0f;
             return sprint != null && sprint.Values.TryGetNumber(SpeedBonusKey, out bonus);
+        }
+
+        /// <summary>
+        /// Sprint's bonus for an entity: the largest of Sprint's own and any equipped module's <c>sprint_bonus</c>,
+        /// which replaces it rather than adding (Sprinter: "a bigger Sprint bonus").
+        /// </summary>
+        public static float BonusFor(float sprintBonus, ModuleSlots slots)
+        {
+            float bonus = sprintBonus;
+            foreach (SlotType type in (SlotType[])Enum.GetValues(typeof(SlotType)))
+            {
+                for (int index = 0; index < slots.SlotsPerType; index++)
+                {
+                    if (slots.IsEquipped(type, index)
+                        && slots.Get(type, index).Values.TryGetNumber(SprinterBonusKey, out float moduleBonus))
+                    {
+                        bonus = Math.Max(bonus, moduleBonus);
+                    }
+                }
+            }
+
+            return bonus;
         }
 
         public void Toggle()

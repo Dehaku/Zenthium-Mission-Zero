@@ -77,18 +77,6 @@ namespace Zenthium.Tests.EditMode
             Assert.That(incapacitatedRaised, Is.False);
         }
 
-        [Test]
-        public void Proc_CallsTheCleanse()
-        {
-            Entity entity = CreateEntityWith213Percent(Team.Enemy, CombatTestSetup.RollThatMisses);
-            var cleanse = new CountingCleanse();
-            entity.SetDefianceCleanse(cleanse);
-
-            CombatTestSetup.CreatePipeline().Apply(CombatTestSetup.Environmental(LethalDamage), entity);
-
-            Assert.That(cleanse.Calls, Is.EqualTo(1));
-        }
-
         [TestCase(Team.Player, 5f, TestName = "Proc_PlayerIsInvulnerableFor5Seconds")]
         [TestCase(Team.Enemy, 1f, TestName = "Proc_EveryoneElseIsInvulnerableFor1Second")]
         [TestCase(Team.Ally, 1f, TestName = "Proc_AllyIsInvulnerableFor1Second")]
@@ -141,16 +129,6 @@ namespace Zenthium.Tests.EditMode
 
             Assert.That(entity.Defiance.RollStacks, Is.EqualTo(0));
             Assert.That(entity.Health.Current, Is.EqualTo(55f).Within(Tolerance));
-        }
-
-        private sealed class CountingCleanse : IDefianceCleanse
-        {
-            public int Calls { get; private set; }
-
-            public void CleanseForDefiance()
-            {
-                Calls++;
-            }
         }
     }
 }

@@ -16,14 +16,15 @@ Milestones for Claude Code to build the game in this Unity project.
 5. **Ask before** adding packages, changing `Packages/manifest.json`, `ProjectSettings/` or `.asmdef` files.
 6. **Editor work is the user's.** Claude doesn't hand-edit `.unity`, `.prefab` or `.asset` files. Claude writes the code, then gives numbered Editor steps for the user (create this prefab, add these components, set these references). Keep the steps short and exact.
 7. **Stubs:** if a piece needs a later milestone, stub it behind an interface and list it in the log entry.
-8. **Hand-off, not verification.** Claude can't compile, run tests or launch Unity. Each milestone ends with:
+8. **On-screen checklist:** every milestone rewrites `Assets/_Project/Sandbox/MilestoneChecklist.txt` with what to test in that milestone's sandbox, short and numbered. Sandboxes built on the shared room (`PlayerSandboxSceneCreator.TryBuildRoom`) show it, and Caps Lock toggles it; new sandbox commands must include it.
+9. **Hand-off, not verification.** Claude can't compile, run tests or launch Unity, but it can read the results afterwards: the Console in `Logs/Editor.log` (with its search and read tools) and the last test run in `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Zenthium-Mission-Zero/TestResults.xml`. Each milestone ends with:
    - what was implemented,
    - the Editor steps still to do,
    - what to check: the Console, the test classes to run, and the *You check* items below.
    Claude never says a milestone works. The user ticks the *You check* boxes after checking.
-9. **Log:** add an entry to `Docs/BuildLog.md`: what was built, deferred items, open questions, and the Editor steps given.
-10. **Architecture decisions:** when a milestone settles something `CLAUDE.md` lists as TODO (saving, UI structure, scene and mission flow), propose the wording for its Architecture section and let the user add it or approve the edit.
-11. **Commits:** don't commit or push unless asked. Message format: `Area: what changed`.
+10. **Log:** add an entry to `Docs/BuildLog.md`: what was built, deferred items, open questions, and the Editor steps given.
+11. **Architecture decisions:** when a milestone settles something `CLAUDE.md` lists as TODO (saving, UI structure, scene and mission flow), propose the wording for its Architecture section and let the user add it or approve the edit.
+12. **Commits:** don't commit or push unless asked. Message format: `Area: what changed`.
 
 ### Fixed by CLAUDE.md (summary; `CLAUDE.md` is the authority)
 | Area | Rule |

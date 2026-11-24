@@ -17,7 +17,7 @@ namespace Zenthium.Entities
         [SerializeField] private GameDatabase database;
         [SerializeField] private GameClockDriver clock;
 
-        [Tooltip("A preset hero. Leave empty to use a faction entity.")]
+        [Tooltip("A preset hero, with its kit. Leave empty to use a faction entity.")]
         [SerializeField] private HeroData hero;
 
         [Tooltip("A faction entity, used when no hero is set.")]
@@ -28,11 +28,14 @@ namespace Zenthium.Entities
         [Tooltip("Mission ranks above D: 0 at D, 4 at S, 5 at S2. Only faction entities use it.")]
         [SerializeField, Min(0)] private int difficultyLevel;
 
-        [Tooltip("Stand-in for module slots until Milestone 4: these only grant resources for now.")]
+        [Tooltip("A faction entity's fixed module list, each in the next slot of its type. Heroes use their kit.")]
         [SerializeField] private List<ModuleData> modules = new List<ModuleData>();
 
-        [Tooltip("Stand-in until Milestone 4: the tags this entity's modules would give it, such as KnockbackResistant.")]
-        [SerializeField] private List<ModuleTag> moduleTags = new List<ModuleTag>();
+        [Tooltip("Testing: slots of each type unlocked for a hero. 0 uses the preset's starting slots.")]
+        [SerializeField, Min(0)] private int unlockedSlots;
+
+        [Tooltip("Testing: replaces the module in the last slot of its type, or fills the first empty one.")]
+        [SerializeField] private ModuleData testModule;
 
         /// <summary>Null until Awake, or if the setup is invalid.</summary>
         public Entity Entity { get; private set; }
@@ -46,6 +49,16 @@ namespace Zenthium.Entities
         /// <summary>Replaces the entity with a fresh one built from the same setup.</summary>
         public void ResetEntity()
         {
+            CreateEntity();
+        }
+
+        /// <summary>Switches to another hero and rebuilds the entity (the sandbox's hero select).</summary>
+        /// <param name="newUnlockedSlots">Slots of each type unlocked; 0 uses the preset's starting slots.</param>
+        public void SetHero(HeroData newHero, int newUnlockedSlots, ModuleData newTestModule)
+        {
+            hero = newHero;
+            unlockedSlots = newUnlockedSlots;
+            testModule = newTestModule;
             CreateEntity();
         }
 
@@ -77,11 +90,19 @@ namespace Zenthium.Entities
             EntitySetup setup;
             if (hero != null)
             {
-                setup = EntitySetup.ForHero(hero, team);
+                int unlocked = unlockedSlots > 0 ? unlockedSlots : database.ModuleConstants.PresetSlotsUnlocked;
+                setup = EntitySetup.ForHero(hero, team, unlocked);
             }
             else if (factionEntity != null)
             {
                 setup = EntitySetup.ForFactionEntity(factionEntity, team, difficultyLevel, database.EntityConstants);
+                foreach (ModuleData module in modules)
+                {
+                    if (module != null)
+                    {
+                        setup.Modules.Add(module);
+                    }
+                }
             }
             else
             {
@@ -90,18 +111,50 @@ namespace Zenthium.Entities
                 return;
             }
 
-            foreach (ModuleData module in modules)
+            AddTestModule(setup);
+
+            try
             {
-                if (module != null)
+                Entity = new Entity(setup, EntityRules.From(database), SharedRandom);
+            }
+            catch (ArgumentException exception)
+            {
+                Debug.LogError($"{name}: {exception.Message}", this);
+                enabled = false;
+                return;
+            }
+
+            enabled = true;
+            OnEntityCreated?.Invoke(Entity);
+        }
+
+        private void AddTestModule(EntitySetup setup)
+        {
+            if (testModule == null || setup.Modules.Contains(testModule)
+                || !testModule.TryGetSlotType(out SlotType testType))
+            {
+                return;
+            }
+
+            int count = 0;
+            int last = -1;
+            for (int i = 0; i < setup.Modules.Count; i++)
+            {
+                if (setup.Modules[i] != null && setup.Modules[i].TryGetSlotType(out SlotType type) && type == testType)
                 {
-                    setup.Modules.Add(module);
+                    count++;
+                    last = i;
                 }
             }
 
-            setup.ModuleTags.AddRange(moduleTags);
-
-            Entity = new Entity(setup, EntityRules.From(database), SharedRandom);
-            OnEntityCreated?.Invoke(Entity);
+            if (count >= database.ModuleConstants.SlotsPerType)
+            {
+                setup.Modules[last] = testModule;
+            }
+            else
+            {
+                setup.Modules.Add(testModule);
+            }
         }
     }
 }

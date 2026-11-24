@@ -3274,6 +3274,10 @@ PrefabInstance:
       value: TrainingDummy
       objectReference: {fileID: 0}
     - target: {fileID: 6415813934360766120, guid: a44d7531a0a075049bfd27b25f52d736, type: 3}
+      propertyPath: team
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6415813934360766120, guid: a44d7531a0a075049bfd27b25f52d736, type: 3}
       propertyPath: clock
       value: 
       objectReference: {fileID: 1690967522}
