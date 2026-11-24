@@ -12,7 +12,8 @@
         "Zenthium.Entities",
         "Zenthium.Combat",
         "Zenthium.Movement",
-        "Zenthium.Modules"
+        "Zenthium.Modules",
+        "Zenthium.World"
     ],
     "includePlatforms": [
         "Editor"

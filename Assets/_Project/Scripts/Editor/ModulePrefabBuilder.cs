@@ -196,7 +196,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>A copy of the primitive's default material in a flat color, saved so prefabs can use it.</summary>
-        private static Material SaveMaterial(string materialName, Color color, GameObject primitive)
+        internal static Material SaveMaterial(string materialName, Color color, GameObject primitive)
         {
             string path = $"{MaterialsFolder}/{materialName}{MaterialExtension}";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);

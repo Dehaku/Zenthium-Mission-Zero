@@ -49,10 +49,27 @@ namespace Zenthium.Tests.EditMode
             "economy,income_mix.Rescue.basic,1.5,\n" +
             "tier,damage.Light,0.5,\n" +
             "tier,damage.Normal,1,\n" +
+            "tier,damage.Heavy,2,\n" +
             "tier,duration.Brief,1,\n" +
             "tier,knockback.Normal,4,\n" +
             "tier,range.Melee,2,\n" +
-            "tier,utility.None,1,\n";
+            "tier,utility.None,1,\n" +
+            WorldConstants;
+
+        /// <summary>The world group, which tests can leave a row out of.</summary>
+        public const string WorldConstants =
+            "world,material_hp.Glass,10,\n" +
+            "world,material_hp.Wood,100,\n" +
+            "world,material_hp.Stone,300,\n" +
+            "world,material_hp.Metal,600,\n" +
+            "world,material_hp.Crystalline,1000,\n" +
+            "world,impact_structure_damage_tier,Heavy,\n" +
+            "world,impact_entity_damage_tier,Light,\n" +
+            "world,building_impact_multiplier,10,\n" +
+            "world,building_throw_multiplier,2,\n" +
+            "world,demolition_multiplier,10,\n" +
+            "world,vehicle_explosion_delay_s,1,\n" +
+            "world,building_neighbor_radius_m,20,\n";
 
         private const string ModulesHeader =
             "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,damage_type,tags,budget_ok,notes\n";
@@ -102,11 +119,13 @@ namespace Zenthium.Tests.EditMode
             return ModuleRow(id, "Active", "Will", "", "30", "", "", "", "", "", "", "", values);
         }
 
+        /// <param name="constants">Replaces the whole constants file, such as one with a row left out.</param>
         public static DesignDataParseResult Parse(
-            string extraModuleRows = "", string extraHeroRows = "", string extraConstantRows = "")
+            string extraModuleRows = "", string extraHeroRows = "", string extraConstantRows = "",
+            string constants = Constants)
         {
             return DesignDataParser.Parse(new DesignDataSource(
-                Constants + extraConstantRows,
+                constants + extraConstantRows,
                 ModulesHeader + KickRow + InkLashRow + extraModuleRows,
                 EntitiesCsv,
                 HeroesHeader + RushHourRow + extraHeroRows,

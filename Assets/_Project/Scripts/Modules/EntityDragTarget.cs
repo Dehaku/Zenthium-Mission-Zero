@@ -6,8 +6,8 @@ using Zenthium.Movement;
 namespace Zenthium.Modules
 {
     /// <summary>
-    /// Lets Drag grab this entity while it's Incapacitated and not captured, whatever its team (modules.md, Drag
-    /// row), and lets go if it gets back up or is captured. A civilian counts as a citizen, which Drag picks first;
+    /// Lets Drag grab this entity while it's Incapacitated, not captured and not Immobile, whatever its team
+    /// (modules.md, Drag row), and lets go if it gets back up or is captured. A civilian counts as a citizen, which Drag picks first;
     /// grabbing citizens who are still on their feet comes in Milestone 6. While dragged, the entity can't be hurt
     /// or knocked back, and its motor follows the carrier.
     /// </summary>
@@ -31,7 +31,8 @@ namespace Zenthium.Modules
         public bool CanBeGrabbedBy(Entity carrier)
         {
             return isActiveAndEnabled && entity != null && carrier != null && carrier != entity
-                && entity.IsIncapacitated && !entity.IsCaptured && !entity.IsBeingDragged;
+                && entity.IsIncapacitated && !entity.IsCaptured && !entity.IsBeingDragged
+                && !entity.HasTag(EntityTag.Immobile);
         }
 
         public void BeginDrag(Entity carrier)

@@ -7,12 +7,13 @@ using Zenthium.Entities;
 namespace Zenthium.Modules
 {
     /// <summary>
-    /// Hits every valid entity within the module's radius tier around the user, such as Megaphone's stun and
-    /// Shockwave Stomp. Each target is pushed away from the user.
+    /// Hits every valid entity and structure within the module's radius tier around the user, such as Megaphone's
+    /// stun and Shockwave Stomp. Each entity is pushed away from the user.
     /// </summary>
     public sealed class AreaStrikeModule : ModuleBehaviour
     {
         private readonly List<EntityBehaviour> reached = new List<EntityBehaviour>();
+        private readonly List<IDamageableStructure> reachedStructures = new List<IDamageableStructure>();
         private readonly HitEffects effects;
 
         public AreaStrikeModule(ModuleData data, HitEffects effects) : base(data)
@@ -35,6 +36,12 @@ namespace Zenthium.Modules
                 {
                     effects.ApplyTo(Context, target, MeleeStrikeModule.Away(origin, target, aim.Direction));
                 }
+            }
+
+            Context.World.CollectStructures(origin, Data.RadiusTier.Value, reachedStructures);
+            foreach (IDamageableStructure structure in reachedStructures)
+            {
+                effects.ApplyToStructure(Context, structure);
             }
         }
     }

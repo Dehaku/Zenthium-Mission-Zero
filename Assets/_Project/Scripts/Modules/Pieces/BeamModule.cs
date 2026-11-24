@@ -7,7 +7,7 @@ namespace Zenthium.Modules
 {
     /// <summary>
     /// An instant beam along the aim, as far as the range tier, such as Repulsor Blast: it hits the first entity the
-    /// user can hurt, and anything solid stops it.
+    /// user can hurt, and anything solid stops it, taking its damage if it's a wall or prop.
     /// </summary>
     public sealed class BeamModule : ModuleBehaviour
     {
@@ -41,12 +41,16 @@ namespace Zenthium.Modules
             float range = Data.RangeTier.Value;
             float length = range;
             if (SweepHit.TryFindFirst(Context, origin, direction, BeamRadius, range, beamHits,
-                    out EntityBehaviour target, out float hitDistance))
+                    out EntityBehaviour target, out Collider solid, out float hitDistance))
             {
                 length = hitDistance;
                 if (target != null)
                 {
                     effects.ApplyTo(Context, target, direction);
+                }
+                else if (ModuleWorld.TryGetStructure(solid, out IDamageableStructure structure))
+                {
+                    effects.ApplyToStructure(Context, structure);
                 }
             }
 

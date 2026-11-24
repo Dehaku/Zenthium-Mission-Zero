@@ -11,7 +11,7 @@ namespace Zenthium.Combat
     /// <item>Friendly fire rules; an Incapacitated target takes nothing.</item>
     /// <item>The source's rank damage bonus and dealt modifiers, and the target's taken modifiers (Marked).</item>
     /// <item>Invulnerable, or being dragged (modules.md, Drag), blocks it.</item>
-    /// <item>Dodge, for direct hits with a source only.</item>
+    /// <item>Dodge, for direct hits with a source that can be dodged.</item>
     /// <item>The target's incoming hit handlers (Weather the Storm), for direct hits.</item>
     /// <item>Armor, then Damage Reduction, with at least a minimum fraction of the damage dealt. DoTs skip this.</item>
     /// <item>The target's HP, where Defiance may save it. A hit that lands raises the source's on-hit events.</item>
@@ -42,11 +42,7 @@ namespace Zenthium.Combat
                 return Result(hit, target, DamageOutcome.NotAllowed, 0f);
             }
 
-            float incoming = hit.BaseDamage * target.DamageModifiers.TakenMultiplier;
-            if (!hit.IsEnvironmental)
-            {
-                incoming *= hit.Source.OutgoingDamageMultiplier * hit.Source.DamageModifiers.DealtMultiplier;
-            }
+            float incoming = Outgoing(hit) * target.DamageModifiers.TakenMultiplier;
 
             DamageEvent result;
             if (target.IsInvulnerable || target.IsBeingDragged)
@@ -65,7 +61,8 @@ namespace Zenthium.Combat
             {
                 var incomingHit = new IncomingHit(hit.Source, hit.Type);
                 target.HandleIncomingHit(ref incomingHit);
-                float amount = Mitigate(incoming, target.Defenses, incomingHit.ExtraDamageReduction);
+                float amount = Mitigate(incoming, target.Defenses.Armor, target.Defenses.DamageReduction,
+                    incomingHit.ExtraDamageReduction);
                 result = new DamageEvent(hit.Source, target, hit.Type, false, DamageOutcome.Dealt, amount,
                     incomingHit.PreventKnockback);
             }
@@ -79,9 +76,28 @@ namespace Zenthium.Combat
             return result;
         }
 
+        /// <summary>
+        /// The damage a wall, door or prop takes (world.md): the source's rank damage bonus and dealt modifiers, then
+        /// its Armor and Damage Reduction with the same minimum as entities. Structures have no stats, so they never
+        /// dodge, and friendly fire doesn't protect them. The caller applies any structure multiplier and the HP loss.
+        /// </summary>
+        /// <param name="damageReduction">As a fraction: 0.5 is 50%.</param>
+        public float ApplyToStructure(Hit hit, float armor, float damageReduction)
+        {
+            float incoming = Outgoing(hit);
+            return hit.IsDamageOverTime ? incoming : Mitigate(incoming, armor, damageReduction, 0f);
+        }
+
+        private static float Outgoing(Hit hit)
+        {
+            return hit.IsEnvironmental
+                ? hit.BaseDamage
+                : hit.BaseDamage * hit.Source.OutgoingDamageMultiplier * hit.Source.DamageModifiers.DealtMultiplier;
+        }
+
         private bool Dodges(Hit hit, Entity target)
         {
-            if (hit.IsDamageOverTime || hit.IsEnvironmental)
+            if (hit.IsDamageOverTime || hit.IsEnvironmental || !hit.CanBeDodged)
             {
                 return false;
             }
@@ -90,9 +106,9 @@ namespace Zenthium.Combat
             return chance > 0f && random.Value01() < chance;
         }
 
-        private float Mitigate(float incoming, Defenses defenses, float extraDamageReduction)
+        private float Mitigate(float incoming, float armor, float damageReduction, float extraDamageReduction)
         {
-            float reduced = (incoming - defenses.Armor) * (1f - defenses.DamageReduction) * (1f - extraDamageReduction);
+            float reduced = (incoming - armor) * (1f - damageReduction) * (1f - extraDamageReduction);
             return Math.Max(reduced, incoming * constants.MinDamageFraction);
         }
 

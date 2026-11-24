@@ -5,9 +5,9 @@ namespace Zenthium.Modules
 {
     /// <summary>
     /// A projectile flying on the XZ plane. It sweeps ahead each frame instead of using physics, so it can't tunnel.
-    /// It passes through entities its shooter can't hurt, stops at the first one it can or at anything solid, and
-    /// falls after its module's range. Time Slow slows it; under Time Stop it freezes and has no collision, so the
-    /// player can walk through it (time.md).
+    /// It passes through entities its shooter can't hurt, stops at the first one it can or at anything solid (damaging
+    /// a wall or prop it hits), and falls after its module's range. Time Slow slows it; under Time Stop it freezes
+    /// and has no collision, so the player can walk through it (time.md).
     /// </summary>
     public sealed class Projectile : MonoBehaviour
     {
@@ -61,11 +61,15 @@ namespace Zenthium.Modules
             }
 
             if (SweepHit.TryFindFirst(context, transform.position, direction, radius, step, sweepHits,
-                    out EntityBehaviour target, out _))
+                    out EntityBehaviour target, out Collider solid, out _))
             {
                 if (target != null)
                 {
                     effects.ApplyTo(context, target, direction);
+                }
+                else if (ModuleWorld.TryGetStructure(solid, out IDamageableStructure structure))
+                {
+                    effects.ApplyToStructure(context, structure);
                 }
 
                 Destroy(gameObject);

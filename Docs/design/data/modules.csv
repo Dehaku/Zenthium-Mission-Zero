@@ -52,7 +52,7 @@ Smoke Bomb,Gear (active),,,30,,,Strong,Medium,Medium,,Short,,,Debuff; Resist:Tou
 Repulsor Blast,Gear (active),Intelligence,Normal,,Charge,15,Some,,,Normal,Medium,,Energy,Ranged,Checked,Kept under budget on purpose: Overclock was the strongest starter
 Grappling Hook,Gear (active),,,5,,,Strong,,,,Long,,,,,
 Bandolier,Gear (passive),,,,,,,,,,,ammo_bonus=0.5; reload_speed=0.3,,NotRandom,,
-Breaching Charge,Gear (active),Intelligence,Massive,30,,,Some,,Huge,Heavy,Melee,fuse_s=5,Physical,,,Blows open locked doors and walls
+Breaching Charge,Gear (active),Intelligence,Massive,30,,,Some,,Huge,Heavy,Melee,fuse_s=5,Physical,Demolition,,Blows open locked doors and walls
 Stasis Cuffs,Gear (active),,,15,,,Strong,,,,Melee,,,NotRandom,,
 Megaphone,Gear (active),,,30,,,Strong,Short,Large,,,,,Debuff; Resist:Toughness; NotRandom,,Stun duration; radius for citizens and stun
 Barrier Shield,Active,,,,Mana,30,Strong,Short,,Normal,,arc_degrees=180,,,,
@@ -104,7 +104,7 @@ Audit,Active,,,20,,,Strong,,,,Long,,,,,
 Notarized,Passive,,,,,,,,Large,,,damage_reduction=0.25,,Buff,,
 Tow Beam,Active,,,5,,,Strong,,,,Medium,,,,,
 Reprogram,Active,Intelligence,,15,,,Strong,,,,Medium,,,Resist:Intelligence,,
-Heavy Gun,Active,Finesse,Normal,3,,,None,,,,Long,,,Ranged,,
+Heavy Gun,Active,Finesse,Normal,3,,,None,,,,Long,,Physical,Ranged,,
 Slot Disable,Passive,,,,,,,,,,,disable_s=5,,Debuff; Resist:Intelligence,,
 Chrome Body,Passive,,,,,,,,,,,damage_reduction=0.25,,,,
 Gold-Plated Chrome,Passive,,,,,,,,,,,toughness_per_valuable=0.05; damage_reduction_per_valuable=0.01,,Buff,,

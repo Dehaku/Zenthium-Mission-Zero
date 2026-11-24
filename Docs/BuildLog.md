@@ -739,3 +739,125 @@ The sandbox was hard to test without knowing the powers, cooldowns and controls,
 - **Change:** the keyboard binding moved to **V** in `InputSystem_Actions.inputactions`, and in the JSON embedded in the generated `InputSystem_Actions.cs`. The gamepad stays on B. The sandbox HUD reads the new key from the asset.
 - `controls.md` still says Left Ctrl. Decide whether V stays for good (and update the doc), or goes back to Left Ctrl for builds, where the Editor shortcuts don't apply.
 - The user checked the Captured state in play.
+
+---
+
+## Milestone 5a: World, structures, props and buildings (implemented, not yet checked, 2026-11-24)
+
+Milestone 5 is split, as approved. **5a** (this entry) builds walls, doors, windows, props, vehicles, the building structure, the Heavy Turret and `Sandbox_World`. **5b** builds DoT ticks, fire and Valuables.
+
+### Done
+- **Data (local edits, approved; the design branch isn't updated):**
+  - `constants.csv`: a new `world` group:
+    - `material_hp.<Material>`: placeholder HP for Glass 10, Wood 100, Stone 300, Metal 600, Crystalline 1000.
+    - `impact_structure_damage_tier` (Heavy) and `impact_entity_damage_tier` (Light).
+    - `building_impact_multiplier` and `demolition_multiplier` (10 each).
+    - `vehicle_explosion_delay_s` (1) and `building_neighbor_radius_m` (20), from world.md.
+  - `modules.csv`: Breaching Charge gets the new `Demolition` tag. Heavy Gun gets `damage_type` Physical (an assumption: confirm it).
+  - Code: `WorldConstants` (`GameDatabase.WorldConstants`), `StructureMaterial`, `LocationType` (maps.md's list) and `ModuleTag.Demolition`. The constants parser reads the `world` group; every material needs an HP.
+- **Combat:**
+  - `DamagePipeline.ApplyToStructure`: the source's rank bonus and dealt modifiers, then Armor, Damage Reduction and the 5% minimum, the same math as entities. DoTs skip the defenses.
+  - `Hit` can be marked as impossible to dodge (`canBeDodged`), for wall impacts.
+  - `KnockbackResolver`: entities with the new `EntityTag.Immobile` never move.
+- **Entities:** `EntityBehaviour` has an Inspector list of entity tags, used for the turret until `entities.csv` carries tags.
+- **Movement:** `EntityMotor.ApplyKnockback` takes a `KnockbackCause` (who, and their stat), passed on in `KnockbackObstacleHit`.
+- **Modules (hooks, so Modules never references World):**
+  - `IDamageableStructure`, `StructureHit` and `StructureHitKind` (Direct, Impact, Demolition). `ModuleWorld.CollectStructures` and `TryGetStructure`.
+  - Every damaging delivery hits structures: melee and area strikes, projectiles, beams and charges (`HitEffects.ApplyToStructure`). `SweepHit` reports what solid thing stopped it.
+  - `KnockbackImpacts` (on every entity body): knocked into a wall, door, window or prop, the thing hit takes the Heavy tier and the entity the Light tier, from the knocker's module stat (Strength for a module without one). The entity's damage can't be dodged. Entities hitting entities do nothing.
+  - `ImpactDamage`, the impact numbers and the knockback cause. Knockbacks from hits, Taunt, shields and Power Throw carry a cause.
+  - `KickModule`: Kick throws the first dragged prop instead of striking, as far as Kick's knockback tier, using Kick's cooldown.
+  - `IThrowable` and `ThrowInfo`. `PowerThrowModule` throws props through it; thrown entities still deal nothing.
+  - `DragAction.TryReleaseFirstThrowable`. `EntityDragTarget` refuses Immobile entities.
+  - `LineOfSight` with the `SeeThrough` marker (windows). Taunt uses it.
+  - Heavy Gun is in the catalog as a projectile module.
+  - `IBreachable` is deleted (with its `.meta`): Breaching Charge now damages structures, and its Demolition tag multiplies the damage to buildings.
+- **World (new `Zenthium.World` assembly, `Scripts/World/`, approved):**
+  - `StructureHealth` (plain C#) and `Structure`: HP, Armor, Damage Reduction, `OnBroken`; not an entity.
+  - `StructureDamageRules`: the impact and Demolition multipliers, for walls, doors and windows only.
+  - `BuildingPart`: a wall, window or door panel; its material sets its HP. Broken, its colliders, visuals and NavMesh carving go.
+  - `Door`: a trigger box around the doorway with its panel as a child. Unlocked, it opens while an entity is in the box. Locked, it stays solid until broken.
+  - `PropBody` (`IDragTarget`, `IThrowable`) with `PropRules`: the Strength gate, thrown damage (Kick x `thrown_x_kick`, to the target and to itself), Small props breaking when thrown. Props are kinematic, so nothing shoves them, and fly with a swept box that can't tunnel.
+  - `VehicleExplosion`: `vehicle_explosion_delay_s` of game time after destruction, `explosion_damage` to every entity, wall and prop within `explosion_radius_m` (environmental and Physical). Explosions chain.
+  - `Building`, `InteriorZone` (live lists of the entities and props inside), `MapSocket` (weighted `SocketContent` options), `BuildingRegistry` (IDs, and neighbors computed once on Start) and `BuildingNeighbors` (plain C#, edge-to-edge distance between interior zones).
+- **Sandbox:** `StructureDebugLabel` (HP labels that follow their target) and `ExplosionRingView` (the red ring). The Sandbox asmdef references World.
+- **Editor:**
+  - New **Zenthium > Setup > Create World Sandbox Scene** (`WorldSandboxSceneCreator`), on a 60 m room. It holds:
+    - a Wood house with an unlocked door and a window;
+    - an L-shaped Stone shop with two interior zones, a locked Metal door and a window, 19 m from the house (neighbors);
+    - arson and Valuables sockets;
+    - a sample wall of each material;
+    - one prop of each props.csv row;
+    - a Heavy Turret (Neutral, Hackable, Immobile, Heavy Gun) that shoots a dummy next to it, saved as `Prefabs/HeavyTurret.prefab`;
+    - the hero select and MoreInfo panels, with the debug panel on the player;
+    - a NavMesh baked from the room only (`Scenes/Sandbox_World_NavMesh.asset`). Building walls and windows carve it at runtime; doors don't.
+  - `TryBuildRoom` takes a room size. Every entity body gets `KnockbackImpacts`. `ModulePrefabBuilder.SaveMaterial` and `ModulesSandboxSceneCreator.CreateModulesCanvas` are internal, to share them.
+  - The Editor asmdef references World and `Unity.AI.Navigation`.
+- **Checklist:** `MilestoneChecklist.txt` holds 5a's tests.
+- **Tests (EditMode; the test asmdef references World):**
+  - New classes: `StructureHealthTests`, `StructureDamageRulesTests`, `PropRulesTests`, `BuildingNeighborsTests`, `ImpactDamageTests`.
+  - New cases (no assertions changed): `DamagePipelineTests` (structure mitigation, rank bonus, DoTs, an undodgeable hit), `KnockbackResolverTests` (Immobile), `DesignDataParserTests` (world constants, a missing material, an unknown material).
+  - Fixture: `DesignDataTestCsv` has the `world` rows and `damage.Heavy`, and `Parse` can take a whole constants file.
+
+### Decisions (approved by the user)
+- The split into 5a and 5b; the new assembly and asmdef references; the constants above.
+- Material HP is placeholders, HP only (no Armor).
+- Sourceless damage (wall impacts, explosions, fire) is Physical.
+- Structures aren't entities. Everyone can damage them, and attackers' damage bonuses apply.
+- Wall impacts: Heavy to the structure and Light to the entity, from the knocker's stat. Walls, doors and windows take 10x impact damage on top, so knockback and throws break them easily.
+- Thrown props: a Kick throw goes Kick's knockback tier, Power Throw its range tier. They damage the first thing hit, with no knockback, and take the same. A prop that lands on nothing takes nothing, except Small props.
+- Vehicle explosions hurt every entity, wall and prop in range, with Armor and Damage Reduction applying.
+- Breaching Charge: a Demolition tag gives 10x damage to buildings, instead of destroying them outright.
+- Heavy Turret: never walks, is never knocked back, can't be dragged (the `Immobile` tag); Heavy Gun set by the sandbox.
+- Neighbors are measured between interior zones' edges.
+- Locked doors are an Inspector flag until Milestone 9 picks door materials by rank.
+
+### Choices made in code (not asked)
+- **What counts as a building part:** anything with `BuildingPart`, including the free-standing sample walls, takes the building multipliers. Props never do.
+- **Impacts:** only knockbacks with a source deal impact damage. The impact's damage to the entity goes through the pipeline as a hit from the knocker, so friendly fire applies. Walls of the room's outer boundary (not structures) still hurt the entity.
+- **Thrown props:** fly at 20 m/s (a feel value). They pass through their thrower and through entities the thrower can't hurt, like projectiles. "Takes the same damage" means the same hit, through the prop's own Armor and Damage Reduction.
+- **Kick:** a prop throw uses Kick's cooldown. One prop per Kick, the earliest grabbed first.
+- **Doors:** only entities open them, not props. A door stays open while anyone is in its trigger box, so it never closes on someone. An open door's panel has no collider, so modules pass through it.
+- **Windows:** full wall height, so they block movement and projectiles but not sight.
+- **Dragged props** can't be hurt (modules.md: dragged targets can't be hurt).
+- **The turret** shoots a dummy, not the player, so it doesn't wear the player down while testing.
+
+### Stubs and deferred
+- **5b:** DoT ticks, building fire state and burn ticks, `Ignites` / `Extinguish`, spreading, Burn on props (x10), vehicles set on fire by blasts, burning interiors blocking enemy paths, and Valuables.
+- `InteriorZone` lists and `Building.Neighbors` have no reader until 5b's fire.
+- `MapSocket` options are filled by missions in Milestone 9; Heavy Turret spawning by rank, too.
+- Turret targeting ("never civilians", enemies.md) is Milestone 6's AI. The friendly fire rules still let Neutrals hurt civilians.
+- Entity tags come from an Inspector list until `entities.csv` has a tags column.
+- **Dev options menu (asked by the user, for later):** expose the wall damage multipliers (`building_impact_multiplier`, `building_throw_multiplier`, `demolition_multiplier`) in a dev options menu, so they can be tuned in play. No such menu exists yet.
+
+### Editor steps for the user
+1. **Let Unity compile.** If the Console says a type is missing although its file exists, it was skipped: tell Claude.
+2. **Run Zenthium > Data > Import Design CSVs.** Expect 0 warnings.
+3. **Run Zenthium > Setup > Create World Sandbox Scene** and choose Replace. It rebuilds the shared prefabs (now with `KnockbackImpacts`) and creates `Sandbox_World.unity`, its NavMesh asset and `Prefabs/HeavyTurret.prefab`.
+4. **Rebuild the other sandboxes** you use (Create Player / Modules Sandbox Scene), since the shared prefabs changed.
+5. **Press Play in `Sandbox_World`** and work through the checklist (Caps Lock).
+
+### What to check
+- [ ] The Console has no errors after compiling, importing and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`DamagePipeline`, `Hit`, `KnockbackResolver`, `EntityMotor`, `HitEffects`, `SweepHit`, the constants parser).
+  - New classes: `StructureHealthTests`, `StructureDamageRulesTests`, `PropRulesTests`, `BuildingNeighborsTests`, `ImpactDamageTests`.
+  - Changed classes: `DamagePipelineTests`, `KnockbackResolverTests`, `DesignDataParserTests`.
+- [ ] Every item on the in-game checklist (12).
+
+### Open questions and findings
+- **Heavy Gun's damage type** wasn't in `modules.csv`; it's set to Physical. Confirm or change it.
+- **Neighbor cost** (asked by the user): the neighbor lists are worked out once when the map is assembled, comparing every pair of buildings' zones. Even a Large map with a few hundred buildings is tens of thousands of rectangle checks, well under a millisecond, and nothing is searched at runtime.
+- **Design mirror:** `constants.csv` and `modules.csv` differ further from the design branch.
+
+### First run (2026-11-24)
+- The user passed checklist items 1-12.
+- **Throw multiplier (asked by the user):** 10x was too much for thrown props, so they get their own multiplier, 2x. Knockback impacts stay at 10x.
+  - Data: `building_throw_multiplier` (2) in `constants.csv`'s `world` group; `WorldConstants.BuildingThrowMultiplier`.
+  - Code: a new `StructureHitKind.Thrown`, used by `PropBody` for what it hits and for itself; `StructureDamageRules` applies the new multiplier to building parts only.
+  - Tests: two new `StructureDamageRulesTests` cases (thrown prop on a wall, and on a prop). The fixtures (`DesignDataTestCsv`, `ImpactDamageTests`, `StructureDamageRulesTests`) have the new constant; no assertions changed.
+  - Checklist item 7 is updated.
+
+### Editor steps
+1. Let Unity compile, then run **Zenthium > Data > Import Design CSVs** (the new constant is required).
+2. Press Play in `Sandbox_World` (no rebuild needed) and throw the bench into a Wood wall: 100, and it breaks.
+3. Run `StructureDamageRulesTests`, `DesignDataParserTests` and `ImpactDamageTests`.

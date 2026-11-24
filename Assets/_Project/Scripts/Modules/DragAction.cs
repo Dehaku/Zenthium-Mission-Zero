@@ -42,6 +42,23 @@ namespace Zenthium.Modules
             ReleaseAll();
         }
 
+        /// <summary>Lets go of the first carried target that can be thrown, such as a prop for Kick to throw.</summary>
+        public bool TryReleaseFirstThrowable(out IThrowable throwable)
+        {
+            foreach (IDragTarget target in carried)
+            {
+                if (target is IThrowable candidate)
+                {
+                    Release(target);
+                    throwable = candidate;
+                    return true;
+                }
+            }
+
+            throwable = null;
+            return false;
+        }
+
         /// <summary>Grabs the best target in reach if there's room; otherwise lets go of everything.</summary>
         public void Use()
         {

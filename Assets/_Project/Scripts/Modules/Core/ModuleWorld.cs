@@ -19,7 +19,7 @@ namespace Zenthium.Modules
     }
 
     /// <summary>
-    /// The scene services module behaviors use: game data, combat rules, the clock, entity queries and lookup,
+    /// The scene services module behaviors use: game data, combat rules, the clock, entity and structure queries,
     /// spawning projectiles, placed objects and summons, shields, and taking entities off the map (Evac Balloon).
     /// One per scene; entities reference it.
     /// </summary>
@@ -85,6 +85,22 @@ namespace Zenthium.Modules
                     && !results.Contains(entity))
                 {
                     results.Add(entity);
+                }
+            }
+        }
+
+        /// <summary>Fills the list with each wall, door, window or prop within the radius that can be hit, once each.</summary>
+        public void CollectStructures(Vector3 center, float radius, List<IDamageableStructure> results)
+        {
+            results.Clear();
+            int count = Physics.OverlapSphereNonAlloc(
+                center, radius, overlapHits, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                if (TryGetStructure(overlapHits[i], out IDamageableStructure structure) && structure.CanBeHit
+                    && !results.Contains(structure))
+                {
+                    results.Add(structure);
                 }
             }
         }
@@ -255,6 +271,24 @@ namespace Zenthium.Modules
             }
 
             return hit.TryGetComponent(out entity);
+        }
+
+        /// <summary>Finds the wall, door, window or prop a collider belongs to, through its rigidbody if it has one.</summary>
+        public static bool TryGetStructure(Collider hit, out IDamageableStructure structure)
+        {
+            structure = null;
+            if (hit == null)
+            {
+                return false;
+            }
+
+            Rigidbody attached = hit.attachedRigidbody;
+            if (attached != null)
+            {
+                return attached.TryGetComponent(out structure);
+            }
+
+            return hit.TryGetComponent(out structure);
         }
 
         private void Awake()

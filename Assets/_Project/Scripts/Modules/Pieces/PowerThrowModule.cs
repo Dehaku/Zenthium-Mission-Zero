@@ -7,9 +7,9 @@ using Zenthium.Movement;
 namespace Zenthium.Modules
 {
     /// <summary>
-    /// Power Throw (modules.md): throws everything the user is dragging along the aim, as far as the range tier, as
-    /// a swept knockback that stops at walls. Thrown things deal no damage until props exist (Milestone 5, with
-    /// their Strength limits).
+    /// Power Throw (modules.md): throws everything the user is dragging along the aim, as far as the range tier.
+    /// Props fly and hit for damage (world.md, Props); dragged entities fly as a swept knockback that stops at walls
+    /// and deal nothing, though slamming into a wall hurts them and the wall, from the thrower's Strength.
     /// </summary>
     public sealed class PowerThrowModule : ModuleBehaviour
     {
@@ -38,16 +38,21 @@ namespace Zenthium.Modules
         {
             Vector3 direction = aim.Direction.normalized;
             Vector3 start = Context.Position + direction * ThrowStartDistance;
+            float distance = Data.RangeTier.Value;
+            float kickDamage = KickModule.KickDamage(Owner, Context.World.Database);
+            KnockbackCause cause = ImpactDamage.Cause(Owner, Data);
             drag.ReleaseAll(thrown);
             foreach (IDragTarget target in thrown)
             {
-                if (target.Body == null || !target.Body.TryGetComponent(out EntityMotor motor))
+                if (target is IThrowable throwable)
                 {
-                    continue;
+                    throwable.Throw(new ThrowInfo(Owner, Context.Position, direction, distance, kickDamage));
                 }
-
-                target.Body.position = new Vector3(start.x, target.Body.position.y, start.z);
-                motor.ApplyKnockback(direction, Data.RangeTier.Value);
+                else if (target.Body != null && target.Body.TryGetComponent(out EntityMotor motor))
+                {
+                    target.Body.position = new Vector3(start.x, target.Body.position.y, start.z);
+                    motor.ApplyKnockback(direction, distance, cause);
+                }
             }
 
             thrown.Clear();

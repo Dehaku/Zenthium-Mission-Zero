@@ -8,5 +8,8 @@ namespace Zenthium.Entities
     {
         Hackable,
         Coward,
+
+        /// <summary>Never moves: no walking, knockback or being dragged, such as a Heavy Turret (world.md).</summary>
+        Immobile,
     }
 }

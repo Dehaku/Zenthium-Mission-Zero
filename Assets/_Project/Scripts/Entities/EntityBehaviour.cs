@@ -31,6 +31,9 @@ namespace Zenthium.Entities
         [Tooltip("A faction entity's fixed module list, each in the next slot of its type. Heroes use their kit.")]
         [SerializeField] private List<ModuleData> modules = new List<ModuleData>();
 
+        [Tooltip("Entity tags, such as Hackable and Immobile for a Heavy Turret. Set here until entities.csv carries them.")]
+        [SerializeField] private List<EntityTag> tags = new List<EntityTag>();
+
         [Tooltip("Testing: slots of each type unlocked for a hero. 0 uses the preset's starting slots.")]
         [SerializeField, Min(0)] private int unlockedSlots;
 
@@ -131,6 +134,7 @@ namespace Zenthium.Entities
                 return;
             }
 
+            setup.Tags.AddRange(tags);
             AddTestModule(setup);
 
             try

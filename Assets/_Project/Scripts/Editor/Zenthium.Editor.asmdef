@@ -10,10 +10,12 @@
         "Zenthium.Combat",
         "Zenthium.Movement",
         "Zenthium.Modules",
+        "Zenthium.World",
         "Zenthium.Sandbox",
         "UnityEngine.UI",
         "Unity.TextMeshPro",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.AI.Navigation"
     ],
     "includePlatforms": [
         "Editor"

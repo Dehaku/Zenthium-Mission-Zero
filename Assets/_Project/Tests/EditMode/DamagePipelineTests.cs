@@ -238,6 +238,51 @@ namespace Zenthium.Tests.EditMode
             Assert.That(defeated, Is.SameAs(target));
         }
 
+        [Test]
+        public void Apply_HitThatCantBeDodged_IsNeverDodged()
+        {
+            // Finesse 20: 10% dodge, and the roll is under it. Like slamming into a wall.
+            Entity target = CreateToughTarget();
+            Entity source = CombatTestSetup.CreateEntity(Team.Player);
+
+            DamageEvent result = CombatTestSetup.CreatePipeline(roll: 0f)
+                .Apply(new Hit(source, 50f, DamageType.Physical, canBeDodged: false), target);
+
+            Assert.That(result.Outcome, Is.EqualTo(DamageOutcome.Dealt));
+        }
+
+        [TestCase(100f, 20f, 0.5f, 40f, TestName = "ApplyToStructure_ArmorThenDamageReduction")]
+        [TestCase(10f, 20f, 0f, 0.5f, TestName = "ApplyToStructure_ArmorAboveDamage_Deals5Percent")]
+        [TestCase(100f, 0f, 0f, 100f, TestName = "ApplyToStructure_NoDefenses_DealsItAll")]
+        public void ApplyToStructure_MitigatesLikeAnEntity(float damage, float armor, float reduction, float expected)
+        {
+            float dealt = CombatTestSetup.CreatePipeline()
+                .ApplyToStructure(CombatTestSetup.Environmental(damage), armor, reduction);
+
+            Assert.That(dealt, Is.EqualTo(expected).Within(Tolerance));
+        }
+
+        [Test]
+        public void ApplyToStructure_AddsTheSourcesRankDamageBonus()
+        {
+            // Rank B: +20%, before Armor.
+            Entity source = CombatTestSetup.CreateEntity(Team.Enemy, RankTier.Goon, difficultyLevel: 2);
+
+            float dealt = CombatTestSetup.CreatePipeline()
+                .ApplyToStructure(new Hit(source, 100f, DamageType.Physical), 20f, 0f);
+
+            Assert.That(dealt, Is.EqualTo(100f).Within(Tolerance));
+        }
+
+        [Test]
+        public void ApplyToStructure_DamageOverTime_IgnoresArmorAndDamageReduction()
+        {
+            float dealt = CombatTestSetup.CreatePipeline()
+                .ApplyToStructure(CombatTestSetup.Environmental(20f, isDamageOverTime: true), 20f, 0.5f);
+
+            Assert.That(dealt, Is.EqualTo(20f).Within(Tolerance));
+        }
+
         private sealed class HalvingHandler : IIncomingHitHandler
         {
             public void OnIncomingHit(ref IncomingHit hit)

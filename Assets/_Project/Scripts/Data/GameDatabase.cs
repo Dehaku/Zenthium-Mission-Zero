@@ -14,6 +14,7 @@ namespace Zenthium.Data
         [SerializeField] private ModuleConstants moduleConstants = new ModuleConstants();
         [SerializeField] private RankScalingConstants rankScaling = new RankScalingConstants();
         [SerializeField] private EconomyConstants economy = new EconomyConstants();
+        [SerializeField] private WorldConstants worldConstants = new WorldConstants();
         [SerializeField] private TierTables tiers = new TierTables();
         [SerializeField] private DataTable<ModuleData> modules = new DataTable<ModuleData>();
         [SerializeField] private DataTable<FactionData> factions = new DataTable<FactionData>();
@@ -29,6 +30,7 @@ namespace Zenthium.Data
         public ModuleConstants ModuleConstants => moduleConstants;
         public RankScalingConstants RankScaling => rankScaling;
         public EconomyConstants Economy => economy;
+        public WorldConstants WorldConstants => worldConstants;
         public TierTables Tiers => tiers;
         public DataTable<ModuleData> Modules => modules;
         public DataTable<FactionData> Factions => factions;
@@ -56,6 +58,7 @@ namespace Zenthium.Data
             ModuleConstants newModuleConstants,
             RankScalingConstants newRankScaling,
             EconomyConstants newEconomy,
+            WorldConstants newWorldConstants,
             TierTables newTiers,
             List<ModuleData> newModules,
             List<FactionData> newFactions,
@@ -69,6 +72,7 @@ namespace Zenthium.Data
             moduleConstants = newModuleConstants;
             rankScaling = newRankScaling;
             economy = newEconomy;
+            worldConstants = newWorldConstants;
             tiers = newTiers;
             modules.SetEntries(newModules);
             factions.SetEntries(newFactions);

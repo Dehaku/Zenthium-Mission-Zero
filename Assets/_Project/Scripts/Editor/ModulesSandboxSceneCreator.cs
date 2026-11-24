@@ -104,7 +104,7 @@ namespace Zenthium.Editor
             Debug.Log($"Created {ScenePath}.");
         }
 
-        private static void CreateModulesCanvas(PlayerSandboxSceneCreator.Room room)
+        internal static void CreateModulesCanvas(PlayerSandboxSceneCreator.Room room)
         {
             var canvasObject = new GameObject("Modules Canvas", typeof(Canvas), typeof(CanvasScaler),
                 typeof(GraphicRaycaster));

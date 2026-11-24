@@ -19,6 +19,7 @@ namespace Zenthium.Modules
             switch (data.Id)
             {
                 case DataIds.Modules.Kick:
+                    return TryCreateKick(data, out behaviour, out problem);
                 case DataIds.Modules.SpeedPunch:
                 case DataIds.Modules.Uppercut:
                     return TryCreateMelee(data, false, out behaviour, out problem);
@@ -30,6 +31,7 @@ namespace Zenthium.Modules
                 case DataIds.Modules.Megaphone:
                     return TryCreateAreaStatus(data, StatusType.Stun, out behaviour, out problem);
                 case DataIds.Modules.EnergyBlaster:
+                case DataIds.Modules.HeavyGun:
                     return TryCreateProjectile(data, out behaviour, out problem);
                 case DataIds.Modules.RepulsorBlast:
                     return TryCreateBeam(data, out behaviour, out problem);
@@ -104,6 +106,20 @@ namespace Zenthium.Modules
             }
 
             behaviour = new MeleeStrikeModule(data, effects);
+            return true;
+        }
+
+        private static bool TryCreateKick(ModuleData data, out ModuleBehaviour behaviour, out string problem)
+        {
+            behaviour = null;
+            if (!TryCreateDamage(data, false, out HitEffects effects, out problem)
+                || !Require(data.RangeTier.IsSet && data.KnockbackTier.IsSet, "a range tier and a knockback tier",
+                    out problem))
+            {
+                return false;
+            }
+
+            behaviour = new KickModule(data, effects);
             return true;
         }
 

@@ -8,7 +8,8 @@ namespace Zenthium.Modules
     /// <summary>
     /// Breaching Charge (modules.md): places a charge in front of the user, as far as the range tier. After
     /// <c>fuse_s</c> of game time it explodes for its damage and knockback within the radius tier, under the user's
-    /// friendly fire rules, and blows open what's breachable (Milestone 5).
+    /// friendly fire rules. Walls, doors, windows and props in the radius take its damage too, buildings more through
+    /// its Demolition tag (a local design decision).
     /// </summary>
     public sealed class BreachingChargeModule : ModuleBehaviour
     {

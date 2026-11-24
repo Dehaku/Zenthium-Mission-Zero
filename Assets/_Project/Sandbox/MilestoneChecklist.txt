@@ -1,33 +1,32 @@
-<b>Milestone 4b: what to test</b>   (Caps Lock hides this. Buttons are on the HUD, bottom left.)
-Hero select (top right): pick the hero, Unlocked slots 4, Apply. Dummies have 100 HP and 5 Armor.
-The debug panel (top left) now shows and hits <b>you</b>: untick "From attacker" to hit yourself.
+<b>Milestone 5a: what to test</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
+Labels show every wall's, door's and prop's HP. Rush Hour: Strength 20, so Kick deals 50. Dummies: 100 HP, 5 Armor.
+The debug panel (top left) shows and changes <b>you</b>: use it to raise your Strength.
 
-<b>Major Overclock</b> (Charge starts full, so Overclocked's +50% is on until Charge drops below 196)
-1. Power 1, Taunt: dummies in sight show Taunted and Marked for 4 s (about half resist). While it lasts,
-   the turret is knocked back 4 m each time its Kick hits you (stand next to it, top right corner).
-   Damage cut: set Unlocked slots 1, Apply (Armor 10). Panel Hit 100: 90 normally, 45 while taunting.
-2. Power 2, Shockwave Stomp: dummies within 6 m take 85 (55 without Overclocked) and fly 8 m.
-3. Power 3, Power Throw: drag a downed dummy (F), then Power 3: it flies 15 m along your aim.
-4. Power 4, Energy Shield: a blue bar in front of your aim for 3 s (30 Charge). Turret shots stop at it;
-   dummies it touches are pushed 4 m.
-5. Passives: Charge 245 (+6/s) on the HUD. The turret's Kick never pushes you (Immovable). Each hit adds 5
-   Armor, up to 50 (label: ReactivePlating; panel: Armor).
-6. Gear 1, Repulsor Blast: a yellow beam along your aim (15 Charge); the first dummy within 15 m takes 70
-   (45 without Overclocked) and flies 4 m. A wall stops the beam.
-7. Gear 3, Breaching Charge: a charge 2 m ahead, a red circle 15 m wide and a 5 s countdown; then every
-   dummy in it is defeated (300) and flies 8 m. It never hurts you. Time Stop (test module) holds the countdown.
-8. Gear 4, Stasis Cuffs: next to a downed dummy, it's captured where it lies (label: Captured). After that
-   nothing touches it: Kicks don't move it, Drag (F) skips it, and Shockwave Stomp doesn't move it either.
+<b>Walls, doors and windows</b>
+1. Sample walls (bottom row): Kick each. Glass breaks at once (10 HP); Wood loses 50 per Kick (100 HP); Stone 300,
+   Metal 600, Crystalline 1000. A broken wall vanishes: walk through the gap.
+2. Wall impact: Kick a dummy into a wall from under 4 m. The wall takes 1000 (Heavy 100 from your Strength, x10)
+   and breaks, even Crystalline; the dummy takes 20 (25 minus its 5 Armor).
+3. Wood house (top right): its south door opens while you stand in it and closes when you step away.
+4. Stone shop (top left, L-shaped): its Metal door is locked and stays shut. Kick a dummy into it: it breaks.
+5. Windows (west side of each building): Kick one; it breaks (Glass, 10 HP).
 
-<b>Rune</b>
-9. Power 1, Ink Beast: 2 beasts (Living Ink) for 20 s. They chase dummies within 15 m and lash them for 35
-   each (25 from your Will 20, +15 Force Spell Tome, minus 5 Armor); with no dummy near, they follow you.
-10. Power 2, Glyph Trap: a purple disc at the mouse, up to 15 m. Place it under a dummy: dummies within 3 m
-    are Rooted 3 s (a third resist), then it's gone. A new cast replaces an untriggered one.
-11. Power 4, Shockwave Stomp: 95 to dummies within 6 m (Strength 20).
-12. Deathly Rage and Second Wind: panel Hit 10000 with "From attacker" off. Defiance procs (102%); you get
-    Deathly Rage (label; panel: Strength 60, max HP 300), and Second Wind heals you to 300.
-13. Fresh Ink: defeating a dummy with your own hit heals 5 HP.
-14. Gear 3, Smoke Bomb: a grey cloud at the mouse, up to 8 m, for 5 s. Dummies inside are Stunned while in
-    it (about half resist); you aren't.
-15. Hold MoreInfo: every module of both heroes is listed, none "not built yet".
+<b>Props</b> (the row above the sample walls)
+6. Drag (F) the bench. The dumpster needs Strength 50 and the tree 250: Drag skips them until you set your
+   Strength that high on the debug panel.
+7. Kick while dragging: the prop flies 4 m along your aim and hits the first dummy, wall or prop for your Kick
+   times its factor (bench x1, dumpster x2, tree x3), and takes the same. The bench always breaks.
+   A thrown prop hitting a wall, door or window deals it x2. Thrown bench (50) into a Wood wall: 100, it breaks.
+8. Major Overclock (hero select), Power 3, Power Throw: throws everything you drag 15 m; props hit as in 7.
+9. Car: each Kick deals 15 (50 minus 20 Armor, halved). At 0 HP a red ring 30 m wide appears; 1 s later it
+   explodes for 500 to everything inside, you included, and to walls and props. Stand back. The motorcycle,
+   7 m away, breaks and explodes too.
+
+<b>Breaching Charge and the turret</b>
+10. Major Overclock, Gear 3, Breaching Charge next to the Stone shop: walls, doors and windows in the 15 m
+    blast take 10x its damage (Demolition) and all break.
+11. Heavy Turret (bottom right corner): Neutral, it fires Heavy Gun at the dummy next to it every 2 s
+    (45 per hit). Kick it: it never moves. Defeat it (5 Kicks), then Drag (F) next to it: it can't be dragged.
+
+<b>NavMesh</b> (Scene view, with AI Navigation's Show NavMesh on)
+12. Building walls and windows cut holes in the NavMesh; doors and broken walls don't.

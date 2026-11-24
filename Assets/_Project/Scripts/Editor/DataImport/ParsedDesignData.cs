@@ -13,6 +13,7 @@ namespace Zenthium.Editor.DataImport
         public ModuleConstants ModuleConstants { get; internal set; }
         public RankScalingConstants RankScaling { get; internal set; }
         public EconomyConstants Economy { get; internal set; }
+        public WorldConstants World { get; internal set; }
         public TierTables Tiers { get; internal set; }
         public List<ModuleRecord> Modules { get; } = new List<ModuleRecord>();
 

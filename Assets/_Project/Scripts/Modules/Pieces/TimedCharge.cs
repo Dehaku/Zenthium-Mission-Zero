@@ -7,15 +7,14 @@ namespace Zenthium.Modules
 {
     /// <summary>
     /// A placed explosive (Breaching Charge): its fuse burns on game time, so Time Slow stretches it and Time Stop
-    /// holds it. Then every entity within the radius takes the charge's hit effects, pushed away from it, and
-    /// anything <see cref="IBreachable"/> in the radius is blown open. Presentation listens to its events.
+    /// holds it. Then every entity within the radius takes the charge's hit effects, pushed away from it, and so does
+    /// every wall, door, window and prop (Breaching Charge's Demolition tag hits buildings harder). Presentation
+    /// listens to its events.
     /// </summary>
     public sealed class TimedCharge : MonoBehaviour
     {
-        private const int MaxBreachHits = 32;
-
         private readonly List<EntityBehaviour> reached = new List<EntityBehaviour>();
-        private readonly Collider[] breachHits = new Collider[MaxBreachHits];
+        private readonly List<IDamageableStructure> reachedStructures = new List<IDamageableStructure>();
         private ModuleContext context;
         private HitEffects effects;
         private float radius;
@@ -62,14 +61,10 @@ namespace Zenthium.Modules
                 effects.ApplyTo(context, target, MeleeStrikeModule.Away(origin, target, Vector3.forward));
             }
 
-            int count = Physics.OverlapSphereNonAlloc(origin, radius, breachHits, Physics.AllLayers,
-                QueryTriggerInteraction.Collide);
-            for (int i = 0; i < count; i++)
+            context.World.CollectStructures(origin, radius, reachedStructures);
+            foreach (IDamageableStructure structure in reachedStructures)
             {
-                if (breachHits[i].TryGetComponent(out IBreachable breachable))
-                {
-                    breachable.Breach();
-                }
+                effects.ApplyToStructure(context, structure);
             }
 
             Destroy(gameObject);

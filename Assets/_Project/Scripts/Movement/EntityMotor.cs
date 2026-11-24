@@ -42,6 +42,7 @@ namespace Zenthium.Movement
         private Entity entity;
         private Vector3 moveInput;
         private Vector3 knockbackDirection;
+        private KnockbackCause knockbackCause;
         private Vector3 dashDirection;
         private Vector3 carryPoint;
         private bool isCarried;
@@ -63,7 +64,8 @@ namespace Zenthium.Movement
         }
 
         /// <summary>Starts a knockback, replacing any in progress and ending a dash. Ignored while carried.</summary>
-        public void ApplyKnockback(Vector3 direction, float distance)
+        /// <param name="cause">Who knocked it back, for impact damage if it hits a wall or prop.</param>
+        public void ApplyKnockback(Vector3 direction, float distance, KnockbackCause cause = default)
         {
             direction.y = 0f;
             if (isCarried || distance <= 0f || direction.sqrMagnitude <= 0f)
@@ -73,6 +75,7 @@ namespace Zenthium.Movement
 
             EndDash();
             knockbackDirection = direction.normalized;
+            knockbackCause = cause;
             knockback.Start(distance);
         }
 
@@ -209,7 +212,8 @@ namespace Zenthium.Movement
             KnockbackStep step = motion.Step(travel, clearDistance);
             if (step.HitObstacle && reportObstacle)
             {
-                OnKnockbackObstacleHit?.Invoke(new KnockbackObstacleHit(obstacle.collider, obstacle.point, step.UnusedDistance));
+                OnKnockbackObstacleHit?.Invoke(new KnockbackObstacleHit(obstacle.collider, obstacle.point, step.UnusedDistance,
+                    knockbackCause));
             }
 
             // Covers exactly the step's distance in one physics step.

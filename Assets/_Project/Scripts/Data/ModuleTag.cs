@@ -20,5 +20,8 @@ namespace Zenthium.Data
         Ignites,
         Extinguish,
         NotRandom,
+
+        /// <summary>Its hits deal extra damage to walls, doors and windows (Breaching Charge; a local design decision).</summary>
+        Demolition,
     }
 }

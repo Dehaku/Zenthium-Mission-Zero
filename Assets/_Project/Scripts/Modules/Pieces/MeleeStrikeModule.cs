@@ -7,13 +7,14 @@ using Zenthium.Entities;
 namespace Zenthium.Modules
 {
     /// <summary>
-    /// A melee hit on every valid entity within the module's range tier and the melee arc around the aim, such as
-    /// Kick, Speed Punch and Uppercut. Each target is pushed away from the user. Dragged targets can't be hurt or
-    /// moved, so it passes over them.
+    /// A melee hit on every valid entity and structure within the module's range tier and the melee arc around the
+    /// aim, such as Speed Punch and Uppercut. Each entity is pushed away from the user. Dragged targets can't be
+    /// hurt or moved, so it passes over them.
     /// </summary>
     public sealed class MeleeStrikeModule : ModuleBehaviour
     {
-        private readonly List<EntityBehaviour> reached = new List<EntityBehaviour>();
+        private readonly List<EntityBehaviour> reachedEntities = new List<EntityBehaviour>();
+        private readonly List<IDamageableStructure> reachedStructures = new List<IDamageableStructure>();
         private readonly HitEffects effects;
 
         public MeleeStrikeModule(ModuleData data, HitEffects effects) : base(data)
@@ -26,19 +27,33 @@ namespace Zenthium.Modules
             effects.Describe(text, Context);
         }
 
-        protected override void Activate(ModuleAim aim)
+        /// <summary>The strike itself, shared with Kick.</summary>
+        /// <param name="reachedEntities">Reused, so a strike allocates nothing.</param>
+        /// <param name="reachedStructures">Reused, so a strike allocates nothing.</param>
+        internal static void Strike(ModuleContext context, ModuleAim aim, HitEffects effects, float range,
+            List<EntityBehaviour> reachedEntities, List<IDamageableStructure> reachedStructures)
         {
-            Vector3 origin = Context.Position;
-            Context.World.CollectEntities(origin, Data.RangeTier.Value, reached);
-            foreach (EntityBehaviour target in reached)
+            Vector3 origin = context.Position;
+            float halfAngle = context.MeleeArcHalfAngle;
+            context.World.CollectEntities(origin, range, reachedEntities);
+            foreach (EntityBehaviour target in reachedEntities)
             {
-                if (target == Context.OwnerBehaviour || target.Entity.IsBeingDragged
-                    || !MeleeArc.Contains(origin, aim.Direction, target.transform.position, Context.MeleeArcHalfAngle))
+                if (target == context.OwnerBehaviour || target.Entity.IsBeingDragged
+                    || !MeleeArc.Contains(origin, aim.Direction, target.transform.position, halfAngle))
                 {
                     continue;
                 }
 
-                effects.ApplyTo(Context, target, Away(origin, target, aim.Direction));
+                effects.ApplyTo(context, target, Away(origin, target, aim.Direction));
+            }
+
+            context.World.CollectStructures(origin, range, reachedStructures);
+            foreach (IDamageableStructure structure in reachedStructures)
+            {
+                if (MeleeArc.Contains(origin, aim.Direction, structure.ClosestPoint(origin), halfAngle))
+                {
+                    effects.ApplyToStructure(context, structure);
+                }
             }
         }
 
@@ -47,6 +62,11 @@ namespace Zenthium.Modules
             Vector3 away = target.transform.position - origin;
             away.y = 0f;
             return away.sqrMagnitude > 0f ? away : fallback;
+        }
+
+        protected override void Activate(ModuleAim aim)
+        {
+            Strike(Context, aim, effects, Data.RangeTier.Value, reachedEntities, reachedStructures);
         }
     }
 }

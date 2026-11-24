@@ -10,12 +10,14 @@ namespace Zenthium.Modules
     public static class SweepHit
     {
         /// <param name="target">The entity hit, or null if something solid stopped it.</param>
+        /// <param name="solid">What stopped it when it isn't an entity, such as a wall to damage; null otherwise.</param>
         /// <param name="hitDistance">How far along the sweep it stopped.</param>
         /// <returns>True if anything stops it within the distance.</returns>
         public static bool TryFindFirst(ModuleContext context, Vector3 origin, Vector3 direction, float radius,
-            float distance, RaycastHit[] buffer, out EntityBehaviour target, out float hitDistance)
+            float distance, RaycastHit[] buffer, out EntityBehaviour target, out Collider solid, out float hitDistance)
         {
             target = null;
+            solid = null;
             hitDistance = float.PositiveInfinity;
             int count = Physics.SphereCastNonAlloc(origin, radius, direction, buffer, distance, Physics.AllLayers,
                 QueryTriggerInteraction.Ignore);
@@ -39,6 +41,7 @@ namespace Zenthium.Modules
                 }
 
                 target = hitEntity;
+                solid = hitEntity == null ? hit.collider : null;
                 hitDistance = hit.distance;
             }
 

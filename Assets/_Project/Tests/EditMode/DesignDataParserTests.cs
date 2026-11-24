@@ -189,5 +189,36 @@ namespace Zenthium.Tests.EditMode
         {
             AssertFailsWithOneErrorMentioning(DesignDataTestCsv.Parse(extraHeroRows: heroRow), mentioned);
         }
+
+        [Test]
+        public void Parse_WorldConstants_AreRead()
+        {
+            DesignDataParseResult result = DesignDataTestCsv.Parse();
+
+            Assert.That(result.Errors, Is.Empty);
+            WorldConstants world = result.Data.World;
+            Assert.That(world.MaterialHp(StructureMaterial.Glass), Is.EqualTo(10f));
+            Assert.That(world.MaterialHp(StructureMaterial.Crystalline), Is.EqualTo(1000f));
+            Assert.That(world.ImpactStructureDamageTier.Value, Is.EqualTo(2f));
+            Assert.That(world.ImpactEntityDamageTier.Value, Is.EqualTo(0.5f));
+            Assert.That(world.BuildingImpactMultiplier, Is.EqualTo(10f));
+            Assert.That(world.BuildingNeighborRadius, Is.EqualTo(20f));
+        }
+
+        [Test]
+        public void Parse_MaterialWithoutHp_Fails()
+        {
+            string constants = DesignDataTestCsv.Constants.Replace("world,material_hp.Metal,600,\n", string.Empty);
+
+            AssertFailsWithOneErrorMentioning(DesignDataTestCsv.Parse(constants: constants), "material_hp.Metal");
+        }
+
+        [Test]
+        public void Parse_UnknownMaterial_Fails()
+        {
+            DesignDataParseResult result = DesignDataTestCsv.Parse(extraConstantRows: "world,material_hp.Paper,5,\n");
+
+            AssertFailsWithOneErrorMentioning(result, "material_hp.Paper");
+        }
     }
 }

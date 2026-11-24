@@ -1,0 +1,22 @@
+{
+    "name": "Zenthium.World",
+    "rootNamespace": "Zenthium.World",
+    "references": [
+        "Zenthium.Core",
+        "Zenthium.Data",
+        "Zenthium.Time",
+        "Zenthium.Entities",
+        "Zenthium.Combat",
+        "Zenthium.Movement",
+        "Zenthium.Modules"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

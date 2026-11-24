@@ -133,6 +133,9 @@ namespace Zenthium.Editor
             public EntityBehaviour Player;
             public CombatDebugPanel DebugPanel;
             public GameObject DummyPrefab;
+
+            /// <summary>The ground, outer walls and pillars, under one parent.</summary>
+            public Transform Geometry;
             public readonly List<EntityBehaviour> Dummies = new List<EntityBehaviour>();
         }
 
@@ -150,7 +153,8 @@ namespace Zenthium.Editor
         /// Asks before replacing anything, then opens a new scene with the room, the rebuilt prefabs, the scene
         /// services, the player, 3 dummies and the combat debug panel. The caller saves the scene.
         /// </summary>
-        internal static bool TryBuildRoom(string scenePath, out Room room)
+        /// <param name="roomSize">Meters along each side of the square room.</param>
+        internal static bool TryBuildRoom(string scenePath, out Room room, float roomSize = RoomSize)
         {
             room = null;
             if (TMP_Settings.instance == null || TMP_Settings.defaultFontAsset == null)
@@ -203,7 +207,7 @@ namespace Zenthium.Editor
             GameObject projectilePrefab = SaveAsPrefab(BuildProjectile(), ProjectilePrefabPath);
 
             Camera camera = SetUpCamera(scene);
-            CreateRoom();
+            built.Geometry = CreateRoom(roomSize);
 
             built.Clock = new GameObject("Game Clock").AddComponent<GameClockDriver>();
             built.CombatRules = new GameObject("Combat Rules").AddComponent<CombatRulesBehaviour>();
@@ -316,6 +320,7 @@ namespace Zenthium.Editor
             });
             body.AddComponent<EntityMotor>();
             body.AddComponent<EntityModules>();
+            body.AddComponent<KnockbackImpacts>();
             return body;
         }
 
@@ -401,28 +406,30 @@ namespace Zenthium.Editor
             throw new System.InvalidOperationException("The new scene has no camera.");
         }
 
-        private static void CreateRoom()
+        private static Transform CreateRoom(float roomSize)
         {
             var room = new GameObject("Room").transform;
 
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Ground";
             ground.transform.SetParent(room, false);
-            float groundScale = RoomSize / PlanePrimitiveSize;
+            float groundScale = roomSize / PlanePrimitiveSize;
             ground.transform.localScale = new Vector3(groundScale, 1f, groundScale);
 
-            float edge = (RoomSize + WallThickness) * 0.5f;
+            float edge = (roomSize + WallThickness) * 0.5f;
             float wallY = WallHeight * 0.5f;
-            float longSide = RoomSize + 2f * WallThickness;
+            float longSide = roomSize + 2f * WallThickness;
             CreateBlock(room, "Wall North", new Vector3(0f, wallY, edge), new Vector3(longSide, WallHeight, WallThickness));
             CreateBlock(room, "Wall South", new Vector3(0f, wallY, -edge), new Vector3(longSide, WallHeight, WallThickness));
-            CreateBlock(room, "Wall East", new Vector3(edge, wallY, 0f), new Vector3(WallThickness, WallHeight, RoomSize));
-            CreateBlock(room, "Wall West", new Vector3(-edge, wallY, 0f), new Vector3(WallThickness, WallHeight, RoomSize));
+            CreateBlock(room, "Wall East", new Vector3(edge, wallY, 0f), new Vector3(WallThickness, WallHeight, roomSize));
+            CreateBlock(room, "Wall West", new Vector3(-edge, wallY, 0f), new Vector3(WallThickness, WallHeight, roomSize));
 
             for (int i = 0; i < PillarPositions.Length; i++)
             {
                 CreateBlock(room, $"Pillar {i + 1}", PillarPositions[i], Vector3.one * PillarSize);
             }
+
+            return room;
         }
 
         private static void CreateBlock(Transform parent, string objectName, Vector3 position, Vector3 size)

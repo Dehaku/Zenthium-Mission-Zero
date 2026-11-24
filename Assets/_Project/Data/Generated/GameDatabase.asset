@@ -64,6 +64,24 @@ MonoBehaviour:
     - missionType: 2
       family: 2
       multiplier: 1.5
+  worldConstants:
+    materialHp:
+    - 10
+    - 100
+    - 300
+    - 600
+    - 1000
+    impactStructureDamageTier:
+      word: Heavy
+      value: 2
+    impactEntityDamageTier:
+      word: Light
+      value: 0.5
+    buildingImpactMultiplier: 10
+    buildingThrowMultiplier: 2
+    demolitionMultiplier: 10
+    vehicleExplosionDelay: 1
+    buildingNeighborRadius: 20
   tiers:
     entries:
     - scale: 0

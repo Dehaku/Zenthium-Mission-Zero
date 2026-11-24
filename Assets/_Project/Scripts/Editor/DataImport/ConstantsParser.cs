@@ -5,7 +5,7 @@ using Zenthium.Data;
 namespace Zenthium.Editor.DataImport
 {
     /// <summary>
-    /// Reads constants.csv into the formula, entity, module, rank scaling and economy constants and the tier tables.
+    /// Reads constants.csv into the formula, entity, module, rank scaling, economy and world constants and the tier tables.
     /// Every constant the game uses must be present, and every name must be one it knows,
     /// so a typo can't go unnoticed.
     /// </summary>
@@ -20,8 +20,10 @@ namespace Zenthium.Editor.DataImport
         private const string ReferenceGroup = "reference";
         private const string EconomyGroup = "economy";
         private const string TierGroup = "tier";
+        private const string WorldGroup = "world";
 
         private const string IncomeMixPrefix = "income_mix.";
+        private const string MaterialHpPrefix = "material_hp.";
         private const char NamePartSeparator = '.';
 
         public static void Parse(CsvTable table, ParsedDesignData data, List<string> errors)
@@ -35,6 +37,7 @@ namespace Zenthium.Editor.DataImport
 
             var named = new Dictionary<string, CsvRow>(StringComparer.Ordinal);
             var incomeMixes = new List<EconomyConstants.IncomeMix>();
+            var materialHp = new float?[Enum.GetValues(typeof(StructureMaterial)).Length];
             foreach (CsvRow row in table.Rows)
             {
                 string group = row.Get(GroupColumn);
@@ -52,9 +55,13 @@ namespace Zenthium.Editor.DataImport
                     case ReferenceGroup:
                         // Starting-hero ranges for balance.py's checks; the game doesn't use them.
                         break;
+                    case WorldGroup when name.StartsWith(MaterialHpPrefix, StringComparison.Ordinal):
+                        ReadMaterialHp(row, name, materialHp, errors);
+                        break;
                     case FormulaGroup:
                     case MirrorGroup:
                     case EconomyGroup:
+                    case WorldGroup:
                         if (name.StartsWith(IncomeMixPrefix, StringComparison.Ordinal))
                         {
                             ReadIncomeMix(row, name, incomeMixes, errors);
@@ -117,7 +124,59 @@ namespace Zenthium.Editor.DataImport
                 incomeMetallic: reader.Float("income_metallic"),
                 statPriceIncreasePerPoint: reader.Float("stat_price_increase_per_point"),
                 incomeMixes: incomeMixes);
+            data.World = new WorldConstants(
+                materialHp: RequireMaterialHp(table.FileName, materialHp, errors),
+                impactStructureDamageTier: reader.Tier("impact_structure_damage_tier", TierScale.Damage, tiers),
+                impactEntityDamageTier: reader.Tier("impact_entity_damage_tier", TierScale.Damage, tiers),
+                buildingImpactMultiplier: reader.Float("building_impact_multiplier"),
+                buildingThrowMultiplier: reader.Float("building_throw_multiplier"),
+                demolitionMultiplier: reader.Float("demolition_multiplier"),
+                vehicleExplosionDelay: reader.Float("vehicle_explosion_delay_s"),
+                buildingNeighborRadius: reader.Float("building_neighbor_radius_m"));
             reader.ReportUnused();
+        }
+
+        /// <summary>A material HP row's name is <c>material_hp.Material</c>.</summary>
+        private static void ReadMaterialHp(CsvRow row, string name, float?[] materialHp, List<string> errors)
+        {
+            string materialText = name.Substring(MaterialHpPrefix.Length);
+            if (!CellReader.TryParseEnum(materialText, out StructureMaterial material))
+            {
+                errors.Add($"{row.Location}: '{name}' should be {MaterialHpPrefix}Material, with a material from: "
+                    + string.Join(", ", Enum.GetNames(typeof(StructureMaterial))) + ".");
+                return;
+            }
+
+            if (materialHp[(int)material].HasValue)
+            {
+                errors.Add($"{row.Location}: duplicate constant '{name}'.");
+                return;
+            }
+
+            float? hp = CellReader.Float(row, ValueColumn, true, errors);
+            if (hp.HasValue)
+            {
+                materialHp[(int)material] = hp.Value;
+            }
+        }
+
+        /// <summary>Every material needs an HP, since any wall or door can be made of it.</summary>
+        private static float[] RequireMaterialHp(string fileName, float?[] materialHp, List<string> errors)
+        {
+            var result = new float[materialHp.Length];
+            for (int i = 0; i < materialHp.Length; i++)
+            {
+                if (materialHp[i].HasValue)
+                {
+                    result[i] = materialHp[i].Value;
+                }
+                else
+                {
+                    errors.Add($"{fileName}: missing the constant '{MaterialHpPrefix}{(StructureMaterial)i}'.");
+                }
+            }
+
+            return result;
         }
 
         /// <summary>A tier row's name is <c>scale.Word</c>, such as <c>damage.Light</c>.</summary>

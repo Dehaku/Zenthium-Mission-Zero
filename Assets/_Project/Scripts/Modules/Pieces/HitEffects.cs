@@ -11,8 +11,8 @@ namespace Zenthium.Modules
 {
     /// <summary>
     /// What a module does to each entity it reaches, in order: damage from its stat formula, knockback from its
-    /// knockback tier, then a status. Every delivery (melee arc, area, projectile) uses it, so the shared rules
-    /// (damage pipeline, knockback, resists) apply the same way everywhere.
+    /// knockback tier, then a status; and what it does to structures. Every delivery (melee arc, area, projectile)
+    /// uses it, so the shared rules (damage pipeline, knockback, resists) apply the same way everywhere.
     /// </summary>
     public sealed class HitEffects
     {
@@ -54,9 +54,7 @@ namespace Zenthium.Modules
             DamageEvent result;
             if (damage != null)
             {
-                float amount = damage.Damage(StatOwner(user), context.World.Database.Formulas)
-                    + SpellDamageBonus.For(user, damageType);
-                result = rules.Pipeline.Apply(new Hit(user, amount, damageType), victim);
+                result = rules.Pipeline.Apply(new Hit(user, Damage(context), damageType), victim);
             }
             else if (!victim.IsIncapacitated && !victim.IsBeingDragged && rules.FriendlyFire.CanHurt(user, victim))
             {
@@ -71,7 +69,7 @@ namespace Zenthium.Modules
             if (rules.Knockback.TryGetDistance(module.KnockbackTier, result, out float distance)
                 && target.TryGetComponent(out EntityMotor motor))
             {
-                motor.ApplyKnockback(direction, distance);
+                motor.ApplyKnockback(direction, distance, ImpactDamage.Cause(user, module, StatOwner(user)));
             }
 
             bool landed = result.Outcome == DamageOutcome.Dealt;
@@ -81,6 +79,25 @@ namespace Zenthium.Modules
             }
 
             return landed;
+        }
+
+        /// <summary>
+        /// Damages a wall, door, window or prop with the same damage an entity would take before its defenses.
+        /// Modules with the Demolition tag hit buildings harder. Knockback and statuses don't apply to structures.
+        /// </summary>
+        /// <returns>True if it dealt damage; modules without damage, such as Megaphone, do nothing.</returns>
+        public bool ApplyToStructure(ModuleContext context, IDamageableStructure structure)
+        {
+            if (damage == null || structure == null || !structure.CanBeHit)
+            {
+                return false;
+            }
+
+            StructureHitKind kind = module.HasTag(ModuleTag.Demolition)
+                ? StructureHitKind.Demolition
+                : StructureHitKind.Direct;
+            structure.TakeHit(new StructureHit(new Hit(context.Owner, Damage(context), damageType), kind));
+            return true;
         }
 
         public void Describe(StringBuilder text, ModuleContext context)
@@ -115,6 +132,13 @@ namespace Zenthium.Modules
 
                 text.Append('\n');
             }
+        }
+
+        /// <summary>The module's damage before the target's defenses. Only call it when there is damage.</summary>
+        private float Damage(ModuleContext context)
+        {
+            return damage.Damage(StatOwner(context.Owner), context.World.Database.Formulas)
+                + SpellDamageBonus.For(context.Owner, damageType);
         }
 
         private Entity StatOwner(Entity user)

@@ -113,7 +113,8 @@ namespace Zenthium.Modules
             KnockbackResolver knockback = Context.World.CombatRules.Knockback;
             if (knockback.TryGetDistance(Data.KnockbackTier, push, out float distance))
             {
-                motor.ApplyKnockback(MeleeStrikeModule.Away(Context.Position, attacker, Vector3.forward), distance);
+                motor.ApplyKnockback(MeleeStrikeModule.Away(Context.Position, attacker, Vector3.forward), distance,
+                    ImpactDamage.Cause(Owner, Data));
             }
         }
 
@@ -133,27 +134,9 @@ namespace Zenthium.Modules
             taunter = null;
         }
 
-        /// <summary>Walls and props block sight; other entities don't.</summary>
         private bool CanSee(Vector3 origin, EntityBehaviour target)
         {
-            Vector3 toTarget = target.transform.position - origin;
-            float distance = toTarget.magnitude;
-            if (distance <= 0f)
-            {
-                return true;
-            }
-
-            int count = Physics.RaycastNonAlloc(origin, toTarget / distance, sightHits, distance, Physics.AllLayers,
-                QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
-            {
-                if (!ModuleWorld.TryGetEntity(sightHits[i].collider, out _))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return LineOfSight.IsClear(origin, target.transform.position, sightHits);
         }
 
         private static string Percent(float fraction)

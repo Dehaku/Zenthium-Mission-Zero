@@ -68,3 +68,15 @@ economy,stat_price_increase_per_point,0.1,Added to a stat's price per point alre
 economy,income_mix.Rescue.basic,1.5,
 economy,income_mix.Countdown.gem,1.5,
 economy,income_mix.Invasion.metallic,1.5,
+world,material_hp.Glass,10,HP of a wall or door of this material (world.md). Placeholder
+world,material_hp.Wood,100,Placeholder
+world,material_hp.Stone,300,Placeholder
+world,material_hp.Metal,600,Placeholder
+world,material_hp.Crystalline,1000,Placeholder
+world,impact_structure_damage_tier,Heavy,Damage a knocked-back entity deals to what it hits (world.md)
+world,impact_entity_damage_tier,Light,Damage a knocked-back entity takes when it hits a wall or prop (world.md)
+world,building_impact_multiplier,10,Walls doors and windows take this many times the damage from knocked-back entities
+world,building_throw_multiplier,2,Walls doors and windows take this many times the damage from thrown props
+world,demolition_multiplier,10,Walls doors and windows take this many times the damage from Demolition modules
+world,vehicle_explosion_delay_s,1,Seconds from a vehicle's destruction to its explosion (world.md)
+world,building_neighbor_radius_m,20,Buildings within this many meters are neighbors (world.md)

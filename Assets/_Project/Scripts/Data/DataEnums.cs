@@ -101,4 +101,36 @@ namespace Zenthium.Data
         Passive,
         Gear,
     }
+
+    /// <summary>Wall and door materials, weakest to strongest (world.md, Walls). Their HP is in constants.csv.</summary>
+    public enum StructureMaterial
+    {
+        Glass,
+        Wood,
+        Stone,
+        Metal,
+        Crystalline,
+    }
+
+    /// <summary>The master list of locations (maps.md, Locations). Each building has one.</summary>
+    public enum LocationType
+    {
+        Bank,
+        Store,
+        Club,
+        Hospital,
+        Museum,
+        Library,
+        RecordsOffice,
+        SwiftTower,
+        Lab,
+        Armory,
+        Warehouse,
+        House,
+        ApartmentBuilding,
+        SmallShop,
+        AntiqueShop,
+        Mansion,
+        Park,
+    }
 }

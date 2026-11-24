@@ -35,6 +35,21 @@ namespace Zenthium.Tests.EditMode
         }
 
         [Test]
+        public void TryGetDistance_ImmobileTarget_DoesNotMove()
+        {
+            // Like a Heavy Turret: the tag is on the entity, not a module.
+            var setup = new EntitySetup(Team.Neutral, StatBlock.Uniform(10f));
+            setup.Tags.Add(EntityTag.Immobile);
+            var target = new Entity(setup, CombatTestSetup.CreateRules(),
+                new FixedRandom(CombatTestSetup.RollThatMisses));
+
+            bool knocked = TryKnockback(CombatTestSetup.CreateEntity(Team.Player), target, out float distance);
+
+            Assert.That(knocked, Is.False);
+            Assert.That(distance, Is.EqualTo(0f));
+        }
+
+        [Test]
         public void TryGetDistance_KnockbackResistant_DoesNotMove()
         {
             // Like Immovable: the tag comes from an equipped module.

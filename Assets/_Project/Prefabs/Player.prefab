@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6958136769696103247}
   - component: {fileID: 4597716273654257326}
   - component: {fileID: 5905671348513108447}
+  - component: {fileID: 6619895840348864979}
   - component: {fileID: 5561046897729463581}
   - component: {fileID: 1836408603891312450}
   - component: {fileID: 7645907726967104450}
@@ -169,6 +170,7 @@ MonoBehaviour:
   team: 0
   difficultyLevel: 0
   modules: []
+  tags: 
   unlockedSlots: 0
   testModule: {fileID: 0}
 --- !u!114 &4597716273654257326
@@ -201,6 +203,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.EntityModules
   world: {fileID: 0}
   meleeArcHalfAngle: 60
+--- !u!114 &6619895840348864979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 81893236922406841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cf5e18a9889daa448932903e8691845, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.KnockbackImpacts
 --- !u!114 &5561046897729463581
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6415813934360766120}
   - component: {fileID: 6510558925886666635}
   - component: {fileID: 2767899941204760757}
+  - component: {fileID: 7800377467134068663}
   - component: {fileID: 6288120947838434953}
   m_Layer: 0
   m_Name: TrainingDummy
@@ -165,6 +166,7 @@ MonoBehaviour:
   team: 2
   difficultyLevel: 0
   modules: []
+  tags: 
   unlockedSlots: 0
   testModule: {fileID: 0}
 --- !u!114 &6510558925886666635
@@ -197,6 +199,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.EntityModules
   world: {fileID: 0}
   meleeArcHalfAngle: 60
+--- !u!114 &7800377467134068663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1377774910006779722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cf5e18a9889daa448932903e8691845, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.KnockbackImpacts
 --- !u!114 &6288120947838434953
 MonoBehaviour:
   m_ObjectHideFlags: 0

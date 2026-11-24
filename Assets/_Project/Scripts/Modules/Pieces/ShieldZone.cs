@@ -101,7 +101,8 @@ namespace Zenthium.Modules
                 var push = new DamageEvent(context.Owner, entity, DamageType.Physical, false, DamageOutcome.Dealt, 0f);
                 if (context.World.CombatRules.Knockback.TryGetDistance(knockbackTier, push, out float distance))
                 {
-                    motor.ApplyKnockback(MeleeStrikeModule.Away(origin, target, context.Aim.Direction), distance);
+                    motor.ApplyKnockback(MeleeStrikeModule.Away(origin, target, context.Aim.Direction), distance,
+                        ImpactDamage.Cause(context.Owner, null));
                 }
             }
         }
