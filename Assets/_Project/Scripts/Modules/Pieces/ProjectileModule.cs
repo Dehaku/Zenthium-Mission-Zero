@@ -21,17 +21,17 @@ namespace Zenthium.Modules
             effects.Describe(text, Context);
         }
 
-        protected override bool CanActivateNow(Vector3 aimDirection)
+        protected override bool CanActivateNow(ModuleAim aim)
         {
-            return aimDirection.sqrMagnitude > 0f;
+            return aim.Direction.sqrMagnitude > 0f;
         }
 
-        protected override void Activate(Vector3 aimDirection)
+        protected override void Activate(ModuleAim aim)
         {
-            Projectile projectile = Context.World.SpawnProjectile(Context.Position, aimDirection);
+            Projectile projectile = Context.World.SpawnProjectile(Context.Position, aim.Direction);
             if (projectile != null)
             {
-                projectile.Launch(Context, effects, aimDirection, Data.RangeTier.Value);
+                projectile.Launch(Context, effects, aim.Direction, Data.RangeTier.Value);
             }
         }
     }

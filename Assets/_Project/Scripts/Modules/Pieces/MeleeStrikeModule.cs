@@ -26,19 +26,19 @@ namespace Zenthium.Modules
             effects.Describe(text, Context);
         }
 
-        protected override void Activate(Vector3 aimDirection)
+        protected override void Activate(ModuleAim aim)
         {
             Vector3 origin = Context.Position;
             Context.World.CollectEntities(origin, Data.RangeTier.Value, reached);
             foreach (EntityBehaviour target in reached)
             {
                 if (target == Context.OwnerBehaviour || target.Entity.IsBeingDragged
-                    || !MeleeArc.Contains(origin, aimDirection, target.transform.position, Context.MeleeArcHalfAngle))
+                    || !MeleeArc.Contains(origin, aim.Direction, target.transform.position, Context.MeleeArcHalfAngle))
                 {
                     continue;
                 }
 
-                effects.ApplyTo(Context, target, Away(origin, target, aimDirection));
+                effects.ApplyTo(Context, target, Away(origin, target, aim.Direction));
             }
         }
 

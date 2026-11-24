@@ -99,10 +99,18 @@ namespace Zenthium.Statuses
             }
         }
 
-        /// <returns>False if it didn't take: blocked by Invulnerable, no stacking, no slot left to disable, or no time.</returns>
+        /// <returns>
+        /// False if it didn't take: the entity is captured or Invulnerable (hostile statuses), it doesn't
+        /// stack, no slot is left to disable, or there's no time.
+        /// </returns>
         public bool TryApply(in StatusApplication application)
         {
             StatusInfo info = StatusCatalog.Get(application.Type);
+            if (owner.IsCaptured)
+            {
+                return false;
+            }
+
             if (info.IsHostile && owner.IsInvulnerable)
             {
                 return false;
@@ -148,6 +156,11 @@ namespace Zenthium.Statuses
         /// <returns>False if Invulnerable blocks it.</returns>
         public bool SetInsideArea(in StatusApplication application)
         {
+            if (owner.IsCaptured)
+            {
+                return false;
+            }
+
             if (FindArea(application.Type, application.Source) != null)
             {
                 return true;
@@ -201,6 +214,22 @@ namespace Zenthium.Statuses
             {
                 RaiseChanged();
             }
+        }
+
+        /// <summary>Ends every status, such as when the entity is captured.</summary>
+        internal void ClearAll()
+        {
+            if (instances.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = instances.Count - 1; i >= 0; i--)
+            {
+                RemoveAt(i);
+            }
+
+            RaiseChanged();
         }
 
         /// <param name="gameDelta">The entity's game seconds since the last tick.</param>

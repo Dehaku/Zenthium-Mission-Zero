@@ -28,9 +28,13 @@ namespace Zenthium.Modules
         private EntityBehaviour entityBehaviour;
         private Rigidbody body;
         private Entity entity;
+        private ModuleContext context;
+        private ModuleAim aim = new ModuleAim(Vector3.forward);
 
         /// <summary>Null until the entity exists.</summary>
         public Entity Entity => entity;
+
+        public ModuleWorld World => world;
 
         /// <summary>Null if the game data has no Kick.</summary>
         public ModuleBehaviour Kick { get; private set; }
@@ -49,17 +53,33 @@ namespace Zenthium.Modules
                 && !(type == SlotType.Active && entity.Statuses.IsSilenced);
         }
 
-        public bool TryKick(Vector3 aimDirection)
+        /// <summary>Where the entity is aiming now. Whoever controls it (input, AI) sets it every frame.</summary>
+        public void SetAim(ModuleAim newAim)
         {
-            return isActiveAndEnabled && Kick != null && Kick.TryActivate(aimDirection, true);
+            aim = newAim;
+            if (context != null)
+            {
+                context.Aim = newAim;
+            }
+        }
+
+        /// <summary>For entities spawned in code (summons): set before the object activates.</summary>
+        public void SetWorld(ModuleWorld newWorld)
+        {
+            world = newWorld;
+        }
+
+        public bool TryKick(ModuleAim aim)
+        {
+            return isActiveAndEnabled && Kick != null && Kick.TryActivate(aim, true);
         }
 
         /// <summary>Uses an active or gear active in its slot (Power 1-4, Gear 1-4).</summary>
-        public bool TryActivateSlot(SlotType type, int index, Vector3 aimDirection)
+        public bool TryActivateSlot(SlotType type, int index, ModuleAim aim)
         {
             ModuleBehaviour module = GetSlotted(type, index);
             return isActiveAndEnabled && module != null && module.Activation != null
-                && module.TryActivate(aimDirection, IsSlotUsable(type, index));
+                && module.TryActivate(aim, IsSlotUsable(type, index));
         }
 
         private void Awake()
@@ -119,8 +139,9 @@ namespace Zenthium.Modules
         {
             Teardown();
             entity = newEntity;
-            var context = new ModuleContext(entityBehaviour, entity, world, body,
-                GetComponent<EntityMotor>(), meleeArcHalfAngle);
+            context = new ModuleContext(entityBehaviour, entity, world, body,
+                GetComponent<EntityMotor>(), meleeArcHalfAngle) { Aim = aim };
+            world.Register(entity, entityBehaviour);
 
             if (world.Database.Modules.TryGet(DataIds.Modules.Kick, out ModuleData kickData))
             {
@@ -148,9 +169,9 @@ namespace Zenthium.Modules
             RefreshEnabled();
         }
 
-        private ModuleBehaviour Create(ModuleData data, ModuleContext context)
+        private ModuleBehaviour Create(ModuleData data, ModuleContext moduleContext)
         {
-            if (!ModuleCatalog.TryCreate(data, out ModuleBehaviour module, out string problem))
+            if (!ModuleCatalog.TryCreate(data, world.Database, out ModuleBehaviour module, out string problem))
             {
                 // Once per module: kits include modules built in later milestones.
                 if (reportedGaps.Add(data.Id))
@@ -161,7 +182,7 @@ namespace Zenthium.Modules
                 return null;
             }
 
-            module.Attach(context);
+            module.Attach(moduleContext);
             all.Add(module);
             return module;
         }
@@ -190,6 +211,11 @@ namespace Zenthium.Modules
         {
             if (entity != null)
             {
+                if (world != null)
+                {
+                    world.Unregister(entity);
+                }
+
                 entity.OnDamaged -= ForwardDamageTaken;
                 entity.OnHitDealt -= ForwardHitDealt;
                 entity.OnDefianceProc -= ForwardDefianceProc;
@@ -206,6 +232,7 @@ namespace Zenthium.Modules
             slotted = new ModuleBehaviour[0];
             Kick = null;
             entity = null;
+            context = null;
         }
 
         private void ForwardDamageTaken(DamageEvent damage)

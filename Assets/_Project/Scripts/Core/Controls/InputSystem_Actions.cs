@@ -631,7 +631,7 @@ namespace Zenthium.Core.Controls
                 {
                     ""name"": """",
                     ""id"": ""7a8fbdde-0be7-47f3-9e16-267341754586"",
-                    ""path"": ""<Keyboard>/leftCtrl"",
+                    ""path"": ""<Keyboard>/v"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",

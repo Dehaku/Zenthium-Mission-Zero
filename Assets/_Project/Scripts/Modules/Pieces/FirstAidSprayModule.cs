@@ -26,7 +26,7 @@ namespace Zenthium.Modules
             this.healFraction = healFraction;
         }
 
-        public override bool TryActivate(Vector3 aimDirection, bool slotUsable)
+        public override bool TryActivate(ModuleAim aim, bool slotUsable)
         {
             if (Context != null && IsEnabled && slotUsable && !Owner.IsIncapacitated && Owner.Statuses.CanAct)
             {
@@ -37,7 +37,7 @@ namespace Zenthium.Modules
                 }
             }
 
-            return base.TryActivate(aimDirection, slotUsable);
+            return base.TryActivate(aim, slotUsable);
         }
 
         public override void DescribeEffects(StringBuilder text)
@@ -47,7 +47,7 @@ namespace Zenthium.Modules
                 .Append("Next to a downed citizen: revives them, free, no cooldown\n");
         }
 
-        protected override void Activate(Vector3 aimDirection)
+        protected override void Activate(ModuleAim aim)
         {
             Owner.Heal(Owner.Health.Max * healFraction);
         }

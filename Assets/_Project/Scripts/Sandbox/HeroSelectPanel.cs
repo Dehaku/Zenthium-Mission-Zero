@@ -115,7 +115,7 @@ namespace Zenthium.Sandbox
             var options = new List<string> { NoTestModule };
             foreach (ModuleData module in database.Modules.Entries)
             {
-                if (module.TryGetSlotType(out _) && ModuleCatalog.TryCreate(module, out _, out _))
+                if (module.TryGetSlotType(out _) && ModuleCatalog.TryCreate(module, database, out _, out _))
                 {
                     testModules.Add(module);
                     options.Add(module.Id);

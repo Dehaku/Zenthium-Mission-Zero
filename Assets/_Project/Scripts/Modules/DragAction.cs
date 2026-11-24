@@ -32,6 +32,16 @@ namespace Zenthium.Modules
         private DragRules rules;
         private float reach;
 
+        public int CarriedCount => carried.Count;
+
+        /// <summary>Lets go of everything and lists what was carried, such as for Power Throw.</summary>
+        public void ReleaseAll(List<IDragTarget> released)
+        {
+            released.Clear();
+            released.AddRange(carried);
+            ReleaseAll();
+        }
+
         /// <summary>Grabs the best target in reach if there's room; otherwise lets go of everything.</summary>
         public void Use()
         {

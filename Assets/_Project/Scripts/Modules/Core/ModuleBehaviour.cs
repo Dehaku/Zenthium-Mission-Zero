@@ -33,19 +33,19 @@ namespace Zenthium.Modules
 
         protected Entity Owner => Context.Owner;
 
-        /// <param name="aimDirection">The user's aim on the XZ plane.</param>
+        /// <param name="aim">The user's aim on the XZ plane, and how far away the aimed point is.</param>
         /// <param name="slotUsable">False if its slot is locked, disabled or Silenced. Base actions pass true.</param>
         /// <returns>True if it was used.</returns>
-        public virtual bool TryActivate(Vector3 aimDirection, bool slotUsable)
+        public virtual bool TryActivate(ModuleAim aim, bool slotUsable)
         {
             if (Activation == null || Context == null || !IsEnabled
-                || Activation.Check(Owner, slotUsable) != ActivationBlock.None || !CanActivateNow(aimDirection))
+                || Activation.Check(Owner, slotUsable) != ActivationBlock.None || !CanActivateNow(aim))
             {
                 return false;
             }
 
             Activation.TryBegin(Owner, slotUsable);
-            Activate(aimDirection);
+            Activate(aim);
             return true;
         }
 
@@ -84,13 +84,13 @@ namespace Zenthium.Modules
         }
 
         /// <summary>Checks that only this module makes, such as needing a target in reach. Nothing is spent yet.</summary>
-        protected virtual bool CanActivateNow(Vector3 aimDirection)
+        protected virtual bool CanActivateNow(ModuleAim aim)
         {
             return true;
         }
 
         /// <summary>The module's effect, after the cost is spent and the cooldown started.</summary>
-        protected virtual void Activate(Vector3 aimDirection)
+        protected virtual void Activate(ModuleAim aim)
         {
         }
 

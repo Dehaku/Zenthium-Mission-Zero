@@ -8,9 +8,9 @@ using Zenthium.Statuses;
 namespace Zenthium.Sandbox
 {
     /// <summary>
-    /// A small in-world label over an entity for sandbox scenes: its team, HP, whether it's Incapacitated,
-    /// dragged or Invulnerable, and its statuses (hidden markers included). Test tool only; the real HUD comes in
-    /// Milestone 10.
+    /// A small in-world label over an entity for sandbox scenes: its team, HP, whether it's Incapacitated or
+    /// captured, dragged or Invulnerable, and its statuses (hidden markers included). Test tool only; the real HUD
+    /// comes in Milestone 10.
     /// </summary>
     public sealed class EntityDebugLabel : MonoBehaviour
     {
@@ -64,6 +64,7 @@ namespace Zenthium.Sandbox
             entity = newEntity;
             entity.Health.OnHealthChanged += MarkDirty;
             entity.Statuses.OnStatusesChanged += MarkStatusesDirty;
+            entity.OnCaptured += MarkStatusesDirty;
             isDirty = true;
         }
 
@@ -73,6 +74,7 @@ namespace Zenthium.Sandbox
             {
                 entity.Health.OnHealthChanged -= MarkDirty;
                 entity.Statuses.OnStatusesChanged -= MarkStatusesDirty;
+                entity.OnCaptured -= MarkStatusesDirty;
                 entity = null;
             }
         }
@@ -101,7 +103,7 @@ namespace Zenthium.Sandbox
                 .Append(" / ").Append(Mathf.CeilToInt(entity.Health.Max));
             if (entity.IsIncapacitated)
             {
-                text.Append("\nIncapacitated");
+                text.Append(entity.IsCaptured ? "\nCaptured" : "\nIncapacitated");
             }
 
             if (shownDragged)

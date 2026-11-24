@@ -54,6 +54,8 @@ namespace Zenthium.Movement
 
         public bool IsDashing => dash.IsActive;
 
+        public bool IsKnockedBack => knockback.IsActive;
+
         /// <param name="input">Screen-space direction: x is world X, y is world Z. Longer than 1 is clamped.</param>
         public void SetMoveInput(Vector2 input)
         {

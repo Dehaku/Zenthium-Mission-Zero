@@ -34,6 +34,9 @@ namespace Zenthium.Modules
         /// <summary>Degrees either side of the aim that melee modules reach (a feel value).</summary>
         public float MeleeArcHalfAngle { get; }
 
+        /// <summary>The user's current aim, for effects that follow it, such as a shield in front of you.</summary>
+        public ModuleAim Aim { get; internal set; } = new ModuleAim(Vector3.forward);
+
         public Vector3 Position => Body.position;
         public IRandomSource Random => World.Random;
     }

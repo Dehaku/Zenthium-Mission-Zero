@@ -614,3 +614,128 @@ The sandbox was hard to test without knowing the powers, cooldowns and controls,
 ### Third run (2026-11-24)
 - Items 7, 9 and 11 passed.
 - **Evac Balloon (asked by the user):** a shrinking body reads as moving away from an overhead camera, so it now grows to 2x as it rises toward the camera (`extractionEndScale`, a feel value from 1 to 5 on Module World). The scene saved the old 0.2, so rebuild `Sandbox_Modules` or set **Extraction End Scale** to 2 on Module World.
+- The user checked the rest; Milestone 4a was committed as `8f9e835`.
+
+---
+
+## Milestone 4b: Modules and statuses, Major Overclock and Rune (implemented, not yet checked, 2026-11-24)
+
+### Done
+- **No data, package or assembly changes.** Every number comes from the existing rows of `modules.csv` and `entities.csv`.
+- **Shared parts:**
+  - **`ModuleAim`:** an aim direction plus how far away the aimed point is. It replaces the plain direction in every module's activation (`TryActivate`, `CanActivateNow`, `Activate`, `EntityModules.TryKick` and `TryActivateSlot`). `PlacementPoint` clamps a placed module to its range.
+    - `PlayerAim.PointDistance` gives the mouse's distance on the ground; the stick has none, so placed modules use their full range.
+    - `EntityModules.SetAim` keeps the live aim on the module context for effects that follow it (shields). The player sets it every frame.
+  - **Summons:**
+    - `Entity.Summoner` (through `EntitySetup.Summoner`).
+    - `EntityBehaviour.ConfigureSummon` sets a spawned body up before it activates.
+    - `ModuleWorld.SpawnSummon` builds the body under an inactive holder, then activates it. A player's summons are allies.
+    - `PlaceholderSummonBrain`, until Milestone 6: chase the nearest opponent within 15 m, use the first active slot in reach, otherwise follow the summoner within 10 m (feel values).
+  - **Module World:**
+    - An entity lookup (`TryGetBehaviour`), registered by `EntityModules`.
+    - Spawning glyphs, smoke clouds, charges, shields and summons.
+    - Active shields, which projectiles check.
+    - A brief beam visual.
+  - **Defiance:** `AddChanceBonus` / `RemoveChanceBonus`, added to the chance from Will.
+  - **`HitEffects`:**
+    - Can scale damage with the summoner's stat (Ink Lash).
+    - Adds `SpellDamageBonus`: equipped modules' `magic_hit_damage`, on the user's Magic hits and on all its summons' hits, into the same hit.
+  - **Other helpers:**
+    - `Opponents`: player and allies against enemies and neutrals; civilians on neither side.
+    - `SweepHit`: shared by projectiles and beams.
+    - `EntityMotor.IsKnockedBack`.
+    - `DragAction.CarriedCount` and `ReleaseAll(list)`.
+    - `IBreachable`, a stub for Milestone 5's walls and doors.
+- **Major Overclock:**
+  - **Taunt** (`TauntModule`): enemies within vision range (100 m) and line of sight (walls block, entities don't) get Taunted and Marked for `duration_s`, with one Will resist roll for both. For that time the user takes `self_damage_reduction` less, and anyone who hits them is knocked back with Taunt's tier (Normal).
+  - **Shockwave Stomp:** an area damage strike.
+  - **Power Throw** (`PowerThrowModule`): releases everything dragged, starts it 1.2 m in front, and throws it the range tier (15 m) as a swept knockback. No damage until props.
+  - **Energy Shield and Barrier Shield** (`ShieldModule`, `ShieldZone`): a crescent following the aim for the duration tier, with a 1.5 m reach (feel value). It stops projectiles from anyone who could hurt the user and pushes opponents in its arc with the knockback tier.
+  - **High-Capacity Battery, Immovable:** data only.
+  - **Reactive Plating:** a layer of +`armor_per_hit` Armor per hit that lands, up to `armor_max`, through the Intensity status.
+  - **Overclocked:** +`damage` dealt while Charge is at least `charge_above` of its max.
+  - **Repulsor Blast** (`BeamModule`): an instant beam with a 0.25 m sweep radius, to the first entity the user can hurt or a wall.
+  - **Breaching Charge** (`BreachingChargeModule`, `TimedCharge`): placed up to its range ahead. Its fuse runs on game time, then it hits everything in the radius and calls `IBreachable` on anything it finds.
+  - **Stasis Cuffs:** `ExtractionModule`, enemies only. `EvacBalloonModule` was renamed `ExtractionModule` (`.meta` moved) and handles both.
+- **Rune:**
+  - **Ink Beast** (`SummonModule`): 1 + `extra_beasts` summons of the Ink Beast entity, attacking with `summon_attack` (Ink Lash), for `summon_lifetime_s`. A recast replaces the ones out.
+  - **Ink Lash:** a melee strike using the summoner's Will.
+  - **Glyph Trap** (`GlyphTrapModule`, `PlacedGlyph`): at the aim point, up to its range; roots every opponent inside when the first steps in, then disappears. One at a time.
+  - **Smoke Bomb** (`SmokeBombModule`, `SmokeCloud`): a cloud at the aim point. It stuns opponents while inside (the "while inside" status), with one Toughness resist roll each on entering.
+  - **Deathly Rage:** the Defiance bonus while equipped; on a proc, the Deathly Rage status with Strength and Toughness x3.
+  - **Second Wind, Fresh Ink:** `HealOnTriggerPassive`.
+  - **Living Ink, Force Spell Tome:** data only, read by Ink Beast and `HitEffects`.
+  - Speed Punch, Padded Suit and First Aid Spray were already built in 4a.
+- **The catalog** (`ModuleCatalog.TryCreate`) now takes the database (for the summon's entity), and each module is one line calling a builder.
+- **Editor:**
+  - `ModulePrefabBuilder` builds the module prefabs in `Prefabs/Modules/` and flat-colored materials in `Prefabs/Materials/`: Summon, Glyph, SmokeCloud, Charge (red circle + countdown via `Sandbox/ChargeView`), Shield, BeamVisual. Visuals have no colliders. `TryBuildRoom` wires them to Module World.
+  - In `Sandbox_Modules` the combat debug panel now inspects and hits the player, with the turret as attacker (`CombatSandboxSceneCreator.BindDebugPanel`), so Defiance, Taunt and Armor can be tested on yourself.
+- **Checklist:** `MilestoneChecklist.txt` holds 4b's tests.
+- **Tests (EditMode):**
+  - New `ModuleRulesTests`: placement point, summon count, spell damage bonus, Overclocked's threshold.
+  - New case in `DefianceTests`: a full chance bonus guarantees one proc, then the roll stack cancels it.
+
+### Decisions (approved by the user)
+- Only Ink Lash uses its summoner's stat, for now.
+- Force Spell Tome's +15 goes into the same hit, on the user's Magic hits and all its summons' hits.
+- Smoke Bomb rolls each enemy's resist once, on entering.
+- The shield's reach is a feel value on the shield prefab.
+- Taunt uses the 100 m vision range with line of sight, and one Will roll for both statuses.
+- Power Throw throws everything dragged.
+- Breaching Charge follows the user's friendly fire rules.
+- An Ink Beast recast replaces the beasts already out.
+
+### Choices made in code (not asked)
+- **Which side is the enemy:**
+  - Area and sight modules (Taunt, Glyph, Smoke, the shield push, the summon brain) target `Opponents`: the other side, never civilians.
+  - Damage still follows friendly fire.
+- **Taunt's push on attackers:** goes through `KnockbackResolver`, so KnockbackResistant attackers stay put.
+- **Placed modules** (Glyph Trap, Smoke Bomb, Breaching Charge): land at the mouse's point on the ground plane at the user's height, clamped to their range.
+- **Breaching Charge:** goes 2 m ahead (its Melee range), or nearer if the mouse is nearer.
+- **Summons:** spawn in a ring 1.5 m around the user. Their lifetime runs on the summoner's game time. They're removed when the module is unequipped or the user is reset.
+- **Fresh Ink:** counts opponents only.
+
+### Stubs
+- `IBreachable`: nothing implements it until Milestone 5.
+- `PlaceholderSummonBrain`: replaced by Milestone 6's AI.
+- Taunted: applied, but only AI reads it (Milestone 6).
+- Smoke Bomb's line-of-sight block and awareness reset: Milestone 6.
+- Power Throw's damage and prop size limits: Milestone 5.
+
+### Editor steps for the user
+1. **Let Unity compile.** If the Console says a type is missing although its file exists, tell Claude.
+2. **Run Zenthium > Setup > Create Modules Sandbox Scene** and choose Replace. It now also builds `Prefabs/Modules/` and `Prefabs/Materials/`.
+3. **Press Play in `Sandbox_Modules`** and work through the checklist (Caps Lock).
+
+### What to check
+- [ ] The Console has no errors after compiling and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`Entity`, `Defiance`, `HitEffects`, the module signatures). New: `ModuleRulesTests`; changed: `DefianceTests`.
+- [ ] Every item on the in-game checklist: 8 for Major Overclock, 7 for Rune.
+
+### First run (2026-11-24)
+- All 15 checklist items passed. 254 EditMode tests passed, and the log shows no errors.
+- **Stasis Cuffs** floated its target away like Evac Balloon. The user decided it captures in place instead.
+
+### Captured state (the user's design decision, 2026-11-24)
+- **The rule:** Stasis Cuffs gives a downed enemy a permanent **Captured** state. It lies where it is, and nothing affects it any more: it can't be hurt, knocked back, dragged, revived or given statuses, and its statuses end.
+  - Like other local design decisions, it isn't in `statuses.md` yet. It can be added there, or pushed to the design branch, when you like.
+- **Code:**
+  - `Entity.Capture()`, `IsCaptured` and `OnCaptured`. Only an Incapacitated entity can be captured, so captured entities also take no damage (the pipeline already refuses Incapacitated targets).
+  - `StatusEffects` refuses new statuses on captured entities; `ClearAll` ends the existing ones.
+  - `Entity.Revive`, `KnockbackResolver` and `EntityDragTarget` refuse captured entities. A carrier lets go when its target is captured.
+  - `ModuleWorld.Capture`. The extraction event is renamed `OnRescuedOrCaptured`, and Milestone 9 counts it.
+  - `ExtractionModule` takes an `ExtractionMode`: Evac Balloon floats a citizen or enemy away; Stasis Cuffs captures in place. Neither picks a captured target.
+  - The debug label shows "Captured".
+- **Tests:** new `CaptureTests`: only Incapacitated entities can be captured; capture ends statuses; no new statuses, revive or knockback afterwards. The knockback case would fail without the fix.
+- **Checklist:** item 8 is updated.
+- **Later milestones:** Milestone 6's AI and Milestone 9's mission goals must treat captured entities as out of play.
+
+### Editor steps
+1. Let Unity compile, then press Play in `Sandbox_Modules` (no rebuild needed).
+2. Run the whole EditMode suite; the new class is `CaptureTests`.
+
+### Friendly fire on V (asked by the user, 2026-11-24)
+- **Why:** in the Editor, Left Ctrl with 1-4 opens Editor windows, so friendly fire couldn't be held while using gear.
+- **Change:** the keyboard binding moved to **V** in `InputSystem_Actions.inputactions`, and in the JSON embedded in the generated `InputSystem_Actions.cs`. The gamepad stays on B. The sandbox HUD reads the new key from the asset.
+- `controls.md` still says Left Ctrl. Decide whether V stays for good (and update the doc), or goes back to Left Ctrl for builds, where the Editor shortcuts don't apply.
+- The user checked the Captured state in play.

@@ -18,15 +18,15 @@ namespace Zenthium.Modules
         {
         }
 
-        protected override bool CanActivateNow(Vector3 aimDirection)
+        protected override bool CanActivateNow(ModuleAim aim)
         {
             return Context.Motor != null && !Context.Motor.IsDashing && Owner.Statuses.CanMove
-                && aimDirection.sqrMagnitude > 0f;
+                && aim.Direction.sqrMagnitude > 0f;
         }
 
-        protected override void Activate(Vector3 aimDirection)
+        protected override void Activate(ModuleAim aim)
         {
-            if (!Context.Motor.TryDash(aimDirection, Data.RangeTier.Value))
+            if (!Context.Motor.TryDash(aim.Direction, Data.RangeTier.Value))
             {
                 return;
             }

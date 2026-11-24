@@ -42,7 +42,7 @@ namespace Zenthium.Modules
                 .Append(" real s; you keep full speed\n");
         }
 
-        protected override void Activate(Vector3 aimDirection)
+        protected override void Activate(ModuleAim aim)
         {
             Context.World.Clock.TimePowers.Start(scale, realSeconds);
         }

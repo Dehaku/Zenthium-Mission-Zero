@@ -43,6 +43,9 @@ namespace Zenthium.Entities
 
         public List<EntityTag> Tags { get; } = new List<EntityTag>();
 
+        /// <summary>The entity that summoned this one, such as Rune for an Ink Beast; null for everyone else.</summary>
+        public Entity Summoner { get; set; }
+
         /// <summary>A preset hero: its own stats, no rank scaling, and its fixed kit in slot order.</summary>
         /// <param name="unlockedSlotsPerType">Usually the preset's starting unlocks (<c>preset_slots_unlocked</c>).</param>
         public static EntitySetup ForHero(HeroData hero, Team team, int unlockedSlotsPerType)

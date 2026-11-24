@@ -1,34 +1,33 @@
-<b>Milestone 4a: what to test</b>   (Caps Lock hides this. Buttons are on the HUD, bottom left.)
+<b>Milestone 4b: what to test</b>   (Caps Lock hides this. Buttons are on the HUD, bottom left.)
+Hero select (top right): pick the hero, Unlocked slots 4, Apply. Dummies have 100 HP and 5 Armor.
+The debug panel (top left) now shows and hits <b>you</b>: untick "From attacker" to hit yourself.
 
-<b>Setup</b> (hero select, top right): Rush Hour, Unlocked slots 4, Apply.
+<b>Major Overclock</b> (Charge starts full, so Overclocked's +50% is on until Charge drops below 196)
+1. Power 1, Taunt: dummies in sight show Taunted and Marked for 4 s (about half resist). While it lasts,
+   the turret is knocked back 4 m each time its Kick hits you (stand next to it, top right corner).
+   Damage cut: set Unlocked slots 1, Apply (Armor 10). Panel Hit 100: 90 normally, 45 while taunting.
+2. Power 2, Shockwave Stomp: dummies within 6 m take 85 (55 without Overclocked) and fly 8 m.
+3. Power 3, Power Throw: drag a downed dummy (F), then Power 3: it flies 15 m along your aim.
+4. Power 4, Energy Shield: a blue bar in front of your aim for 3 s (30 Charge). Turret shots stop at it;
+   dummies it touches are pushed 4 m.
+5. Passives: Charge 245 (+6/s) on the HUD. The turret's Kick never pushes you (Immovable). Each hit adds 5
+   Armor, up to 50 (label: ReactivePlating; panel: Armor).
+6. Gear 1, Repulsor Blast: a yellow beam along your aim (15 Charge); the first dummy within 15 m takes 70
+   (45 without Overclocked) and flies 4 m. A wall stops the beam.
+7. Gear 3, Breaching Charge: a charge 2 m ahead, a red circle 15 m wide and a 5 s countdown; then every
+   dummy in it is defeated (300) and flies 8 m. It never hurts you. Time Stop (test module) holds the countdown.
+8. Gear 4, Stasis Cuffs: next to a downed dummy, it's captured where it lies (label: Captured). After that
+   nothing touches it: Kicks don't move it, Drag (F) skips it, and Shockwave Stomp doesn't move it either.
 
-<b>Actives</b>
-1. Power 1, Speed Punch: a dummy takes 45 (50 minus its 5 Armor), no knockback, 1 s cooldown.
-2. Power 4, Uppercut: same damage, the dummy flies 15 m, costs 15 Stamina.
-3. Power 2, Dash: 8 m along your aim, stops at walls; turret shots can't hurt you mid-dash.
-4. Power 3, Time Slow: 10 s of half speed for dummies, turret and shots, not for you. 30 s cooldown.
-5. Time Stop: pick it as the test module, Apply, use Power 4. Shots freeze in the air and you can walk
-   through them; frozen dummies still take Kick damage and fly when time resumes.
-
-<b>Passives</b>
-6. Sprinter: Sprint is +100% instead of +50%; Stamina 140 with +11/s regen (HUD).
-7. Weather the Storm: set Unlocked slots 2 (Padded Suit's 30 Armor would hide the damage), Apply.
-   Stand next to the turret (top right corner) so it Kicks you: each hit costs 5 Stamina, does 19 instead
-   of 25, and doesn't push you. With Unlocked slots 1 (no Weather the Storm), its Kick pushes you 4 m.
-8. Express Delivery: drag the defeated civilian (bottom left corner) and one defeated dummy at once.
-9. Charming: the three dummies start within 8 m of you, so they're Charmed at once. Walk up to the
-   turret: it becomes Charmed when you get within 8 m. Each goon rolls once (5% convert), but conversion
-   does nothing visible until Milestone 6, so only the Charmed mark shows.
-
-<b>Gear</b>
-10. Gear 1, First Aid Spray: heals 25% max HP, 20 s cooldown. Next to the downed civilian: revives it, free.
-11. Gear 2, Evac Balloon: next to a downed dummy or civilian, it grows as it rises toward the camera,
-    then vanishes.
-12. Gear 3, Padded Suit: Armor +30, so turret shots do 1 (the 5% minimum) instead of 10 with Unlocked slots 1.
-13. Gear 4, Megaphone: dummies within 10 m are Stunned 3 s (label), or resist about half the time.
-
-<b>Other</b>
-14. Unlocked slots 1, Apply: only Speed Punch, Sprinter and First Aid Spray are usable.
-15. The turret fires every 2 s wherever you are; each shot flies 15 m (Energy Blaster's range), half the
-    room, then disappears. Shots never push you: Energy Blaster has no knockback.
-16. Major Overclock and Rune: most modules say "not built yet". That's Milestone 4b.
+<b>Rune</b>
+9. Power 1, Ink Beast: 2 beasts (Living Ink) for 20 s. They chase dummies within 15 m and lash them for 35
+   each (25 from your Will 20, +15 Force Spell Tome, minus 5 Armor); with no dummy near, they follow you.
+10. Power 2, Glyph Trap: a purple disc at the mouse, up to 15 m. Place it under a dummy: dummies within 3 m
+    are Rooted 3 s (a third resist), then it's gone. A new cast replaces an untriggered one.
+11. Power 4, Shockwave Stomp: 95 to dummies within 6 m (Strength 20).
+12. Deathly Rage and Second Wind: panel Hit 10000 with "From attacker" off. Defiance procs (102%); you get
+    Deathly Rage (label; panel: Strength 60, max HP 300), and Second Wind heals you to 300.
+13. Fresh Ink: defeating a dummy with your own hit heals 5 HP.
+14. Gear 3, Smoke Bomb: a grey cloud at the mouse, up to 8 m, for 5 s. Dummies inside are Stunned while in
+    it (about half resist); you aren't.
+15. Hold MoreInfo: every module of both heroes is listed, none "not built yet".

@@ -6,10 +6,10 @@ using Zenthium.Movement;
 namespace Zenthium.Modules
 {
     /// <summary>
-    /// Lets Drag grab this entity while it's Incapacitated, whatever its team (modules.md, Drag row), and lets go if
-    /// it gets back up. A civilian counts as a citizen, which Drag picks first; grabbing citizens who are still on
-    /// their feet comes in Milestone 6. While dragged, the entity can't be hurt or knocked back, and its motor
-    /// follows the carrier.
+    /// Lets Drag grab this entity while it's Incapacitated and not captured, whatever its team (modules.md, Drag
+    /// row), and lets go if it gets back up or is captured. A civilian counts as a citizen, which Drag picks first;
+    /// grabbing citizens who are still on their feet comes in Milestone 6. While dragged, the entity can't be hurt
+    /// or knocked back, and its motor follows the carrier.
     /// </summary>
     [RequireComponent(typeof(EntityBehaviour), typeof(EntityMotor), typeof(Rigidbody))]
     public sealed class EntityDragTarget : MonoBehaviour, IDragTarget
@@ -31,7 +31,7 @@ namespace Zenthium.Modules
         public bool CanBeGrabbedBy(Entity carrier)
         {
             return isActiveAndEnabled && entity != null && carrier != null && carrier != entity
-                && entity.IsIncapacitated && !entity.IsBeingDragged;
+                && entity.IsIncapacitated && !entity.IsCaptured && !entity.IsBeingDragged;
         }
 
         public void BeginDrag(Entity carrier)
@@ -86,6 +86,7 @@ namespace Zenthium.Modules
             Unbind();
             entity = newEntity;
             entity.OnRevived += BreakDragIfDragged;
+            entity.OnCaptured += BreakDragIfDragged;
         }
 
         private void Unbind()
@@ -93,6 +94,7 @@ namespace Zenthium.Modules
             if (entity != null)
             {
                 entity.OnRevived -= BreakDragIfDragged;
+                entity.OnCaptured -= BreakDragIfDragged;
                 entity = null;
             }
         }

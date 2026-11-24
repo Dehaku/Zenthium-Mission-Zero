@@ -23,12 +23,15 @@ namespace Zenthium.Modules
         private readonly DamageType damageType;
         private readonly StatusType? status;
         private readonly float statusSeconds;
+        private readonly bool usesSummonerStats;
 
         /// <param name="damage">Null for modules that deal no damage, such as Megaphone.</param>
         /// <param name="status">A status applied when the hit lands; resisted by the module's Resist tag.</param>
+        /// <param name="usesSummonerStats">A summon's attack that scales with its summoner's stat (Ink Lash).</param>
         public HitEffects(ModuleData module, StatFormula damage, DamageType damageType, StatusType? status = null,
-            float statusSeconds = 0f)
+            float statusSeconds = 0f, bool usesSummonerStats = false)
         {
+            this.usesSummonerStats = usesSummonerStats;
             this.module = module;
             this.damage = damage;
             this.damageType = damageType;
@@ -51,7 +54,8 @@ namespace Zenthium.Modules
             DamageEvent result;
             if (damage != null)
             {
-                float amount = damage.Damage(user, context.World.Database.Formulas);
+                float amount = damage.Damage(StatOwner(user), context.World.Database.Formulas)
+                    + SpellDamageBonus.For(user, damageType);
                 result = rules.Pipeline.Apply(new Hit(user, amount, damageType), victim);
             }
             else if (!victim.IsIncapacitated && !victim.IsBeingDragged && rules.FriendlyFire.CanHurt(user, victim))
@@ -83,8 +87,14 @@ namespace Zenthium.Modules
         {
             if (damage != null)
             {
-                damage.Describe(text, context.Owner, context.World.Database.FormulaConstants,
+                damage.Describe(text, StatOwner(context.Owner), context.World.Database.FormulaConstants,
                     context.World.Database.Formulas);
+                float spellBonus = SpellDamageBonus.For(context.Owner, damageType);
+                if (spellBonus > 0f)
+                {
+                    text.Append("+ ").Append(spellBonus.ToString(NumberFormat, CultureInfo.InvariantCulture))
+                        .Append(" from spell tomes\n");
+                }
             }
 
             if (module.KnockbackTier.IsSet)
@@ -105,6 +115,11 @@ namespace Zenthium.Modules
 
                 text.Append('\n');
             }
+        }
+
+        private Entity StatOwner(Entity user)
+        {
+            return usesSummonerStats && user.Summoner != null ? user.Summoner : user;
         }
 
         private void TryApplyStatus(ModuleContext context, Entity victim)

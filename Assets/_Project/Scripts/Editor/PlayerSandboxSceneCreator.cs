@@ -32,7 +32,7 @@ namespace Zenthium.Editor
         private const string ScenePath = "Assets/_Project/Scenes/Sandbox_Player.unity";
         private const string ProjectFolder = "Assets/_Project";
         private const string PrefabFolderName = "Prefabs";
-        private const string PrefabFolder = ProjectFolder + "/" + PrefabFolderName;
+        internal const string PrefabFolder = ProjectFolder + "/" + PrefabFolderName;
         private const string PlayerPrefabPath = PrefabFolder + "/Player.prefab";
         private const string DummyPrefabPath = PrefabFolder + "/TrainingDummy.prefab";
         private const string ProjectilePrefabPath = PrefabFolder + "/Projectile.prefab";
@@ -131,6 +131,7 @@ namespace Zenthium.Editor
             public CombatRulesBehaviour CombatRules;
             public ModuleWorld World;
             public EntityBehaviour Player;
+            public CombatDebugPanel DebugPanel;
             public GameObject DummyPrefab;
             public readonly List<EntityBehaviour> Dummies = new List<EntityBehaviour>();
         }
@@ -169,8 +170,8 @@ namespace Zenthium.Editor
             bool anyExists = File.Exists(scenePath) || File.Exists(PlayerPrefabPath) || File.Exists(DummyPrefabPath)
                 || File.Exists(ProjectilePrefabPath);
             if (anyExists && !EditorUtility.DisplayDialog($"{Path.GetFileNameWithoutExtension(scenePath)} already exists",
-                    $"Replace {scenePath} and the Player, TrainingDummy and Projectile prefabs with fresh ones? "
-                    + "Other sandbox scenes use the same prefabs.", "Replace", "Cancel"))
+                    $"Replace {scenePath}, the Player, TrainingDummy and Projectile prefabs and the module prefabs "
+                    + "with fresh ones? Other sandbox scenes use the same prefabs.", "Replace", "Cancel"))
             {
                 return false;
             }
@@ -217,6 +218,7 @@ namespace Zenthium.Editor
                 SetReference(so, WorldFields.Clock, built.Clock);
                 SetReference(so, WorldFields.ProjectilePrefab, projectilePrefab.GetComponent<Projectile>());
             });
+            ModulePrefabBuilder.BuildAndWire(built.World, database);
 
             built.Player = PlacePlayer(playerPrefab, built, camera);
             Wire(camera.GetComponent<OverheadCameraRig>(),
@@ -228,7 +230,8 @@ namespace Zenthium.Editor
             }
 
             CombatSandboxSceneCreator.CreateEventSystem();
-            CombatSandboxSceneCreator.CreateDebugPanel(database, built.CombatRules, built.Dummies[0], built.Player);
+            built.DebugPanel = CombatSandboxSceneCreator.CreateDebugPanel(
+                database, built.CombatRules, built.Dummies[0], built.Player);
             SandboxHudSetup.Create(built.Player.GetComponent<PlayerController>());
             room = built;
             return true;
@@ -290,7 +293,7 @@ namespace Zenthium.Editor
             return dummy;
         }
 
-        private static GameObject BuildEntityBody(
+        internal static GameObject BuildEntityBody(
             string objectName, GameDatabase database, HeroData hero, EntityData factionEntity, Team team)
         {
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -328,7 +331,7 @@ namespace Zenthium.Editor
             return projectile;
         }
 
-        private static GameObject SaveAsPrefab(GameObject built, string path)
+        internal static GameObject SaveAsPrefab(GameObject built, string path)
         {
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(built, path);
             Object.DestroyImmediate(built);

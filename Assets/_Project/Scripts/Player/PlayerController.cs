@@ -108,6 +108,7 @@ namespace Zenthium.Player
             InputSystem_Actions.PlayerActions player = actions.Player;
             motor.SetMoveInput(player.Move.ReadValue<Vector2>());
             aim.UpdateAim(player.AimPointer.ReadValue<Vector2>(), player.AimStick.ReadValue<Vector2>());
+            modules.SetAim(CurrentAim());
             SetFriendlyFireHeld(player.FriendlyFire.IsPressed());
             IsMoreInfoHeld = player.MoreInfo.IsPressed();
 
@@ -118,7 +119,7 @@ namespace Zenthium.Player
 
             if (player.Kick.WasPressedThisFrame())
             {
-                modules.TryKick(aim.Direction);
+                modules.TryKick(CurrentAim());
             }
 
             if (player.Drag.WasPressedThisFrame())
@@ -130,14 +131,19 @@ namespace Zenthium.Player
             {
                 if (powerButtons[i].WasPressedThisFrame())
                 {
-                    modules.TryActivateSlot(SlotType.Active, i, aim.Direction);
+                    modules.TryActivateSlot(SlotType.Active, i, CurrentAim());
                 }
 
                 if (gearButtons[i].WasPressedThisFrame())
                 {
-                    modules.TryActivateSlot(SlotType.Gear, i, aim.Direction);
+                    modules.TryActivateSlot(SlotType.Gear, i, CurrentAim());
                 }
             }
+        }
+
+        private ModuleAim CurrentAim()
+        {
+            return new ModuleAim(aim.Direction, aim.PointDistance);
         }
 
         private void Bind(Entity entity)

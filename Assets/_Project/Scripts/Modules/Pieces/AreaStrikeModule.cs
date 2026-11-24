@@ -25,7 +25,7 @@ namespace Zenthium.Modules
             effects.Describe(text, Context);
         }
 
-        protected override void Activate(Vector3 aimDirection)
+        protected override void Activate(ModuleAim aim)
         {
             Vector3 origin = Context.Position;
             Context.World.CollectEntities(origin, Data.RadiusTier.Value, reached);
@@ -33,7 +33,7 @@ namespace Zenthium.Modules
             {
                 if (target != Context.OwnerBehaviour && !target.Entity.IsBeingDragged)
                 {
-                    effects.ApplyTo(Context, target, MeleeStrikeModule.Away(origin, target, aimDirection));
+                    effects.ApplyTo(Context, target, MeleeStrikeModule.Away(origin, target, aim.Direction));
                 }
             }
         }

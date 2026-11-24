@@ -35,6 +35,7 @@ namespace Zenthium.Entities
             this.rules = rules ?? throw new ArgumentNullException(nameof(rules));
             this.random = random ?? throw new ArgumentNullException(nameof(random));
             Team = setup.Team;
+            Summoner = setup.Summoner;
             RankTier = setup.RankTier;
             tags = new HashSet<EntityTag>(setup.Tags);
             isLeader = setup.RankTier == Zenthium.Data.RankTier.Leader;
@@ -70,10 +71,16 @@ namespace Zenthium.Entities
         /// <summary>Back on its feet after being Incapacitated.</summary>
         public event Action OnRevived;
 
+        /// <summary>Captured where it lies (Stasis Cuffs).</summary>
+        public event Action OnCaptured;
+
         /// <summary>Defiance saved the entity at 1 HP.</summary>
         public event Action OnDefianceProc;
 
         public Team Team { get; }
+
+        /// <summary>The entity that summoned this one; null if it wasn't summoned.</summary>
+        public Entity Summoner { get; }
 
         /// <summary>Goon, Champion or Leader; null for heroes and civilians.</summary>
         public RankTier? RankTier { get; }
@@ -90,6 +97,9 @@ namespace Zenthium.Entities
         public StatusEffects Statuses { get; }
 
         public bool IsIncapacitated => Health.IsIncapacitated;
+
+        /// <summary>Captured where it lies; nothing affects it any more (see <see cref="Capture"/>).</summary>
+        public bool IsCaptured { get; private set; }
         public bool IsInvulnerable => Invulnerability.IsActive;
 
         /// <summary>Leaders and the player take half-length crowd control, and pulsed "while inside" crowd control.</summary>
@@ -167,11 +177,29 @@ namespace Zenthium.Entities
             return Health.Heal(amount);
         }
 
+        /// <summary>
+        /// Captures an Incapacitated entity where it lies (Stasis Cuffs): from now on it can't be hurt, knocked back,
+        /// dragged, revived or given statuses, and its statuses end. It stays on the map, captured.
+        /// </summary>
+        /// <returns>False if it isn't Incapacitated, or is already captured.</returns>
+        public bool Capture()
+        {
+            if (!IsIncapacitated || IsCaptured)
+            {
+                return false;
+            }
+
+            IsCaptured = true;
+            Statuses.ClearAll();
+            OnCaptured?.Invoke();
+            return true;
+        }
+
         /// <summary>Gets an Incapacitated entity back up with the given HP (at least 1).</summary>
-        /// <returns>False if it wasn't Incapacitated.</returns>
+        /// <returns>False if it wasn't Incapacitated, or is captured.</returns>
         public bool Revive(float hp)
         {
-            if (!Health.Revive(hp))
+            if (IsCaptured || !Health.Revive(hp))
             {
                 return false;
             }

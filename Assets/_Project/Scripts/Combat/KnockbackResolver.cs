@@ -13,6 +13,7 @@ namespace Zenthium.Combat
     /// can carry it into an exit zone (missions.md, Capture).</item>
     /// <item><see cref="ModuleTag.KnockbackResistant"/> and dragged targets never move.</item>
     /// <item>A hit whose knockback the target cancelled (Weather the Storm) doesn't move it.</item>
+    /// <item>Captured targets never move.</item>
     /// </list>
     /// </summary>
     public sealed class KnockbackResolver
@@ -32,7 +33,7 @@ namespace Zenthium.Combat
             distance = 0f;
             Entity target = hit.Target;
             if (!knockbackTier.IsSet || knockbackTier.Value <= 0f || target == null || hit.KnockbackPrevented
-                || target.HasModuleTag(ModuleTag.KnockbackResistant) || target.IsBeingDragged)
+                || target.IsCaptured || target.HasModuleTag(ModuleTag.KnockbackResistant) || target.IsBeingDragged)
             {
                 return false;
             }

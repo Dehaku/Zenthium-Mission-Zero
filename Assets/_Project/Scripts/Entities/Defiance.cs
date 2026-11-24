@@ -14,6 +14,7 @@ namespace Zenthium.Entities
         private readonly EntityStats stats;
         private readonly EntityConstants constants;
         private readonly bool isPlayer;
+        private readonly ModifierStack chanceBonuses = new ModifierStack();
 
         internal Defiance(EntityStats stats, EntityConstants constants, bool isPlayer)
         {
@@ -25,9 +26,24 @@ namespace Zenthium.Entities
         /// <summary>Defiance Roll stacks: one per proc this mission.</summary>
         public int RollStacks { get; private set; }
 
-        /// <summary>The proc chance after Defiance Roll stacks, as a fraction. Can exceed 1; never below 0.</summary>
+        /// <summary>
+        /// The proc chance from Will plus module bonuses (Deathly Rage), after Defiance Roll stacks, as a fraction.
+        /// Can exceed 1; never below 0.
+        /// </summary>
         public float ProcChance =>
-            Math.Max(0f, stats.Get(Stat.Will) * constants.DefianceChancePerWill - RollStacks * constants.DefianceRollCost);
+            Math.Max(0f, stats.Get(Stat.Will) * constants.DefianceChancePerWill + chanceBonuses.Sum()
+                - RollStacks * constants.DefianceRollCost);
+
+        /// <param name="fraction">Added to the proc chance: 1 is +100%, enough to guarantee one proc.</param>
+        public ModifierHandle AddChanceBonus(float fraction)
+        {
+            return chanceBonuses.Add(fraction);
+        }
+
+        public bool RemoveChanceBonus(ModifierHandle handle)
+        {
+            return chanceBonuses.Remove(handle);
+        }
 
         /// <summary>How long a proc makes the entity Invulnerable: longer for the player.</summary>
         public float InvulnerableSeconds =>

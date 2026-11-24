@@ -130,5 +130,18 @@ namespace Zenthium.Tests.EditMode
             Assert.That(entity.Defiance.RollStacks, Is.EqualTo(0));
             Assert.That(entity.Health.Current, Is.EqualTo(55f).Within(Tolerance));
         }
+
+        [Test]
+        public void ChanceBonus_OfFullChance_GuaranteesOneProc_ThenTheRollStackCancelsIt()
+        {
+            // Deathly Rage: defiance_chance_bonus=1.0, on an entity whose Will gives no chance.
+            Entity entity = CreateEntityWithNoDefiance(Team.Player);
+            entity.Defiance.AddChanceBonus(1f);
+
+            CombatTestSetup.CreatePipeline().Apply(CombatTestSetup.Environmental(LethalDamage), entity);
+
+            Assert.That(entity.Health.Current, Is.EqualTo(1f).Within(Tolerance), "The guaranteed proc");
+            Assert.That(entity.Defiance.ProcChance, Is.EqualTo(0f).Within(Tolerance), "The roll stack cancels the bonus");
+        }
     }
 }

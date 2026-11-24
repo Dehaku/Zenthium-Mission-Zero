@@ -202,7 +202,7 @@ namespace Zenthium.Editor
             eventSystem.AddComponent<InputSystemUIInputModule>();
         }
 
-        internal static void CreateDebugPanel(GameDatabase database, CombatRulesBehaviour combatRules,
+        internal static CombatDebugPanel CreateDebugPanel(GameDatabase database, CombatRulesBehaviour combatRules,
             EntityBehaviour dummy, EntityBehaviour attacker)
         {
             var canvasObject = new GameObject("Debug Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -287,6 +287,17 @@ namespace Zenthium.Editor
                 SetReference(so, PanelFields.AddReductionButton, addReductionButton);
                 SetReference(so, PanelFields.ClearModifiersButton, clearModifiersButton);
                 SetReference(so, PanelFields.ResetButton, resetButton);
+            });
+            return debugPanel;
+        }
+
+        /// <summary>Points the panel at another entity to inspect and hit, with another attacker for Kick.</summary>
+        internal static void BindDebugPanel(CombatDebugPanel panel, EntityBehaviour target, EntityBehaviour attacker)
+        {
+            Wire(panel, so =>
+            {
+                SetReference(so, PanelFields.Dummy, target);
+                SetReference(so, PanelFields.Attacker, attacker);
             });
         }
 

@@ -22,6 +22,12 @@ namespace Zenthium.Player
         /// <summary>A flat unit vector. Starts facing +Z, screen-up.</summary>
         public Vector3 Direction { get; private set; } = Vector3.forward;
 
+        /// <summary>
+        /// Meters from the player to the aimed ground point, for modules placed where you point. Positive infinity
+        /// while aiming with the stick, which has no point: such modules use their full range.
+        /// </summary>
+        public float PointDistance { get; private set; } = float.PositiveInfinity;
+
         /// <param name="pointerScreenPosition">The mouse position in screen pixels.</param>
         /// <param name="stick">The right stick, after the Input System's default deadzone.</param>
         public void UpdateAim(Vector2 pointerScreenPosition, Vector2 stick)
@@ -41,11 +47,13 @@ namespace Zenthium.Player
 
             if (isStickAiming)
             {
+                PointDistance = float.PositiveInfinity;
                 Turn(new Vector3(stick.x, 0f, stick.y));
             }
             else if (TryGetPointerDirection(pointerScreenPosition, out Vector3 toPointer))
             {
                 // Recomputed every frame, since the player moves under a still mouse.
+                PointDistance = toPointer.magnitude;
                 Turn(toPointer);
             }
         }

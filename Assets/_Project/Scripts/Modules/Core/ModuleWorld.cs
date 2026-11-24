@@ -19,8 +19,9 @@ namespace Zenthium.Modules
     }
 
     /// <summary>
-    /// The scene services module behaviors use: game data, combat rules, the clock, entity queries, spawning
-    /// projectiles, and taking entities off the map (Evac Balloon). One per scene; entities reference it.
+    /// The scene services module behaviors use: game data, combat rules, the clock, entity queries and lookup,
+    /// spawning projectiles, placed objects and summons, shields, and taking entities off the map (Evac Balloon).
+    /// One per scene; entities reference it.
     /// </summary>
     public sealed class ModuleWorld : MonoBehaviour
     {
@@ -30,6 +31,20 @@ namespace Zenthium.Modules
         [SerializeField] private CombatRulesBehaviour combatRules;
         [SerializeField] private GameClockDriver clock;
         [SerializeField] private Projectile projectilePrefab;
+
+        [Tooltip("The body for summons (Ink Beast). Its entity, team and modules are set when it's spawned.")]
+        [SerializeField] private EntityBehaviour summonPrefab;
+
+        [SerializeField] private PlacedGlyph glyphPrefab;
+        [SerializeField] private SmokeCloud smokePrefab;
+        [SerializeField] private TimedCharge chargePrefab;
+        [SerializeField] private ShieldZone shieldPrefab;
+
+        [Tooltip("A thin bar shown briefly along a beam (Repulsor Blast). Presentation only.")]
+        [SerializeField] private GameObject beamVisualPrefab;
+
+        [Tooltip("Seconds a beam's bar stays visible.")]
+        [SerializeField, Min(0.01f)] private float beamVisualSeconds = 0.15f;
 
         [Tooltip("Meters per second an extracted entity floats up before it leaves the map.")]
         [SerializeField, Min(0.1f)] private float extractionRiseSpeed = 3f;
@@ -43,11 +58,15 @@ namespace Zenthium.Modules
 
         private readonly Collider[] overlapHits = new Collider[MaxOverlapHits];
         private readonly IRandomSource random = new UnityRandomSource();
+        private readonly Dictionary<Entity, EntityBehaviour> behaviours = new Dictionary<Entity, EntityBehaviour>();
+        private readonly List<ShieldZone> shields = new List<ShieldZone>();
+        private Transform spawnHolder;
 
         /// <summary>
-        /// An entity was rescued or captured. Milestone 9's mission goals count these; until then nothing listens.
+        /// An entity was rescued or captured, floated away or captured where it lies. Milestone 9's mission goals
+        /// count these; until then nothing listens.
         /// </summary>
-        public event Action<EntityBehaviour, ExtractionKind> OnExtracted;
+        public event Action<EntityBehaviour, ExtractionKind> OnRescuedOrCaptured;
 
         public GameDatabase Database => database;
         public CombatRulesBehaviour CombatRules => combatRules;
@@ -70,16 +89,118 @@ namespace Zenthium.Modules
             }
         }
 
-        /// <returns>Null if the scene has no projectile prefab set.</returns>
+        /// <summary>The scene object of an entity whose modules are running, such as an attacker to knock back.</summary>
+        public bool TryGetBehaviour(Entity entity, out EntityBehaviour behaviour)
+        {
+            behaviour = null;
+            return entity != null && behaviours.TryGetValue(entity, out behaviour) && behaviour != null;
+        }
+
+        /// <returns>Null if the scene has no prefab for it. The same for the other Spawn methods.</returns>
         public Projectile SpawnProjectile(Vector3 position, Vector3 direction)
         {
-            if (projectilePrefab == null)
+            return Spawn(projectilePrefab, position, Quaternion.LookRotation(direction, Vector3.up));
+        }
+
+        public PlacedGlyph SpawnGlyph(Vector3 position)
+        {
+            return Spawn(glyphPrefab, position, Quaternion.identity);
+        }
+
+        public SmokeCloud SpawnSmoke(Vector3 position)
+        {
+            return Spawn(smokePrefab, position, Quaternion.identity);
+        }
+
+        public TimedCharge SpawnCharge(Vector3 position)
+        {
+            return Spawn(chargePrefab, position, Quaternion.identity);
+        }
+
+        public ShieldZone SpawnShield(Vector3 position)
+        {
+            return Spawn(shieldPrefab, position, Quaternion.identity);
+        }
+
+        /// <summary>
+        /// Spawns a summon on the summoner's side: a player's summons are allies. It's built inactive, configured,
+        /// then activated, since a prefab can't hold the scene's references.
+        /// </summary>
+        public EntityBehaviour SpawnSummon(EntityData entity, Entity summoner, IReadOnlyList<ModuleData> modules,
+            Vector3 position)
+        {
+            if (summonPrefab == null)
             {
-                Debug.LogError($"{name}: {nameof(ModuleWorld)} has no projectile prefab.", this);
+                Debug.LogError($"{name}: {nameof(ModuleWorld)} has no summon prefab.", this);
                 return null;
             }
 
-            return Instantiate(projectilePrefab, position, Quaternion.LookRotation(direction, Vector3.up));
+            EntityBehaviour summon = Instantiate(summonPrefab, position, Quaternion.identity, spawnHolder);
+            Team team = summoner.Team == Team.Player ? Team.Ally : summoner.Team;
+            summon.ConfigureSummon(database, clock, entity, team, summoner, modules);
+            summon.GetComponent<EntityModules>().SetWorld(this);
+            summon.transform.SetParent(null, true);
+            return summon;
+        }
+
+        /// <summary>Shows a beam's path briefly (presentation only).</summary>
+        public void ShowBeam(Vector3 from, Vector3 to)
+        {
+            Vector3 path = to - from;
+            if (beamVisualPrefab == null || path.sqrMagnitude <= 0f)
+            {
+                return;
+            }
+
+            GameObject beam = Instantiate(beamVisualPrefab, (from + to) * 0.5f, Quaternion.LookRotation(path, Vector3.up));
+            Vector3 scale = beam.transform.localScale;
+            beam.transform.localScale = new Vector3(scale.x, scale.y, path.magnitude);
+            Destroy(beam, beamVisualSeconds);
+        }
+
+        /// <summary>Whether an active shield stops a projectile from this shooter at this point.</summary>
+        public bool IsBlockedByShield(Vector3 point, Entity shooter)
+        {
+            foreach (ShieldZone shield in shields)
+            {
+                if (shield != null && shield.Blocks(point, shooter))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal void Register(Entity entity, EntityBehaviour behaviour)
+        {
+            behaviours[entity] = behaviour;
+        }
+
+        internal void Unregister(Entity entity)
+        {
+            behaviours.Remove(entity);
+        }
+
+        internal void RegisterShield(ShieldZone shield)
+        {
+            shields.Add(shield);
+        }
+
+        internal void UnregisterShield(ShieldZone shield)
+        {
+            shields.Remove(shield);
+        }
+
+        private T Spawn<T>(T prefab, Vector3 position, Quaternion rotation) where T : Component
+        {
+            if (prefab == null)
+            {
+                Debug.LogError($"{name}: {nameof(ModuleWorld)} has no {typeof(T).Name} prefab.", this);
+                return null;
+            }
+
+            return Instantiate(prefab, position, rotation);
         }
 
         /// <summary>Floats the entity away and takes it off the map, counting it as rescued or captured.</summary>
@@ -111,8 +232,17 @@ namespace Zenthium.Modules
                 collider.enabled = false;
             }
 
-            OnExtracted?.Invoke(target, kind);
+            OnRescuedOrCaptured?.Invoke(target, kind);
             StartCoroutine(FloatAway(target.gameObject));
+        }
+
+        /// <summary>Captures an Incapacitated entity where it lies (Stasis Cuffs); it stays on the map.</summary>
+        public void Capture(EntityBehaviour target)
+        {
+            if (target != null && target.Entity != null && target.Entity.Capture())
+            {
+                OnRescuedOrCaptured?.Invoke(target, ExtractionKind.Captured);
+            }
         }
 
         /// <summary>Finds the entity a collider belongs to, through its rigidbody if it has one.</summary>
@@ -129,6 +259,12 @@ namespace Zenthium.Modules
 
         private void Awake()
         {
+            // Spawned under an inactive parent, a summon doesn't wake until it's configured.
+            var holder = new GameObject("Spawn Holder");
+            holder.SetActive(false);
+            spawnHolder = holder.transform;
+            spawnHolder.SetParent(transform, false);
+
             if (database == null || combatRules == null || clock == null)
             {
                 Debug.LogError($"{name}: {nameof(ModuleWorld)} needs a Game Database, Combat Rules and a Game Clock Driver.", this);

@@ -37,6 +37,8 @@ namespace Zenthium.Entities
         [Tooltip("Testing: replaces the module in the last slot of its type, or fills the first empty one.")]
         [SerializeField] private ModuleData testModule;
 
+        private Entity summoner;
+
         /// <summary>Null until Awake, or if the setup is invalid.</summary>
         public Entity Entity { get; private set; }
 
@@ -60,6 +62,23 @@ namespace Zenthium.Entities
             unlockedSlots = newUnlockedSlots;
             testModule = newTestModule;
             CreateEntity();
+        }
+
+        /// <summary>
+        /// Sets up a summoned faction entity in code, since a spawned prefab can't hold scene references. Call it before
+        /// the object activates (spawn it under an inactive parent), so Awake builds the entity from this.
+        /// </summary>
+        public void ConfigureSummon(GameDatabase newDatabase, GameClockDriver newClock, EntityData newEntity,
+            Team newTeam, Entity newSummoner, IReadOnlyList<ModuleData> newModules)
+        {
+            database = newDatabase;
+            clock = newClock;
+            hero = null;
+            factionEntity = newEntity;
+            team = newTeam;
+            summoner = newSummoner;
+            modules.Clear();
+            modules.AddRange(newModules);
         }
 
         private void Awake()
@@ -96,6 +115,7 @@ namespace Zenthium.Entities
             else if (factionEntity != null)
             {
                 setup = EntitySetup.ForFactionEntity(factionEntity, team, difficultyLevel, database.EntityConstants);
+                setup.Summoner = summoner;
                 foreach (ModuleData module in modules)
                 {
                     if (module != null)

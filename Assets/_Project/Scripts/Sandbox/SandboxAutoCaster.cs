@@ -55,11 +55,11 @@ namespace Zenthium.Sandbox
             ModuleBehaviour kick = modules.Kick;
             if (kick != null && aim.magnitude <= kick.Data.RangeTier.Value)
             {
-                modules.TryKick(aim);
+                modules.TryKick(new ModuleAim(aim, aim.magnitude));
             }
             else
             {
-                modules.TryActivateSlot(SlotType.Active, 0, aim);
+                modules.TryActivateSlot(SlotType.Active, 0, new ModuleAim(aim, aim.magnitude));
             }
         }
     }

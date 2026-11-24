@@ -90,6 +90,9 @@ namespace Zenthium.Editor
             Wire(turret.gameObject.AddComponent<SandboxAutoCaster>(),
                 so => SetReference(so, AutoCasterFields.Target, room.Player));
 
+            // Here the panel inspects and hits the player (to test Defiance, Taunt and Armor), with the turret attacking.
+            CombatSandboxSceneCreator.BindDebugPanel(room.DebugPanel, room.Player, turret);
+
             EntityBehaviour civilian = PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, CivilianPosition, room);
             civilian.name = "Civilian Dummy";
             Wire(civilian, so =>

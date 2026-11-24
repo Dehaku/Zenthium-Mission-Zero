@@ -54,7 +54,14 @@ namespace Zenthium.Modules
                 return;
             }
 
-            if (TryFindHit(step, out EntityBehaviour target))
+            if (context.World.IsBlockedByShield(transform.position + direction * step, context.Owner))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (SweepHit.TryFindFirst(context, transform.position, direction, radius, step, sweepHits,
+                    out EntityBehaviour target, out _))
             {
                 if (target != null)
                 {
@@ -71,51 +78,6 @@ namespace Zenthium.Modules
             {
                 Destroy(gameObject);
             }
-        }
-
-        /// <param name="target">The entity hit, or null if something solid stopped it.</param>
-        /// <returns>True if anything stops it within the step.</returns>
-        private bool TryFindHit(float step, out EntityBehaviour target)
-        {
-            target = null;
-            int count = Physics.SphereCastNonAlloc(transform.position, radius, direction, sweepHits, step,
-                Physics.AllLayers, QueryTriggerInteraction.Ignore);
-            float nearest = float.PositiveInfinity;
-            bool found = false;
-            for (int i = 0; i < count; i++)
-            {
-                RaycastHit hit = sweepHits[i];
-                if (hit.distance >= nearest || hit.collider.attachedRigidbody == context.Body)
-                {
-                    continue;
-                }
-
-                if (ModuleWorld.TryGetEntity(hit.collider, out EntityBehaviour entity))
-                {
-                    if (!CanHit(entity))
-                    {
-                        continue;
-                    }
-
-                    target = entity;
-                }
-                else
-                {
-                    target = null;
-                }
-
-                nearest = hit.distance;
-                found = true;
-            }
-
-            return found;
-        }
-
-        private bool CanHit(EntityBehaviour entity)
-        {
-            Entity victim = entity.Entity;
-            return victim != null && !victim.IsIncapacitated && !victim.IsBeingDragged
-                && context.World.CombatRules.FriendlyFire.CanHurt(context.Owner, victim);
         }
     }
 }
