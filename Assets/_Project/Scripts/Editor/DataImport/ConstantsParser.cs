@@ -111,7 +111,8 @@ namespace Zenthium.Editor.DataImport
                 presetSlotsUnlocked: reader.Int("preset_slots_unlocked"),
                 crowdControlDurationMultiplier: reader.Float("cc_duration_multiplier"),
                 crowdControlPulseOnSeconds: reader.Float("cc_pulse_on_s"),
-                crowdControlPulseOffSeconds: reader.Float("cc_pulse_off_s"));
+                crowdControlPulseOffSeconds: reader.Float("cc_pulse_off_s"),
+                damageOverTimeTickSeconds: reader.Float("dot_tick_s"));
             data.RankScaling = new RankScalingConstants(
                 innateBoostGoon: reader.Float("innate_boost_goon"),
                 innateBoostChampion: reader.Float("innate_boost_champion"),
@@ -133,6 +134,21 @@ namespace Zenthium.Editor.DataImport
                 demolitionMultiplier: reader.Float("demolition_multiplier"),
                 vehicleExplosionDelay: reader.Float("vehicle_explosion_delay_s"),
                 buildingNeighborRadius: reader.Float("building_neighbor_radius_m"));
+            data.Fire = new FireConstants(
+                tickSeconds: reader.Float("fire_tick_s"),
+                breakIntervalSeconds: reader.Float("fire_break_interval_s"),
+                burnDamage: reader.Float("fire_burn_damage"),
+                burnSeconds: reader.Float("fire_burn_s"),
+                burnOutSeconds: reader.Float("burn_out_s"),
+                spreadIntervalSeconds: reader.Float("fire_spread_interval_s"),
+                spreadChance: reader.Float("fire_spread_chance"),
+                propBurnDurationMultiplier: reader.Float("prop_burn_duration_multiplier"));
+            data.Valuables = new ValuableConstants(
+                slowPerValuable: reader.Float("carrying_treasure_slow_per_valuable"),
+                slowCap: reader.Float("carrying_treasure_slow_cap"),
+                iconGrowthPerValuable: reader.Float("valuable_icon_growth_per_valuable"),
+                iconGrowthCap: reader.Float("valuable_icon_growth_cap"),
+                pickupSeconds: reader.Float("valuable_pickup_s"));
             reader.ReportUnused();
         }
 

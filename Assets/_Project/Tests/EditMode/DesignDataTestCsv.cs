@@ -36,6 +36,7 @@ namespace Zenthium.Tests.EditMode
             "formula,cc_duration_multiplier,0.5,\n" +
             "formula,cc_pulse_on_s,0.5,\n" +
             "formula,cc_pulse_off_s,0.5,\n" +
+            "formula,dot_tick_s,0.5,\n" +
             "mirror,innate_boost_goon,0,\n" +
             "mirror,innate_boost_champion,1,\n" +
             "mirror,innate_boost_leader,2,\n" +
@@ -69,7 +70,20 @@ namespace Zenthium.Tests.EditMode
             "world,building_throw_multiplier,2,\n" +
             "world,demolition_multiplier,10,\n" +
             "world,vehicle_explosion_delay_s,1,\n" +
-            "world,building_neighbor_radius_m,20,\n";
+            "world,building_neighbor_radius_m,20,\n" +
+            "world,fire_tick_s,5,\n" +
+            "world,fire_break_interval_s,10,\n" +
+            "world,fire_burn_damage,20,\n" +
+            "world,fire_burn_s,4,\n" +
+            "world,burn_out_s,60,\n" +
+            "world,fire_spread_interval_s,15,\n" +
+            "world,fire_spread_chance,0.25,\n" +
+            "world,prop_burn_duration_multiplier,10,\n" +
+            "world,carrying_treasure_slow_per_valuable,0.05,\n" +
+            "world,carrying_treasure_slow_cap,0.5,\n" +
+            "world,valuable_icon_growth_per_valuable,0.05,\n" +
+            "world,valuable_icon_growth_cap,0.5,\n" +
+            "world,valuable_pickup_s,5,\n";
 
         private const string ModulesHeader =
             "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,damage_type,tags,budget_ok,notes\n";

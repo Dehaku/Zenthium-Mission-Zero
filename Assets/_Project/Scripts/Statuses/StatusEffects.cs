@@ -11,6 +11,7 @@ namespace Zenthium.Statuses
     /// <list type="bullet">
     /// <item>Stacking per status: Refresh, Intensity, Independent or no stacking. A refresh never shortens the time left.</item>
     /// <item>Durations run on the entity's game time, so Time Slow stretches them and Time Stop freezes them.</item>
+    /// <item>Damage-over-time statuses tick on that game time too; the damage pipeline deals each tick.</item>
     /// <item>Crowd control lasts half as long on Leaders and the player; "while inside" crowd control pulses on them.</item>
     /// <item>Invulnerable entities take no new hostile statuses; a Defiance proc cleanses them.</item>
     /// <item>Disables switch off a random slot each; slots with <c>CannotBeDisabled</c> modules are skipped.</item>
@@ -24,6 +25,9 @@ namespace Zenthium.Statuses
         private readonly IRandomSource random;
         private readonly List<Instance> instances = new List<Instance>();
 
+        // Ticks are raised after the update, since dealing their damage can cleanse statuses (Defiance) mid-loop.
+        private readonly List<DamageOverTimeTick> dueTicks = new List<DamageOverTimeTick>();
+
         internal StatusEffects(Entity owner, ModuleConstants constants, IRandomSource random)
         {
             this.owner = owner ?? throw new ArgumentNullException(nameof(owner));
@@ -33,6 +37,9 @@ namespace Zenthium.Statuses
 
         /// <summary>Raised when a status starts, ends, gains a layer or pulses on or off.</summary>
         public event Action OnStatusesChanged;
+
+        /// <summary>A damage-over-time status ticks, every <see cref="ModuleConstants.DamageOverTimeTickSeconds"/> of game time.</summary>
+        public event Action<DamageOverTimeTick> OnDamageOverTimeTick;
 
         /// <summary>False while Stunned, Rooted or Engulfed. Knockback still moves the entity.</summary>
         public bool CanMove => !AnyStops(movement: true);
@@ -133,7 +140,7 @@ namespace Zenthium.Statuses
                 return Restack(existing, info, application, seconds);
             }
 
-            var instance = new Instance(application, info, seconds);
+            var instance = new Instance(application, info, seconds) { Dot = CreateDot(application, info, seconds) };
             if (info.DisablesSlot.HasValue)
             {
                 instance.DisabledSlot = owner.Slots.DisableRandom(info.DisablesSlot.Value, random);
@@ -194,6 +201,79 @@ namespace Zenthium.Statuses
             }
         }
 
+        /// <summary>Ends every timed instance of a status, such as Extinguish removing Burn (world.md, Fire).</summary>
+        /// <returns>True if any was removed.</returns>
+        public bool Remove(StatusType type)
+        {
+            bool removed = false;
+            for (int i = instances.Count - 1; i >= 0; i--)
+            {
+                if (instances[i].Type == type && !instances[i].IsArea)
+                {
+                    RemoveAt(i);
+                    removed = true;
+                }
+            }
+
+            if (removed)
+            {
+                RaiseChanged();
+            }
+
+            return removed;
+        }
+
+        /// <summary>
+        /// Sets an Intensity status to an exact number of layers, adding it or ending it at 0, for statuses that
+        /// follow a count, such as Carrying Treasure's one layer per Valuable (world.md). Layers above the
+        /// application's cap are cut to it.
+        /// </summary>
+        public void SetLayers(in StatusApplication application, int layers)
+        {
+            if (application.MaxLayers > 0)
+            {
+                layers = Math.Min(layers, application.MaxLayers);
+            }
+
+            Instance existing = FindTimed(application.Type);
+            if (layers <= 0)
+            {
+                if (existing != null)
+                {
+                    RemoveAt(instances.IndexOf(existing));
+                    RaiseChanged();
+                }
+
+                return;
+            }
+
+            if (owner.IsCaptured || (existing != null && existing.Layers == layers))
+            {
+                return;
+            }
+
+            if (existing == null)
+            {
+                StatusInfo info = StatusCatalog.Get(application.Type);
+                if (info.IsHostile && owner.IsInvulnerable)
+                {
+                    return;
+                }
+
+                existing = new Instance(application, info, application.Seconds) { Layers = layers };
+                instances.Add(existing);
+            }
+            else
+            {
+                RemoveModifiers(existing);
+                existing.Layers = layers;
+                existing.Modifiers = application.Modifiers;
+            }
+
+            ApplyModifiers(existing);
+            RaiseChanged();
+        }
+
         /// <summary>
         /// A Defiance proc clears hostile statuses: DoTs and debuffs. Carrying Treasure and hidden markers stay
         /// (stats.md, Defiance).
@@ -245,6 +325,16 @@ namespace Zenthium.Statuses
                     continue;
                 }
 
+                if (instance.Dot != null)
+                {
+                    int ticks = instance.Dot.Advance(gameDelta);
+                    for (int tick = 0; tick < ticks; tick++)
+                    {
+                        dueTicks.Add(new DamageOverTimeTick(instance.Type, instance.Source, instance.Dot.DamagePerTick,
+                            instance.DamageType));
+                    }
+                }
+
                 if (float.IsPositiveInfinity(instance.Remaining))
                 {
                     continue;
@@ -262,6 +352,30 @@ namespace Zenthium.Statuses
             {
                 RaiseChanged();
             }
+
+            RaiseDueTicks();
+        }
+
+        private void RaiseDueTicks()
+        {
+            if (dueTicks.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < dueTicks.Count; i++)
+            {
+                OnDamageOverTimeTick?.Invoke(dueTicks[i]);
+            }
+
+            dueTicks.Clear();
+        }
+
+        private DamageOverTime CreateDot(in StatusApplication application, StatusInfo info, float seconds)
+        {
+            bool ticks = info.Kind == StatusKind.DamageOverTime && application.Damage > 0f
+                && constants.DamageOverTimeTickSeconds > 0f && seconds > 0f && !float.IsPositiveInfinity(seconds);
+            return ticks ? new DamageOverTime(application.Damage, seconds, constants.DamageOverTimeTickSeconds) : null;
         }
 
         private bool Restack(Instance existing, StatusInfo info, in StatusApplication application, float seconds)
@@ -279,6 +393,12 @@ namespace Zenthium.Statuses
 
             existing.Source = application.Source;
             existing.Remaining = Math.Max(existing.Remaining, seconds);
+            if (application.Damage > 0f)
+            {
+                existing.Dot = CreateDot(application, info, existing.Remaining);
+                existing.DamageType = application.DamageType;
+            }
+
             RemoveModifiers(existing);
             existing.Modifiers = application.Modifiers;
             ApplyModifiers(existing);
@@ -429,6 +549,7 @@ namespace Zenthium.Statuses
                 Source = application.Source;
                 Remaining = seconds;
                 Modifiers = application.Modifiers;
+                DamageType = application.DamageType;
             }
 
             public StatusType Type { get; }
@@ -443,6 +564,11 @@ namespace Zenthium.Statuses
             public bool IsPulsed { get; set; }
             public float SecondsInside { get; set; }
             public bool IsOn { get; set; } = true;
+
+            /// <summary>Null unless it's a damage-over-time status with damage to deal.</summary>
+            public DamageOverTime Dot { get; set; }
+
+            public DamageType DamageType { get; set; }
         }
     }
 }

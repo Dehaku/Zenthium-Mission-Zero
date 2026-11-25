@@ -43,6 +43,7 @@ MonoBehaviour:
     crowdControlDurationMultiplier: 0.5
     crowdControlPulseOnSeconds: 0.5
     crowdControlPulseOffSeconds: 0.5
+    damageOverTimeTickSeconds: 0.5
   rankScaling:
     innateBoostGoon: 0
     innateBoostChampion: 1
@@ -82,6 +83,21 @@ MonoBehaviour:
     demolitionMultiplier: 10
     vehicleExplosionDelay: 1
     buildingNeighborRadius: 20
+  fireConstants:
+    tickSeconds: 5
+    breakIntervalSeconds: 10
+    burnDamage: 20
+    burnSeconds: 5
+    burnOutSeconds: 60
+    spreadIntervalSeconds: 15
+    spreadChance: 0.25
+    propBurnDurationMultiplier: 10
+  valuableConstants:
+    slowPerValuable: 0.05
+    slowCap: 0.5
+    iconGrowthPerValuable: 0.05
+    iconGrowthCap: 0.5
+    pickupSeconds: 5
   tiers:
     entries:
     - scale: 0

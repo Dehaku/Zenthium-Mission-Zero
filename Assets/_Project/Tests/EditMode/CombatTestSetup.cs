@@ -45,7 +45,8 @@ namespace Zenthium.Tests.EditMode
                     presetSlotsUnlocked: 1,
                     crowdControlDurationMultiplier: 0.5f,
                     crowdControlPulseOnSeconds: 0.5f,
-                    crowdControlPulseOffSeconds: 0.5f),
+                    crowdControlPulseOffSeconds: 0.5f,
+                    damageOverTimeTickSeconds: 0.5f),
                 new RankScalingConstants(
                     innateBoostGoon: 0f,
                     innateBoostChampion: 1f,

@@ -45,7 +45,7 @@ Force Spell Tome,Gear (passive),,,,,,,,,,,magic_hit_damage=15,Magic,,,Also appli
 Fire Spell Tome,Gear (passive),,,,,,,,,,,magic_hit_damage=10; burn_damage=12; burn_s=4,Magic,Debuff; Resist:Toughness,,Also applies to your summons' hits
 Electric Spell Tome,Gear (passive),,,,,,,,,,,magic_hit_damage=10; chain_targets=5; chain_range_m=5; chain_damage=5,Magic,,,Also applies to your summons' hits
 First Aid Spray,Gear (active),,,20,,,Strong,,,,Melee,heal=0.25,,,,Free and no cooldown on Incapacitated citizens
-Water Cannon,Gear (active),Strength,Light,,Ammo,5,Strong,,,Huge,Medium,,,Ranged; Extinguish,,Extinguish
+Water Cannon,Gear (active),Strength,Light,,Ammo,5,Strong,,,Huge,Medium,,Physical,Ranged; Extinguish,,Extinguish
 Gel Coat,Active,,,15,,,Strong,Medium,,,Short,,,Extinguish,,
 Fireproof Body,Passive,,,,,,,,,,,,,Extinguish,,
 Smoke Bomb,Gear (active),,,30,,,Strong,Medium,Medium,,Short,,,Debuff; Resist:Toughness,,Stun lasts while inside

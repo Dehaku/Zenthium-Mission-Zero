@@ -48,14 +48,19 @@ namespace Zenthium.Statuses
         /// <param name="source">Who applied it; null for the environment.</param>
         /// <param name="seconds">Game seconds, before the half-length crowd control rule, or <see cref="UntilRemoved"/>.</param>
         /// <param name="maxLayers">The cap for Intensity statuses; 0 is no cap.</param>
+        /// <param name="damage">A DoT's total damage over its whole duration; 0 for other statuses.</param>
+        /// <param name="damageType">A DoT's damage type, set by its source.</param>
         public StatusApplication(StatusType type, Entity source, float seconds,
-            IReadOnlyList<StatusModifier> modifiers = null, int maxLayers = 0)
+            IReadOnlyList<StatusModifier> modifiers = null, int maxLayers = 0, float damage = 0f,
+            DamageType damageType = DamageType.Physical)
         {
             Type = type;
             Source = source;
             Seconds = seconds;
             Modifiers = modifiers;
             MaxLayers = maxLayers;
+            Damage = damage;
+            DamageType = damageType;
         }
 
         public StatusType Type { get; }
@@ -63,5 +68,10 @@ namespace Zenthium.Statuses
         public float Seconds { get; }
         public IReadOnlyList<StatusModifier> Modifiers { get; }
         public int MaxLayers { get; }
+
+        /// <summary>A DoT's total damage over its whole duration.</summary>
+        public float Damage { get; }
+
+        public DamageType DamageType { get; }
     }
 }

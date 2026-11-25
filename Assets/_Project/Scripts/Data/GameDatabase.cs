@@ -15,6 +15,8 @@ namespace Zenthium.Data
         [SerializeField] private RankScalingConstants rankScaling = new RankScalingConstants();
         [SerializeField] private EconomyConstants economy = new EconomyConstants();
         [SerializeField] private WorldConstants worldConstants = new WorldConstants();
+        [SerializeField] private FireConstants fireConstants = new FireConstants();
+        [SerializeField] private ValuableConstants valuableConstants = new ValuableConstants();
         [SerializeField] private TierTables tiers = new TierTables();
         [SerializeField] private DataTable<ModuleData> modules = new DataTable<ModuleData>();
         [SerializeField] private DataTable<FactionData> factions = new DataTable<FactionData>();
@@ -31,6 +33,8 @@ namespace Zenthium.Data
         public RankScalingConstants RankScaling => rankScaling;
         public EconomyConstants Economy => economy;
         public WorldConstants WorldConstants => worldConstants;
+        public FireConstants FireConstants => fireConstants;
+        public ValuableConstants ValuableConstants => valuableConstants;
         public TierTables Tiers => tiers;
         public DataTable<ModuleData> Modules => modules;
         public DataTable<FactionData> Factions => factions;
@@ -59,6 +63,8 @@ namespace Zenthium.Data
             RankScalingConstants newRankScaling,
             EconomyConstants newEconomy,
             WorldConstants newWorldConstants,
+            FireConstants newFireConstants,
+            ValuableConstants newValuableConstants,
             TierTables newTiers,
             List<ModuleData> newModules,
             List<FactionData> newFactions,
@@ -73,6 +79,8 @@ namespace Zenthium.Data
             rankScaling = newRankScaling;
             economy = newEconomy;
             worldConstants = newWorldConstants;
+            fireConstants = newFireConstants;
+            valuableConstants = newValuableConstants;
             tiers = newTiers;
             modules.SetEntries(newModules);
             factions.SetEntries(newFactions);

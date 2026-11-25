@@ -28,6 +28,9 @@ namespace Zenthium.World
         /// <summary>Raised once, when its HP reaches 0.</summary>
         public event Action OnBroken;
 
+        /// <summary>Raised for every hit it can take, before its damage, so fire tags act even on a hit that breaks it.</summary>
+        public event Action<StructureHit> OnHit;
+
         /// <summary>Null if the scene has none; nothing can damage it then.</summary>
         public ModuleWorld World => world;
 
@@ -97,6 +100,7 @@ namespace Zenthium.World
                 return;
             }
 
+            OnHit?.Invoke(hit);
             float amount = world.CombatRules.Pipeline.ApplyToStructure(hit.Hit, armor, damageReduction)
                 * StructureDamageRules.Multiplier(hit.Kind, isBuildingPart, world.Database.WorldConstants);
             health.TakeDamage(amount);

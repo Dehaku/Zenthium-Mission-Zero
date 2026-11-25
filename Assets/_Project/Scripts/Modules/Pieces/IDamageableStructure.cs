@@ -22,14 +22,20 @@ namespace Zenthium.Modules
     /// <summary>One hit on a structure, before its Armor, Damage Reduction and multipliers.</summary>
     public readonly struct StructureHit
     {
-        public StructureHit(Hit hit, StructureHitKind kind)
+        /// <param name="ignites">From an <c>Ignites</c> module: sets buildings and props on fire (world.md, Fire).</param>
+        /// <param name="extinguishes">From an <c>Extinguish</c> module: puts out buildings and props.</param>
+        public StructureHit(Hit hit, StructureHitKind kind, bool ignites = false, bool extinguishes = false)
         {
             Hit = hit;
             Kind = kind;
+            Ignites = ignites;
+            Extinguishes = extinguishes;
         }
 
         public Hit Hit { get; }
         public StructureHitKind Kind { get; }
+        public bool Ignites { get; }
+        public bool Extinguishes { get; }
     }
 
     /// <summary>

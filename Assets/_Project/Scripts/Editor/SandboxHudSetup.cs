@@ -10,8 +10,8 @@ using static Zenthium.Editor.SerializedWiring;
 namespace Zenthium.Editor
 {
     /// <summary>
-    /// Adds the sandbox HUD (bottom left) and the milestone test checklist (center, toggled with Caps Lock) to a
-    /// sandbox scene. Each milestone updates the checklist text file at <see cref="ChecklistPath"/>.
+    /// Adds the sandbox HUD (bottom left), a Reset scene button (bottom right) and the milestone test checklist
+    /// (center, toggled with Caps Lock) to a sandbox scene. Each milestone updates the checklist text file at <see cref="ChecklistPath"/>.
     /// </summary>
     internal static class SandboxHudSetup
     {
@@ -27,12 +27,23 @@ namespace Zenthium.Editor
         private const float Padding = 12f;
         private static readonly Color PanelColor = new Color(0f, 0f, 0f, 0.7f);
 
+        // The reset button sits in the bottom right corner, under the right-hand column.
+        private const string ResetButtonLabel = "Reset scene";
+        private static readonly Vector2 ResetButtonSize = new Vector2(180f, 44f);
+        private const float ResetButtonTextSize = 20f;
+        private static readonly Color ResetButtonColor = new Color(0.6f, 0.15f, 0.1f, 0.9f);
+
         // Serialized field names, which SerializedObject needs as strings. Keep them in sync with the components.
         private static class HudFields
         {
             public const string Controller = "controller";
             public const string Modules = "modules";
             public const string Label = "label";
+        }
+
+        private static class ResetFields
+        {
+            public const string Button = "button";
         }
 
         private static class ChecklistFields
@@ -44,7 +55,9 @@ namespace Zenthium.Editor
 
         internal static void Create(PlayerController player)
         {
-            var canvasObject = new GameObject("Sandbox HUD Canvas", typeof(Canvas), typeof(CanvasScaler));
+            // The raycaster lets the reset button take clicks; the panels and text below don't catch any.
+            var canvasObject = new GameObject("Sandbox HUD Canvas", typeof(Canvas), typeof(CanvasScaler),
+                typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -61,6 +74,8 @@ namespace Zenthium.Editor
                 SetReference(so, HudFields.Modules, player.GetComponent<EntityModules>());
                 SetReference(so, HudFields.Label, hudText);
             });
+
+            CreateResetButton(canvasObject.transform);
 
             var checklist = AssetDatabase.LoadAssetAtPath<TextAsset>(ChecklistPath);
             if (checklist == null)
@@ -80,6 +95,39 @@ namespace Zenthium.Editor
                 SetReference(so, ChecklistFields.Panel, checklistPanel);
                 SetReference(so, ChecklistFields.Label, checklistText);
             });
+        }
+
+        /// <summary>A "Reset scene" button in the bottom right corner, which reloads the scene in Play mode.</summary>
+        private static void CreateResetButton(Transform canvas)
+        {
+            var buttonObject = new GameObject("Reset Scene Button", typeof(RectTransform), typeof(Image),
+                typeof(Button));
+            var rect = (RectTransform)buttonObject.transform;
+            rect.SetParent(canvas, false);
+            rect.anchorMin = Vector2.right;
+            rect.anchorMax = Vector2.right;
+            rect.pivot = Vector2.right;
+            rect.anchoredPosition = new Vector2(-Padding, Padding);
+            rect.sizeDelta = ResetButtonSize;
+            buttonObject.GetComponent<Image>().color = ResetButtonColor;
+
+            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var labelRect = (RectTransform)labelObject.transform;
+            labelRect.SetParent(rect, false);
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+            var label = labelObject.GetComponent<TextMeshProUGUI>();
+            label.font = TMP_Settings.defaultFontAsset;
+            label.fontSize = ResetButtonTextSize;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = Color.white;
+            label.raycastTarget = false;
+            label.text = ResetButtonLabel;
+
+            Wire(buttonObject.AddComponent<SandboxSceneReset>(),
+                so => SetReference(so, ResetFields.Button, buttonObject.GetComponent<Button>()));
         }
 
         /// <param name="anchor">The screen point the panel hangs from, which is also its pivot.</param>

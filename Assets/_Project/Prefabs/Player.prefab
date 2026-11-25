@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 4597716273654257326}
   - component: {fileID: 5905671348513108447}
   - component: {fileID: 6619895840348864979}
+  - component: {fileID: 5065444097696470817}
+  - component: {fileID: 2270642078370191364}
   - component: {fileID: 5561046897729463581}
   - component: {fileID: 1836408603891312450}
   - component: {fileID: 7645907726967104450}
@@ -215,6 +217,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cf5e18a9889daa448932903e8691845, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.KnockbackImpacts
+--- !u!114 &5065444097696470817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 81893236922406841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df162f8fee867a24f80e8b4d16a2f275, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.DamageOverTimeTicks
+--- !u!114 &2270642078370191364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 81893236922406841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: deb0ef34f59a8c14bad24f56d37e2bbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.World::Zenthium.World.ValuableCarrier
+  service: {fileID: 0}
+  startingValuables: 0
 --- !u!114 &5561046897729463581
 MonoBehaviour:
   m_ObjectHideFlags: 0

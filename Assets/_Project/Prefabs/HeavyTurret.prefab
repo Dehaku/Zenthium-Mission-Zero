@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 7310174513595627924}
   - component: {fileID: 7353414727750200140}
   - component: {fileID: 8001455183569371892}
+  - component: {fileID: 8310445463476245824}
+  - component: {fileID: 3822406105574810209}
   m_Layer: 0
   m_Name: HeavyTurret
   m_TagString: Untagged
@@ -211,3 +213,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cf5e18a9889daa448932903e8691845, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.KnockbackImpacts
+--- !u!114 &8310445463476245824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3426095738912133110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df162f8fee867a24f80e8b4d16a2f275, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.DamageOverTimeTicks
+--- !u!114 &3822406105574810209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3426095738912133110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: deb0ef34f59a8c14bad24f56d37e2bbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.World::Zenthium.World.ValuableCarrier
+  service: {fileID: 0}
+  startingValuables: 0

@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 using Zenthium.Data;
 using Zenthium.Entities;
 using Zenthium.Modules;
@@ -68,6 +69,25 @@ namespace Zenthium.Editor
         private static readonly Color RingColor = new Color(0.9f, 0.15f, 0.1f);
         private static readonly Color TurretColor = new Color(0.25f, 0.25f, 0.25f);
 
+        // Valuables: three bags in the Wood house, two by the player, and a dummy carrying three.
+        private const float BagHeight = 0.3f;
+        private static readonly Vector3[] BagPositions =
+        {
+            new Vector3(11f, BagHeight, 11f),
+            new Vector3(14f, BagHeight, 15f),
+            new Vector3(17f, BagHeight, 11f),
+            new Vector3(-6f, BagHeight, -3f),
+            new Vector3(-4f, BagHeight, -3f),
+        };
+
+        private const int CarrierDummyIndex = 1;
+        private const int CarrierDummyValuables = 3;
+
+        private static readonly Vector2 CanvasReferenceResolution = new Vector2(1920f, 1080f);
+        private static readonly Vector2 LostCounterAnchor = new Vector2(0.5f, 1f);
+        private static readonly Vector2 LostCounterSize = new Vector2(400f, 40f);
+        private const float LostCounterFontSize = 24f;
+
         // Serialized field names, which SerializedObject needs as strings. Keep them in sync with the components.
         private static class StructureFields
         {
@@ -94,6 +114,8 @@ namespace Zenthium.Editor
         private static class RegistryFields
         {
             public const string Database = "database";
+            public const string World = "world";
+            public const string IsSpreadOn = "isSpreadOn";
         }
 
         private static class PropFields
@@ -120,6 +142,22 @@ namespace Zenthium.Editor
         {
             public const string Explosion = "explosion";
             public const string Ring = "ring";
+        }
+
+        private static class BuildingViewFields
+        {
+            public const string Building = "building";
+        }
+
+        private static class BagFields
+        {
+            public const string Service = "service";
+            public const string StartingValuables = "startingValuables";
+        }
+
+        private static class LostCounterFields
+        {
+            public const string Service = "service";
         }
 
         private static class TurretFields
@@ -190,7 +228,12 @@ namespace Zenthium.Editor
                 database.ModuleConstants.SlotsPerType);
 
             var registry = new GameObject("Building Registry").AddComponent<BuildingRegistry>();
-            Wire(registry, so => SetReference(so, RegistryFields.Database, database));
+            Wire(registry, so =>
+            {
+                SetReference(so, RegistryFields.Database, database);
+                SetReference(so, RegistryFields.World, room.World);
+                Find(so, RegistryFields.IsSpreadOn).boolValue = true;
+            });
             var context = new BuildContext
             {
                 Room = room,
@@ -202,6 +245,8 @@ namespace Zenthium.Editor
             BuildStoneShop(context);
             BuildSampleWalls(context);
             BuildProps(context);
+            PlaceValuables(room);
+            CreateLostCounter(room.Valuables);
             EntityBehaviour turretTarget =
                 PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, TurretTargetPosition, room);
             turretTarget.name = "Turret Target Dummy";
@@ -237,6 +282,7 @@ namespace Zenthium.Editor
                     Vector3.left));
 
             CreateZone(root, "Interior", Rect.MinMaxRect(minX, minZ, maxX, maxZ));
+            AddBuildingViews(context, root, "Wood House", new Vector3((minX + maxX) * 0.5f, 0f, maxZ + 1.5f));
             CreateSocket(root, "Valuables Socket", new Vector3(doorX, 0f, maxZ - 2f), SocketContent.Valuables);
         }
 
@@ -265,6 +311,7 @@ namespace Zenthium.Editor
 
             CreateZone(root, "Interior (front)", Rect.MinMaxRect(-22f, 8f, -10f, 14f));
             CreateZone(root, "Interior (back)", Rect.MinMaxRect(-22f, 14f, -16f, 22f));
+            AddBuildingViews(context, root, "Stone Shop", new Vector3(-19f, 0f, 23.5f));
         }
 
         /// <summary>One free-standing wall of each material, weakest to strongest, with no building.</summary>
@@ -307,6 +354,7 @@ namespace Zenthium.Editor
                 prop.AddComponent<Rigidbody>().isKinematic = true;
                 Structure structure = AddStructure(context, prop);
                 Wire(prop.AddComponent<PropBody>(), so => SetReference(so, PropFields.Data, data));
+                prop.AddComponent<PropBurning>();
                 NavMeshObstacle obstacle = prop.AddComponent<NavMeshObstacle>();
                 obstacle.shape = NavMeshObstacleShape.Box;
                 obstacle.size = Vector3.one;
@@ -347,7 +395,8 @@ namespace Zenthium.Editor
         {
             GameObject body = PlayerSandboxSceneCreator.BuildEntityBody("Heavy Turret", room.Database, null,
                 turretData, Team.Neutral);
-            body.GetComponent<Renderer>().sharedMaterial = ModulePrefabBuilder.SaveMaterial("Turret", TurretColor, body);
+            body.GetComponent<Renderer>().sharedMaterial =
+                ModulePrefabBuilder.SaveMaterial("Turret", TurretColor, body);
             Wire(body.GetComponent<EntityBehaviour>(), so =>
             {
                 SerializedProperty modules = Find(so, CombatSandboxSceneCreator.EntityFields.Modules);
@@ -434,7 +483,8 @@ namespace Zenthium.Editor
                 SetReference(so, DoorFields.Panel, panel.GetComponent<BuildingPart>());
                 Find(so, DoorFields.IsLocked).boolValue = isLocked;
             });
-            AddLabel(context, panel.GetComponent<Structure>(), (isLocked ? "Locked " : string.Empty) + material + " door");
+            string doorTitle = (isLocked ? "Locked " : string.Empty) + material + " door";
+            AddLabel(context, panel.GetComponent<Structure>(), doorTitle);
             CreateSocket(parent, "Arson Socket (door)", center + outward * ArsonSocketDistance, SocketContent.Arson);
         }
 
@@ -483,7 +533,79 @@ namespace Zenthium.Editor
             var box = zone.AddComponent<BoxCollider>();
             box.isTrigger = true;
             box.size = new Vector3(area.width, WallHeight, area.height);
+
+            // Off until the building burns (InteriorZone); then it carves the floor out of enemy paths.
+            NavMeshObstacle obstacle = zone.AddComponent<NavMeshObstacle>();
+            obstacle.shape = NavMeshObstacleShape.Box;
+            obstacle.size = box.size;
+            obstacle.carving = true;
             zone.AddComponent<InteriorZone>();
+        }
+
+        /// <summary>A label over the building with its fire state, and its orange and black fire colors.</summary>
+        private static void AddBuildingViews(BuildContext context, Transform root, string title, Vector3 labelPoint)
+        {
+            var building = root.GetComponent<Building>();
+            Wire(root.gameObject.AddComponent<BuildingFireView>(),
+                so => SetReference(so, BuildingViewFields.Building, building));
+
+            TextMeshPro text = CreateWorldText(context.Labels, title + " Label", labelPoint + LabelOffset, title);
+            Wire(text.gameObject.AddComponent<BuildingDebugLabel>(), so =>
+            {
+                SetReference(so, BuildingViewFields.Building, building);
+                SetReference(so, LabelFields.Label, text);
+                Find(so, LabelFields.Title).stringValue = title;
+            });
+        }
+
+        /// <summary>
+        /// Loose Valuables: three inside the Wood house (they melt if it burns out) and two by the player; and a
+        /// dummy that carries three, to drop when defeated.
+        /// </summary>
+        private static void PlaceValuables(PlayerSandboxSceneCreator.Room room)
+        {
+            var bagPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerSandboxSceneCreator.ValuableBagPrefabPath);
+            var root = new GameObject("Valuables").transform;
+            foreach (Vector3 position in BagPositions)
+            {
+                var bag = (GameObject)PrefabUtility.InstantiatePrefab(bagPrefab, root);
+                bag.transform.position = position;
+                Wire(bag.GetComponent<ValuableBag>(), so => SetReference(so, BagFields.Service, room.Valuables));
+            }
+
+            EntityBehaviour carrier = room.Dummies[CarrierDummyIndex];
+            carrier.name = "Dummy (carries 3 Valuables)";
+            Wire(carrier.GetComponent<ValuableCarrier>(),
+                so => Find(so, BagFields.StartingValuables).intValue = CarrierDummyValuables);
+        }
+
+        /// <summary>The lost count, at the top center of the screen.</summary>
+        private static void CreateLostCounter(ValuableService service)
+        {
+            var canvasObject = new GameObject("Valuables Canvas", typeof(Canvas), typeof(CanvasScaler));
+            canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = CanvasReferenceResolution;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
+
+            var textObject = new GameObject("Lost Valuables", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var rect = (RectTransform)textObject.transform;
+            rect.SetParent(canvasObject.transform, false);
+            rect.anchorMin = LostCounterAnchor;
+            rect.anchorMax = LostCounterAnchor;
+            rect.pivot = LostCounterAnchor;
+            rect.sizeDelta = LostCounterSize;
+            var text = textObject.GetComponent<TextMeshProUGUI>();
+            text.font = TMP_Settings.defaultFontAsset;
+            text.fontSize = LostCounterFontSize;
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = Color.white;
+            Wire(textObject.AddComponent<LostValuablesLabel>(), so =>
+            {
+                SetReference(so, LostCounterFields.Service, service);
+                SetReference(so, LabelFields.Label, text);
+            });
         }
 
         private static void CreateSocket(Transform building, string socketName, Vector3 position,
@@ -504,12 +626,24 @@ namespace Zenthium.Editor
 
         private static void AddLabel(BuildContext context, Structure target, string title)
         {
-            var labelObject = new GameObject(title + " Label", typeof(RectTransform), typeof(TextMeshPro));
-            var rect = (RectTransform)labelObject.transform;
-            rect.SetParent(context.Labels, false);
-            rect.position = target.transform.position + LabelOffset;
+            TextMeshPro text = CreateWorldText(context.Labels, title + " Label",
+                target.transform.position + LabelOffset, title);
+            Wire(text.gameObject.AddComponent<StructureDebugLabel>(), so =>
+            {
+                SetReference(so, LabelFields.Target, target);
+                SetReference(so, LabelFields.Label, text);
+                Find(so, LabelFields.Title).stringValue = title;
+                Find(so, LabelFields.Offset).vector3Value = LabelOffset;
+            });
+        }
 
-            // Lying flat, facing the overhead camera.
+        /// <summary>White world-space text lying flat, facing the overhead camera.</summary>
+        private static TextMeshPro CreateWorldText(Transform parent, string objectName, Vector3 position, string title)
+        {
+            var labelObject = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshPro));
+            var rect = (RectTransform)labelObject.transform;
+            rect.SetParent(parent, false);
+            rect.position = position;
             rect.rotation = Quaternion.Euler(90f, 0f, 0f);
             rect.sizeDelta = LabelSize;
             var text = labelObject.GetComponent<TextMeshPro>();
@@ -518,14 +652,7 @@ namespace Zenthium.Editor
             text.alignment = TextAlignmentOptions.Center;
             text.color = Color.white;
             text.text = title;
-
-            Wire(labelObject.AddComponent<StructureDebugLabel>(), so =>
-            {
-                SetReference(so, LabelFields.Target, target);
-                SetReference(so, LabelFields.Label, text);
-                Find(so, LabelFields.Title).stringValue = title;
-                Find(so, LabelFields.Offset).vector3Value = LabelOffset;
-            });
+            return text;
         }
 
         /// <summary>

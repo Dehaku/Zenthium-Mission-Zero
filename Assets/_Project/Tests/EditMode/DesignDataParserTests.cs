@@ -206,6 +206,21 @@ namespace Zenthium.Tests.EditMode
         }
 
         [Test]
+        public void Parse_FireValuableAndDoTConstants_AreRead()
+        {
+            DesignDataParseResult result = DesignDataTestCsv.Parse();
+
+            Assert.That(result.Errors, Is.Empty);
+            Assert.That(result.Data.Fire.TickSeconds, Is.EqualTo(5f));
+            Assert.That(result.Data.Fire.BreakIntervalSeconds, Is.EqualTo(10f));
+            Assert.That(result.Data.Fire.BurnOutSeconds, Is.EqualTo(60f));
+            Assert.That(result.Data.Fire.PropBurnDurationMultiplier, Is.EqualTo(10f));
+            Assert.That(result.Data.Valuables.SlowCap, Is.EqualTo(0.5f));
+            Assert.That(result.Data.Valuables.PickupSeconds, Is.EqualTo(5f));
+            Assert.That(result.Data.ModuleConstants.DamageOverTimeTickSeconds, Is.EqualTo(0.5f));
+        }
+
+        [Test]
         public void Parse_MaterialWithoutHp_Fails()
         {
             string constants = DesignDataTestCsv.Constants.Replace("world,material_hp.Metal,600,\n", string.Empty);

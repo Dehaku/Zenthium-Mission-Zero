@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Zenthium.Data;
+using Zenthium.Modules;
 
 namespace Zenthium.World
 {
@@ -13,10 +14,25 @@ namespace Zenthium.World
     {
         [SerializeField] private GameDatabase database;
 
+        [Tooltip("The scene's module services: the clock, combat rules and randomness that fire runs on.")]
+        [SerializeField] private ModuleWorld world;
+
+        [Tooltip("Fire spreads between neighbors (world.md, Fire): from rank A. Milestone 11 sets it from the rank.")]
+        [SerializeField] private bool isSpreadOn;
+
         private readonly List<Building> buildings = new List<Building>();
         private int nextId;
 
         public IReadOnlyList<Building> Buildings => buildings;
+
+        /// <summary>Null if the scene has none; buildings can't burn then.</summary>
+        public ModuleWorld World => world;
+
+        public bool IsSpreadOn
+        {
+            get => isSpreadOn;
+            set => isSpreadOn = value;
+        }
 
         /// <summary>
         /// Works out every building's neighbors. It runs once on Start, after the scene's buildings have registered;
@@ -74,9 +90,9 @@ namespace Zenthium.World
 
         private void Awake()
         {
-            if (database == null)
+            if (database == null || world == null)
             {
-                Debug.LogError($"{name}: {nameof(BuildingRegistry)} needs a Game Database.", this);
+                Debug.LogError($"{name}: {nameof(BuildingRegistry)} needs a Game Database and the Module World.", this);
             }
         }
 

@@ -14,6 +14,7 @@ namespace Zenthium.Data
         [SerializeField] private float crowdControlDurationMultiplier;
         [SerializeField] private float crowdControlPulseOnSeconds;
         [SerializeField] private float crowdControlPulseOffSeconds;
+        [SerializeField] private float damageOverTimeTickSeconds;
 
         // Unity's serializer needs a parameterless constructor.
         public ModuleConstants()
@@ -25,13 +26,15 @@ namespace Zenthium.Data
             int presetSlotsUnlocked,
             float crowdControlDurationMultiplier,
             float crowdControlPulseOnSeconds,
-            float crowdControlPulseOffSeconds)
+            float crowdControlPulseOffSeconds,
+            float damageOverTimeTickSeconds)
         {
             this.slotsPerType = slotsPerType;
             this.presetSlotsUnlocked = presetSlotsUnlocked;
             this.crowdControlDurationMultiplier = crowdControlDurationMultiplier;
             this.crowdControlPulseOnSeconds = crowdControlPulseOnSeconds;
             this.crowdControlPulseOffSeconds = crowdControlPulseOffSeconds;
+            this.damageOverTimeTickSeconds = damageOverTimeTickSeconds;
         }
 
         /// <summary>Active, passive and gear slots each.</summary>
@@ -48,5 +51,8 @@ namespace Zenthium.Data
 
         /// <summary>"While inside" crowd control on Leaders and the player: seconds off per pulse.</summary>
         public float CrowdControlPulseOffSeconds => crowdControlPulseOffSeconds;
+
+        /// <summary>Game seconds between damage-over-time ticks.</summary>
+        public float DamageOverTimeTickSeconds => damageOverTimeTickSeconds;
     }
 }

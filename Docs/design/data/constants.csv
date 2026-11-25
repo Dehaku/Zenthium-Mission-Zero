@@ -25,6 +25,7 @@ formula,preset_slots_unlocked,1,Slots of each type a preset hero starts with unl
 formula,cc_duration_multiplier,0.5,Crowd control length on Leaders and the player (statuses.md)
 formula,cc_pulse_on_s,0.5,Seconds on per pulse of while-inside crowd control on Leaders and the player (statuses.md)
 formula,cc_pulse_off_s,0.5,Seconds off per pulse of while-inside crowd control on Leaders and the player (statuses.md)
+formula,dot_tick_s,0.5,Game seconds between damage-over-time ticks (a local design decision)
 mirror,innate_boost_goon,0,Mirror of factions.md. Keep in sync
 mirror,innate_boost_champion,1,Mirror of factions.md. Keep in sync
 mirror,innate_boost_leader,2,Mirror of factions.md. Keep in sync
@@ -80,3 +81,16 @@ world,building_throw_multiplier,2,Walls doors and windows take this many times t
 world,demolition_multiplier,10,Walls doors and windows take this many times the damage from Demolition modules
 world,vehicle_explosion_delay_s,1,Seconds from a vehicle's destruction to its explosion (world.md)
 world,building_neighbor_radius_m,20,Buildings within this many meters are neighbors (world.md)
+world,fire_tick_s,5,Seconds between a burning building's Burn ticks on everything inside (world.md)
+world,fire_break_interval_s,10,Seconds between a burning building destroying one wall window or door (a local design decision; world.md says 5)
+world,fire_burn_damage,20,Damage of the Burn a burning building gives each tick (world.md)
+world,fire_burn_s,5,Seconds the Burn lasts: as long as the tick interval so it never lapses (a local design decision; world.md says 4)
+world,burn_out_s,60,Seconds until a burning building is burned out (world.md)
+world,fire_spread_interval_s,15,Seconds between each burning building's spread rolls (world.md)
+world,fire_spread_chance,0.25,Chance per roll to ignite each unburned neighbor (world.md)
+world,prop_burn_duration_multiplier,10,Burn lasts this many times longer on props (statuses.md)
+world,carrying_treasure_slow_per_valuable,0.05,Move speed lost per Valuable carried (world.md)
+world,carrying_treasure_slow_cap,0.5,Most move speed Valuables can take (world.md)
+world,valuable_icon_growth_per_valuable,0.05,The money bag icon grows this much per Valuable (world.md)
+world,valuable_icon_growth_cap,0.5,Most the icon can grow (world.md)
+world,valuable_pickup_s,5,Seconds a non-player entity takes to pick up a Valuable; damage resets it (world.md)

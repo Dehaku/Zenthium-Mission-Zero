@@ -15,6 +15,7 @@ using Zenthium.Movement;
 using Zenthium.Player;
 using Zenthium.Sandbox;
 using Zenthium.Timing;
+using Zenthium.World;
 using static Zenthium.Editor.SerializedWiring;
 
 namespace Zenthium.Editor
@@ -36,6 +37,7 @@ namespace Zenthium.Editor
         private const string PlayerPrefabPath = PrefabFolder + "/Player.prefab";
         private const string DummyPrefabPath = PrefabFolder + "/TrainingDummy.prefab";
         private const string ProjectilePrefabPath = PrefabFolder + "/Projectile.prefab";
+        internal const string ValuableBagPrefabPath = PrefabFolder + "/ValuableBag.prefab";
 
         private const float CameraHeight = 30f;
 
@@ -122,6 +124,33 @@ namespace Zenthium.Editor
             public const string Label = "label";
         }
 
+        private static class CarrierFields
+        {
+            public const string Service = "service";
+        }
+
+        private static class ValuableServiceFields
+        {
+            public const string World = "world";
+            public const string BagPrefab = "bagPrefab";
+        }
+
+        private static class CarrierViewFields
+        {
+            public const string Carrier = "carrier";
+            public const string Icon = "icon";
+            public const string Callout = "callout";
+        }
+
+        // Valuables: a small yellow bag, and its carrier's placeholder icon under the entity (toward screen-down, -Z)
+        // and "KA-CHING!" callout above it.
+        private const float BagSize = 0.5f;
+        private static readonly Color BagColor = new Color(1f, 0.85f, 0.1f);
+        private const float CarrierTextSize = 4f;
+        private static readonly Vector2 CarrierTextBox = new Vector2(3f, 1.5f);
+        private static readonly Vector3 CarrierIconPosition = new Vector3(0f, 1.1f, -1.4f);
+        private static readonly Vector3 CalloutPosition = new Vector3(0f, 1.2f, 2.4f);
+
         /// <summary>What <see cref="TryBuildRoom"/> made, for commands that add to it.</summary>
         internal sealed class Room
         {
@@ -130,6 +159,7 @@ namespace Zenthium.Editor
             public GameClockDriver Clock;
             public CombatRulesBehaviour CombatRules;
             public ModuleWorld World;
+            public ValuableService Valuables;
             public EntityBehaviour Player;
             public CombatDebugPanel DebugPanel;
             public GameObject DummyPrefab;
@@ -223,6 +253,7 @@ namespace Zenthium.Editor
                 SetReference(so, WorldFields.ProjectilePrefab, projectilePrefab.GetComponent<Projectile>());
             });
             ModulePrefabBuilder.BuildAndWire(built.World, database);
+            built.Valuables = CreateValuableService(built.World);
 
             built.Player = PlacePlayer(playerPrefab, built, camera);
             Wire(camera.GetComponent<OverheadCameraRig>(),
@@ -241,7 +272,10 @@ namespace Zenthium.Editor
             return true;
         }
 
-        /// <summary>Places an entity and sets the references a prefab can't hold: the scene's clock and Module World.</summary>
+        /// <summary>
+        /// Places an entity and sets the references a prefab can't hold: the scene's clock, Module World and Valuable
+        /// service.
+        /// </summary>
         internal static EntityBehaviour PlaceEntity(GameObject prefab, Vector3 position, Room room)
         {
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
@@ -249,6 +283,12 @@ namespace Zenthium.Editor
             var entity = instance.GetComponent<EntityBehaviour>();
             Wire(entity, so => SetReference(so, CombatSandboxSceneCreator.EntityFields.Clock, room.Clock));
             Wire(instance.GetComponent<EntityModules>(), so => SetReference(so, ModulesFields.World, room.World));
+            if (instance.TryGetComponent(out ValuableCarrier carrier))
+            {
+                Wire(carrier, so => SetReference(so, CarrierFields.Service, room.Valuables));
+                AddCarrierView(carrier);
+            }
+
             AddDebugLabel(entity);
             return entity;
         }
@@ -321,7 +361,61 @@ namespace Zenthium.Editor
             body.AddComponent<EntityMotor>();
             body.AddComponent<EntityModules>();
             body.AddComponent<KnockbackImpacts>();
+            body.AddComponent<DamageOverTimeTicks>();
+            body.AddComponent<ValuableCarrier>();
             return body;
+        }
+
+        /// <summary>Saves the Valuable bag prefab and creates the scene's Valuable service with it.</summary>
+        private static ValuableService CreateValuableService(ModuleWorld world)
+        {
+            GameObject bag = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            bag.name = "Valuable Bag";
+            bag.transform.localScale = Vector3.one * BagSize;
+            bag.GetComponent<SphereCollider>().isTrigger = true;
+            bag.AddComponent<Rigidbody>().isKinematic = true;
+            bag.AddComponent<ValuableBag>();
+            bag.GetComponent<Renderer>().sharedMaterial = ModulePrefabBuilder.SaveMaterial("Valuable", BagColor, bag);
+            GameObject bagPrefab = SaveAsPrefab(bag, ValuableBagPrefabPath);
+
+            var service = new GameObject("Valuable Service").AddComponent<ValuableService>();
+            Wire(service, so =>
+            {
+                SetReference(so, ValuableServiceFields.World, world);
+                SetReference(so, ValuableServiceFields.BagPrefab, bagPrefab.GetComponent<ValuableBag>());
+            });
+            return service;
+        }
+
+        /// <summary>Adds the carrier's icon and callout to the scene instance, not the prefab.</summary>
+        private static void AddCarrierView(ValuableCarrier carrier)
+        {
+            TMP_Text icon = CreateFlatText(carrier.transform, "Valuables Icon", CarrierIconPosition, BagColor);
+            TMP_Text callout = CreateFlatText(carrier.transform, "Ka-ching Callout", CalloutPosition, BagColor);
+            Wire(carrier.gameObject.AddComponent<ValuableCarrierView>(), so =>
+            {
+                SetReference(so, CarrierViewFields.Carrier, carrier);
+                SetReference(so, CarrierViewFields.Icon, icon);
+                SetReference(so, CarrierViewFields.Callout, callout);
+            });
+        }
+
+        /// <summary>World-space text lying flat, facing the overhead camera.</summary>
+        private static TMP_Text CreateFlatText(Transform parent, string objectName, Vector3 localPosition, Color color)
+        {
+            var textObject = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshPro));
+            var rect = (RectTransform)textObject.transform;
+            rect.SetParent(parent, false);
+            rect.localPosition = localPosition;
+            rect.localRotation = LabelFacingCamera;
+            rect.sizeDelta = CarrierTextBox;
+            var text = textObject.GetComponent<TextMeshPro>();
+            text.font = TMP_Settings.defaultFontAsset;
+            text.fontSize = CarrierTextSize;
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = color;
+            text.text = string.Empty;
+            return text;
         }
 
         private static GameObject BuildProjectile()

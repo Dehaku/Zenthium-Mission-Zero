@@ -95,6 +95,8 @@ namespace Zenthium.Editor.DataImport
                 data.RankScaling,
                 data.Economy,
                 data.World,
+                data.Fire,
+                data.Valuables,
                 data.Tiers,
                 InFileOrder(data.Modules, m => m.Id, modules),
                 InFileOrder(data.FactionIds, id => id, factions),

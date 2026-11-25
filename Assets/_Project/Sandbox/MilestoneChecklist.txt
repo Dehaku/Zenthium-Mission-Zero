@@ -1,32 +1,31 @@
-<b>Milestone 5a: what to test</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
-Labels show every wall's, door's and prop's HP. Rush Hour: Strength 20, so Kick deals 50. Dummies: 100 HP, 5 Armor.
-The debug panel (top left) shows and changes <b>you</b>: use it to raise your Strength.
+<b>Milestone 5b: what to test</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
+Reset scene (bottom right) reloads the scene without leaving Play mode.
+Rush Hour: Strength 20 (Kick 50), Will 10. Dummies: 100 HP, 5 Armor. Building labels show their fire state.
 
-<b>Walls, doors and windows</b>
-1. Sample walls (bottom row): Kick each. Glass breaks at once (10 HP); Wood loses 50 per Kick (100 HP); Stone 300,
-   Metal 600, Crystalline 1000. A broken wall vanishes: walk through the gap.
-2. Wall impact: Kick a dummy into a wall from under 4 m. The wall takes 1000 (Heavy 100 from your Strength, x10)
-   and breaks, even Crystalline; the dummy takes 20 (25 minus its 5 Armor).
-3. Wood house (top right): its south door opens while you stand in it and closes when you step away.
-4. Stone shop (top left, L-shaped): its Metal door is locked and stays shut. Kick a dummy into it: it breaks.
-5. Windows (west side of each building): Kick one; it breaks (Glass, 10 HP).
+<b>Fire</b> (hero select: Test module <b>Fire Wand</b>, Apply; it replaces Power 4)
+1. Fire Wand a Wood house wall: the house turns orange and its label counts "Burning N s".
+2. Every 5 s everyone inside gets Burn (stand inside: you lose 2 HP every 0.5 s, with no gap; it ignores
+   Armor). Every 10 s one random wall, window or door breaks.
+3. After 60 s it's burned out: what's left of it turns black, and the 3 bags inside melt: "Valuables lost: 3"
+   at the top of the screen.
+4. Spreading is on: while one building burns, every 15 s the other (19 m away) has a 25% chance to catch fire.
+5. Props: Fire Wand the dumpster (50 HP): the shot deals 15, then its label says Burning and it loses 2 HP
+   every 0.5 s until it breaks. Burn on props lasts 50 s (10x).
+6. Fire Wand the car: Burn ignores its Armor, so it reaches 0 in about 25 s and explodes; the blast sets the
+   motorcycle on fire too.
+7. Scene view (Show NavMesh): a burning building's floor is cut out of the NavMesh, and comes back when it's
+   out or burned out.
 
-<b>Props</b> (the row above the sample walls)
-6. Drag (F) the bench. The dumpster needs Strength 50 and the tree 250: Drag skips them until you set your
-   Strength that high on the debug panel.
-7. Kick while dragging: the prop flies 4 m along your aim and hits the first dummy, wall or prop for your Kick
-   times its factor (bench x1, dumpster x2, tree x3), and takes the same. The bench always breaks.
-   A thrown prop hitting a wall, door or window deals it x2. Thrown bench (50) into a Wood wall: 100, it breaks.
-8. Major Overclock (hero select), Power 3, Power Throw: throws everything you drag 15 m; props hit as in 7.
-9. Car: each Kick deals 15 (50 minus 20 Armor, halved). At 0 HP a red ring 30 m wide appears; 1 s later it
-   explodes for 500 to everything inside, you included, and to walls and props. Stand back. The motorcycle,
-   7 m away, breaks and explodes too.
+<b>Putting fires out</b> (Test module <b>Water Cannon</b>; it replaces Gear 4 and costs 5 Ammo)
+8. Water Cannon a wall of a burning building: it goes out (its colors come back), and can burn again later
+   from a fresh 60 s.
+9. Water Cannon a burning prop: Burning goes from its label. Push a dummy into a burning building (Water
+   Cannon knocks back 15 m), wait for Burn on its label, then Water Cannon it: the Burn ends.
 
-<b>Breaching Charge and the turret</b>
-10. Major Overclock, Gear 3, Breaching Charge next to the Stone shop: walls, doors and windows in the 15 m
-    blast take 10x its damage (Demolition) and all break.
-11. Heavy Turret (bottom right corner): Neutral, it fires Heavy Gun at the dummy next to it every 2 s
-    (45 per hit). Kick it: it never moves. Defeat it (5 Kicks), then Drag (F) next to it: it can't be dragged.
-
-<b>NavMesh</b> (Scene view, with AI Navigation's Show NavMesh on)
-12. Building walls and windows cut holes in the NavMesh; doors and broken walls don't.
+<b>Valuables</b>
+10. Drag (F) next to a bag (two by your start): it's picked up at once. A "$1" shows under you; each bag adds
+    -5% speed (label: CarryingTreasure), up to -50% at 10.
+11. Kick with bags and no dragged prop: they all fly about 4 m along your aim, scattering. One that hits a
+    dummy deals 45 (Kick 50 minus 5 Armor). They land as bags you can pick up again.
+12. The dummy marked "carries 3 Valuables" shows "$3". Defeat it: "KA-CHING!", and 3 bags drop around it.
+13. Drag a prop and carry bags: the first Kick throws the prop, the next launches the bags.

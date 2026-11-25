@@ -11,7 +11,8 @@ namespace Zenthium.World
     /// <summary>
     /// A vehicle's explosion (world.md, Props): a delay after it's destroyed, it deals its explosion damage to every
     /// entity in its radius, the player and civilians included, and to every wall, door, window and prop there.
-    /// It's environmental damage: Armor and Damage Reduction apply, dodging doesn't. Its fuse runs on game time.
+    /// It's environmental damage: Armor and Damage Reduction apply, dodging doesn't. It sets the other vehicles in
+    /// the blast on fire. Its fuse runs on game time.
     /// Presentation shows the radius from <see cref="OnFuseLit"/>.
     /// </summary>
     [RequireComponent(typeof(PropBody), typeof(Structure))]
@@ -91,9 +92,17 @@ namespace Zenthium.World
             }
 
             world.CollectStructures(origin, prop.Data.ExplosionRadius, reachedStructures);
+            FireConstants fire = world.Database.FireConstants;
             foreach (IDamageableStructure solid in reachedStructures)
             {
                 solid.TakeHit(new StructureHit(blast, StructureHitKind.Direct));
+
+                // world.md: the blast sets the vehicles in it on fire, but not buildings.
+                if (solid is Component other && other.TryGetComponent(out PropBody vehicle) && vehicle.Data != null
+                    && PropRules.Explodes(vehicle.Data) && other.TryGetComponent(out PropBurning burning))
+                {
+                    burning.Ignite(fire.BurnDamage, fire.BurnSeconds);
+                }
             }
 
             OnExploded?.Invoke();

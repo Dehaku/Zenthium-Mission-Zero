@@ -8,7 +8,8 @@ namespace Zenthium.Modules
     /// <summary>
     /// Drag (modules.md, Drag row): grabs the best target in reach and pulls it behind the carrier. Carry capacity
     /// grows with Strength. The carrier isn't slowed and can still fight. Dragged targets trail one behind another,
-    /// like beads on a rope.
+    /// like beads on a rope. Pickups, such as Valuables, are taken at once instead (<see cref="IPickup"/>); they
+    /// have trigger colliders, so the reach check includes triggers.
     /// </summary>
     [RequireComponent(typeof(EntityBehaviour), typeof(Rigidbody))]
     public sealed class DragAction : MonoBehaviour
@@ -59,7 +60,10 @@ namespace Zenthium.Modules
             return false;
         }
 
-        /// <summary>Grabs the best target in reach if there's room; otherwise lets go of everything.</summary>
+        /// <summary>
+        /// Grabs the best target in reach if there's room, or picks it up if it's a pickup; otherwise lets go of
+        /// everything.
+        /// </summary>
         public void Use()
         {
             if (entity == null || entity.IsIncapacitated)
@@ -68,7 +72,11 @@ namespace Zenthium.Modules
             }
 
             IDragTarget target = FindTarget();
-            if (target != null)
+            if (target is IPickup pickup)
+            {
+                pickup.PickUp(entityBehaviour);
+            }
+            else if (target != null)
             {
                 Grab(target);
             }
@@ -160,7 +168,7 @@ namespace Zenthium.Modules
 
             Vector3 origin = body.position;
             int count = Physics.OverlapSphereNonAlloc(
-                origin, reach, reachHits, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+                origin, reach, reachHits, Physics.AllLayers, QueryTriggerInteraction.Collide);
             for (int i = 0; i < count; i++)
             {
                 if (!TryGetDragTarget(reachHits[i], out IDragTarget target) || candidates.Contains(target)

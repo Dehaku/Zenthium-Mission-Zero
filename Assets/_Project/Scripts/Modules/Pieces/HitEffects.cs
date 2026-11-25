@@ -78,17 +78,26 @@ namespace Zenthium.Modules
                 TryApplyStatus(context, victim);
             }
 
+            if (landed && module.HasTag(ModuleTag.Extinguish))
+            {
+                // world.md, Fire: Extinguish modules remove Burn from entities.
+                victim.Statuses.Remove(StatusType.Burn);
+            }
+
             return landed;
         }
 
         /// <summary>
         /// Damages a wall, door, window or prop with the same damage an entity would take before its defenses.
-        /// Modules with the Demolition tag hit buildings harder. Knockback and statuses don't apply to structures.
+        /// Modules with the Demolition tag hit buildings harder; <c>Ignites</c> and <c>Extinguish</c> modules start
+        /// and put out fires (world.md, Fire). Knockback and statuses don't apply to structures.
         /// </summary>
-        /// <returns>True if it dealt damage; modules without damage, such as Megaphone, do nothing.</returns>
+        /// <returns>True if it hit; a module with no damage and no fire tag, such as Megaphone, does nothing.</returns>
         public bool ApplyToStructure(ModuleContext context, IDamageableStructure structure)
         {
-            if (damage == null || structure == null || !structure.CanBeHit)
+            bool ignites = module.HasTag(ModuleTag.Ignites);
+            bool extinguishes = module.HasTag(ModuleTag.Extinguish);
+            if (structure == null || !structure.CanBeHit || (damage == null && !ignites && !extinguishes))
             {
                 return false;
             }
@@ -96,7 +105,8 @@ namespace Zenthium.Modules
             StructureHitKind kind = module.HasTag(ModuleTag.Demolition)
                 ? StructureHitKind.Demolition
                 : StructureHitKind.Direct;
-            structure.TakeHit(new StructureHit(new Hit(context.Owner, Damage(context), damageType), kind));
+            float amount = damage != null ? Damage(context) : 0f;
+            structure.TakeHit(new StructureHit(new Hit(context.Owner, amount, damageType), kind, ignites, extinguishes));
             return true;
         }
 

@@ -828,7 +828,7 @@ Milestone 5 is split, as approved. **5a** (this entry) builds walls, doors, wind
 - `MapSocket` options are filled by missions in Milestone 9; Heavy Turret spawning by rank, too.
 - Turret targeting ("never civilians", enemies.md) is Milestone 6's AI. The friendly fire rules still let Neutrals hurt civilians.
 - Entity tags come from an Inspector list until `entities.csv` has a tags column.
-- **Dev options menu (asked by the user, for later):** expose the wall damage multipliers (`building_impact_multiplier`, `building_throw_multiplier`, `demolition_multiplier`) in a dev options menu, so they can be tuned in play. No such menu exists yet.
+- **Dev options menu (asked by the user, for later):** expose the wall damage multipliers (`building_impact_multiplier`, `building_throw_multiplier`, `demolition_multiplier`) and the fire wall-break interval (`fire_break_interval_s`, Milestone 5b) in a dev options menu, so they can be tuned in play. No such menu exists yet.
 
 ### Editor steps for the user
 1. **Let Unity compile.** If the Console says a type is missing although its file exists, it was skipped: tell Claude.
@@ -861,3 +861,100 @@ Milestone 5 is split, as approved. **5a** (this entry) builds walls, doors, wind
 1. Let Unity compile, then run **Zenthium > Data > Import Design CSVs** (the new constant is required).
 2. Press Play in `Sandbox_World` (no rebuild needed) and throw the bench into a Wood wall: 100, and it breaks.
 3. Run `StructureDamageRulesTests`, `DesignDataParserTests` and `ImpactDamageTests`.
+
+---
+
+## Milestone 5b: DoT ticks, fire and Valuables (implemented, not yet checked, 2026-11-24)
+
+### Done
+- **Data (local edits, approved):**
+  - `constants.csv`: `dot_tick_s` (0.5, formula group). In the `world` group, from world.md and statuses.md: `fire_tick_s` 5, `fire_burn_damage` 20, `fire_burn_s` 4, `burn_out_s` 60, `fire_spread_interval_s` 15, `fire_spread_chance` 0.25, `prop_burn_duration_multiplier` 10, `carrying_treasure_slow_per_valuable` 0.05, `carrying_treasure_slow_cap` 0.5, `valuable_icon_growth_per_valuable` 0.05, `valuable_icon_growth_cap` 0.5, `valuable_pickup_s` 5.
+  - `modules.csv`: Water Cannon's `damage_type` is Physical.
+  - Code: `ModuleConstants.DamageOverTimeTickSeconds`; new `FireConstants` and `ValuableConstants` (`GameDatabase.FireConstants`, `ValuableConstants`), read by the constants parser.
+- **DoT ticks:**
+  - `DamageOverTime` (plain C#): a DoT's total damage in equal ticks on game time, never past its end.
+  - `StatusApplication` carries a DoT's total damage and damage type. `StatusEffects` raises `OnDamageOverTimeTick` (after its update, since the damage can trigger a Defiance cleanse).
+  - `DamageOverTimeTicks` (Modules, on every entity body) deals each tick through the pipeline as a DoT hit.
+  - `StatusEffects.Remove(type)` (for Extinguish) and `SetLayers` (Carrying Treasure follows the bag count).
+- **Fire:**
+  - `BuildingFire` (plain C#): unburned, burning, burned out; ticks every 5 s and spread rolls every 15 s from ignition; burned out at 60 s, with nothing at that moment; Extinguish makes it unburned and its clock starts over.
+  - `Building` runs it: each tick, Burn on every entity inside and on every prop inside (each once, even across two zones), and one random standing wall, window or door broken (`FireTargets`). Spread rolls ignite unburned neighbors when `BuildingRegistry.IsSpreadOn` (on in the sandbox; Milestone 11 sets it by rank). Burned out, the loose bags in its zones melt.
+  - `InteriorZone`: tracks loose bags, and carves its floor out of the NavMesh while its building burns.
+  - `StructureHit` carries `Ignites` and `Extinguishes` from the module's tags; `Structure.OnHit` passes them on. Any building part's hit ignites or puts out the building.
+  - `PropBurning`: Burns on any prop (your answer 2), 10x as long at the same damage per tick, ignoring Armor; nothing while dragged; Extinguish clears them. A vehicle blast sets the other vehicles in it on fire.
+  - `HitEffects`: Extinguish removes Burn from entities a hit lands on.
+- **Valuables:**
+  - `ValuableBag`: a trigger collider (never blocks anyone), found by Drag as a `Valuable` target and picked up at once (`IPickup`, new in Modules; `DragAction` now includes triggers in its reach check). Launched, it flies like a swept knockback and deals the thrower's Kick damage to the first thing it hits (walls take the throw multiplier), then lands there.
+  - `ValuableCarrier` (on every entity body, `ICarriedLoot`): the count, Carrying Treasure layers, dropping everything on defeat (`OnDroppedAll`), and the player's Kick launch.
+  - `ValuableService` (scene service): spawns, scatters (1.5 m drop radius, launch spread of ±25% distance and ±15°, feel values) and keeps `LostCount`.
+  - `ValuableRules` (the slow layers and icon scale) and `ValuablePickupTimer` (5 s, reset by damage; Milestone 6's AI uses it).
+  - `KickModule`: a dragged prop first; otherwise the player's bags; otherwise the strike.
+- **Test modules:** Fire Wand (projectile, Ignites) and Water Cannon (beam, Extinguish) are in the catalog.
+- **Sandbox:** `ValuableCarrierView` ("$N" icon and "KA-CHING!"), `BuildingFireView` (orange, black), `BuildingDebugLabel`, `LostValuablesLabel`; `StructureDebugLabel` shows "Burning" on props.
+- **Editor:**
+  - `TryBuildRoom` creates a Valuable Service and `Prefabs/ValuableBag.prefab` in every sandbox; every entity body gets `DamageOverTimeTicks` and `ValuableCarrier`; placed entities get their carrier's service and view.
+  - `Sandbox_World`: spreading on; zones carve while burning; props can burn; three bags in the Wood house and two by the player; a dummy carrying three; building labels and fire colors; the lost counter at the top.
+- **Checklist:** `MilestoneChecklist.txt` holds 5b's tests.
+- **Tests (EditMode):**
+  - New classes: `DamageOverTimeTests`, `BuildingFireTests`, `FireTargetsTests`, `ValuableRulesTests` (with the pickup timer).
+  - New cases (no assertions changed): `StatusEffectsTests` (Burn ticks, Time Stop, `Remove`, `SetLayers` and its cap), `DesignDataParserTests` (the new constants).
+  - Fixtures: `DesignDataTestCsv` and `CombatTestSetup` have the new constants.
+
+### Decisions (approved by the user)
+- DoT ticks every 0.5 s; the world.md numbers in `constants.csv`; Water Cannon is Physical.
+- Every prop can burn (not only vehicles), 10x as long at the same damage per tick.
+- Launched bags fly Kick's knockback tier with a small random spread, deal Kick damage to the first thing hit (walls x2, like thrown props) and land there.
+- Extinguish removes Burn only on hits that land (so not on allies for now).
+- Dropped bags scatter within 1.5 m; spread rolls every 15 s from ignition; only loose bags melt.
+
+### Choices made in code (not asked)
+- A DoT whose duration isn't a whole number of ticks loses the last part-tick.
+- Building fire Burns have no source (environmental), so they hurt everyone inside, the player included.
+- The building's Burn reaches each entity once per tick even if it stands where two zones overlap.
+- An `Ignites` hit on an entity does nothing by itself; Burn on entities comes from burning buildings now, and from modules with `burn_damage` when those are built.
+- Only the player's Kick launches bags (world.md: "The player can press Kick").
+- Launching bags uses Kick's cooldown.
+- Bags in flight inside a building at burn-out melt too.
+
+### Stubs and deferred
+- `ValuablePickupTimer` has no caller until Milestone 6's AI; goons looting, handing bags to a Leader and loot destinations come then.
+- Civilians carrying and dropping Valuables, and Valuable placement in sockets: Milestones 6 and 9. The lost count's mission goal: Milestone 9.
+- Modules with `burn_damage` (Fire Ring, Spectrum Bolt, Fire Spell Tome, Hoop of Fire): later milestones.
+- Gel Coat and Fireproof Body: later.
+
+### Editor steps for the user
+1. **Let Unity compile.** If the Console says a type is missing although its file exists, tell Claude.
+2. **Run Zenthium > Data > Import Design CSVs.** The new constants are required.
+3. **Run Zenthium > Setup > Create World Sandbox Scene** and choose Replace. It also creates `Prefabs/ValuableBag.prefab`.
+4. Rebuild the Player and Modules sandboxes if you use them (the shared prefabs changed).
+5. **Press Play in `Sandbox_World`** and work through the checklist (Caps Lock).
+
+### What to check
+- [ ] The Console has no errors after compiling, importing and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`StatusEffects`, `StatusApplication`, `HitEffects`, `DragAction`, the constants parser).
+  - New classes: `DamageOverTimeTests`, `BuildingFireTests`, `FireTargetsTests`, `ValuableRulesTests`.
+  - Changed classes: `StatusEffectsTests`, `DesignDataParserTests`.
+- [ ] Every item on the in-game checklist (13).
+
+### First run (2026-11-24)
+- The user passed checklist items 1-13.
+- **Item 2:** Burn (4 s) ends before the next fire tick (5 s), so it stops and starts. world.md's numbers; left as they are, as a question below.
+- **Item 3:** nothing turned black at burn-out, because the 5 s breaks had destroyed every wall, window and door by then.
+
+### Changes after the first run (asked by the user, 2026-11-24)
+- **Walls break every 10 s** (a local design decision; world.md says one per fire tick): a new `fire_break_interval_s` (10) in the `world` group, `FireConstants.BreakIntervalSeconds`, and `FireStep.PartBreaks`. Burn still comes every `fire_tick_s` (5). Over 60 s that's 5 breaks, so most of a building is left to turn black.
+- **Dev options menu (for later):** add `fire_break_interval_s` to the dev options list, with the wall damage multipliers.
+- **Reset scene button** in every sandbox (bottom right, `SandboxSceneReset`, added by `SandboxHudSetup`): reloads the scene in Play mode. The HUD canvas now has a raycaster so the button takes clicks; the HUD and checklist panels still catch none.
+- **Tests:** `BuildingFireTests` gets a new case for breaks every 10 s, and its 60 s case also checks the 5 breaks (renamed to `Advance_To60Seconds_BurnsOutAfter11Ticks5BreaksAnd3Rolls`). `DesignDataParserTests` checks the new constant. The fixtures have it.
+- **Checklist:** items 2 and 3 are updated, and the header mentions Reset scene.
+
+### Editor steps
+1. Let Unity compile, then run **Zenthium > Data > Import Design CSVs** (the new constant is required).
+2. Run **Create World Sandbox Scene** (Replace) for the button; the Player and Modules sandboxes get it when rebuilt.
+3. Run `BuildingFireTests` and `DesignDataParserTests`.
+
+### Open question
+- **Burn gap (decided by the user):** the building's Burn now lasts 5 s (`fire_burn_s` 5, was world.md's 4), as long as the tick interval, so it never lapses: 20 damage over 5 s, 2 per 0.5 s tick. On props that's 50 s. world.md still says 4 s; update it or push the change to the design branch when you like. Checklist items 2, 5 and 6 have the new numbers. No code or test changes; re-import the CSVs.
+
+### Test fix (approved by the user, 2026-11-24)
+- The EditMode run had 1 failure in 339: `StatusEffectsTests.SetLayers_ThreeValuables_Slow15Percent` expected 4.2 m/s, but three Valuables (15% slow on 6 m/s) give 5.1, which the code returned. The test's literal was miscalculated when it was written; with the user's approval its expected value is now 5.1. The game code is unchanged.

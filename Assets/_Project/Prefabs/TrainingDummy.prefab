@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 6510558925886666635}
   - component: {fileID: 2767899941204760757}
   - component: {fileID: 7800377467134068663}
+  - component: {fileID: 8519507834732460766}
+  - component: {fileID: 9044511757726249296}
   - component: {fileID: 6288120947838434953}
   m_Layer: 0
   m_Name: TrainingDummy
@@ -211,6 +213,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cf5e18a9889daa448932903e8691845, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.KnockbackImpacts
+--- !u!114 &8519507834732460766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1377774910006779722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df162f8fee867a24f80e8b4d16a2f275, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.Modules::Zenthium.Modules.DamageOverTimeTicks
+--- !u!114 &9044511757726249296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1377774910006779722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: deb0ef34f59a8c14bad24f56d37e2bbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.World::Zenthium.World.ValuableCarrier
+  service: {fileID: 0}
+  startingValuables: 0
 --- !u!114 &6288120947838434953
 MonoBehaviour:
   m_ObjectHideFlags: 0

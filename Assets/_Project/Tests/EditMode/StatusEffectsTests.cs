@@ -275,5 +275,83 @@ namespace Zenthium.Tests.EditMode
             Assert.That(hero.Statuses.IsSilenced, Is.True);
             Assert.That(hero.Statuses.CanAct, Is.True, "Kick and Drag still work");
         }
+
+        [Test]
+        public void Burn_TicksItsDamageEveryHalfSecond()
+        {
+            // world.md: a burning building's Burn is 20 over 4 s; ticks every 0.5 s make 8 ticks of 2.5.
+            Entity goon = CombatTestSetup.CreateEntity(Team.Enemy, RankTier.Goon);
+            var ticks = new System.Collections.Generic.List<DamageOverTimeTick>();
+            goon.Statuses.OnDamageOverTimeTick += ticks.Add;
+            goon.Statuses.TryApply(new StatusApplication(StatusType.Burn, null, 4f, damage: 20f,
+                damageType: DamageType.Magic));
+
+            Tick(goon, 1.2f);
+            Assert.That(ticks, Has.Count.EqualTo(2), "At 0.5 s and 1 s");
+
+            Tick(goon, 10f);
+            Assert.That(ticks, Has.Count.EqualTo(8));
+            Assert.That(ticks[0].Damage, Is.EqualTo(2.5f).Within(Tolerance));
+            Assert.That(ticks[0].DamageType, Is.EqualTo(DamageType.Magic));
+            Assert.That(goon.Statuses.Has(StatusType.Burn), Is.False);
+        }
+
+        [Test]
+        public void Burn_UnderTimeStop_DoesNotTick()
+        {
+            Entity goon = CombatTestSetup.CreateEntity(Team.Enemy, RankTier.Goon);
+            int ticks = 0;
+            goon.Statuses.OnDamageOverTimeTick += _ => ticks++;
+            goon.Statuses.TryApply(new StatusApplication(StatusType.Burn, null, 4f, damage: 20f));
+            var clock = new GameClock();
+            clock.SetTimePowerScale(0f);
+
+            goon.Tick(clock, 2f);
+
+            Assert.That(ticks, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Remove_EndsEveryInstanceOfTheStatus()
+        {
+            // Extinguish removes Burn (world.md, Fire); Burns stack independently.
+            Entity goon = CombatTestSetup.CreateEntity(Team.Enemy, RankTier.Goon);
+            goon.Statuses.TryApply(new StatusApplication(StatusType.Burn, null, 4f, damage: 20f));
+            goon.Statuses.TryApply(new StatusApplication(StatusType.Burn, null, 4f, damage: 20f));
+
+            bool removed = goon.Statuses.Remove(StatusType.Burn);
+
+            Assert.That(removed, Is.True);
+            Assert.That(goon.Statuses.Has(StatusType.Burn), Is.False);
+        }
+
+        [TestCase(3, 5.1f, TestName = "SetLayers_ThreeValuables_Slow15Percent")]
+        [TestCase(12, 3f, TestName = "SetLayers_TwelveValuables_SlowCappedAt50Percent")]
+        public void SetLayers_CarryingTreasure_SlowsPerLayerUpToTheCap(int valuables, float expectedSpeed)
+        {
+            // Base move speed 6 m/s; -5% per Valuable, capped at 10 layers (-50%).
+            Entity goon = CombatTestSetup.CreateEntity(Team.Enemy, RankTier.Goon);
+            var slowPerLayer = new[] { new StatusModifier(StatusModifierTarget.Slow, 0.05f) };
+
+            goon.Statuses.SetLayers(new StatusApplication(StatusType.CarryingTreasure, null,
+                StatusApplication.UntilRemoved, slowPerLayer, maxLayers: 10), valuables);
+
+            Assert.That(goon.MoveSpeed.Current, Is.EqualTo(expectedSpeed).Within(Tolerance));
+        }
+
+        [Test]
+        public void SetLayers_Zero_EndsTheStatus()
+        {
+            Entity goon = CombatTestSetup.CreateEntity(Team.Enemy, RankTier.Goon);
+            var slowPerLayer = new[] { new StatusModifier(StatusModifierTarget.Slow, 0.05f) };
+            var carrying = new StatusApplication(StatusType.CarryingTreasure, null, StatusApplication.UntilRemoved,
+                slowPerLayer, maxLayers: 10);
+            goon.Statuses.SetLayers(carrying, 4);
+
+            goon.Statuses.SetLayers(carrying, 0);
+
+            Assert.That(goon.Statuses.Has(StatusType.CarryingTreasure), Is.False);
+            Assert.That(goon.MoveSpeed.Current, Is.EqualTo(6f).Within(Tolerance));
+        }
     }
 }
