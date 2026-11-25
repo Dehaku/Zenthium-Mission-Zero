@@ -19,6 +19,8 @@ GameObject:
   - component: {fileID: 8001455183569371892}
   - component: {fileID: 8310445463476245824}
   - component: {fileID: 3822406105574810209}
+  - component: {fileID: 5713167791132196630}
+  - component: {fileID: 1169856566082658413}
   m_Layer: 0
   m_Name: HeavyTurret
   m_TagString: Untagged
@@ -168,7 +170,7 @@ MonoBehaviour:
   difficultyLevel: 0
   modules:
   - {fileID: 11400000, guid: b123ca1bafc05094b8bdc98efa9fde27, type: 2}
-  tags: 0000000002000000i
+  tags: 000000000200000003000000i
   unlockedSlots: 0
   testModule: {fileID: 0}
 --- !u!114 &7310174513595627924
@@ -239,3 +241,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Zenthium.World::Zenthium.World.ValuableCarrier
   service: {fileID: 0}
   startingValuables: 0
+--- !u!114 &5713167791132196630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3426095738912133110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a02f6ec2332332f4685cb16b314683d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.AI::Zenthium.AI.AiNavigator
+  repathSeconds: 0.5
+  repathDistance: 1
+  sampleRadius: 20
+  cornerReach: 0.3
+  doorProbeDistance: 1.2
+--- !u!114 &1169856566082658413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3426095738912133110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca06a4b1365aee44e87d3ba9aa0c597f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.AI::Zenthium.AI.AiBrain
+  squad: {fileID: 0}
+  thinkSeconds: 0.2
+  searchRadius: 6
+  rangeMargin: 0.85
+  followSlack: 3
+  arriveDistance: 1
+  backoffStep: 2

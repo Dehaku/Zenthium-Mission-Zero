@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using Zenthium.AI;
 using Zenthium.Data;
 using Zenthium.Entities;
 using Zenthium.Modules;
@@ -107,7 +108,8 @@ namespace Zenthium.Editor
             body.transform.localScale = Vector3.one * SummonScale;
             body.GetComponent<Renderer>().sharedMaterial = SaveMaterial("Ink", InkColor, body);
             body.AddComponent<EntityDragTarget>();
-            body.AddComponent<PlaceholderSummonBrain>();
+            body.AddComponent<AiNavigator>();
+            body.AddComponent<AiBrain>();
             return body;
         }
 

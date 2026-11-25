@@ -10,6 +10,7 @@
         "Zenthium.Movement",
         "Zenthium.Modules",
         "Zenthium.World",
+        "Zenthium.AI",
         "Zenthium.Player",
         "UnityEngine.UI",
         "Unity.TextMeshPro",

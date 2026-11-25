@@ -94,7 +94,7 @@ Broken Limb,Passive,,,,,,,Short,,,,slow=0.3,,Debuff; Resist:Toughness,,
 Infectious Bite,Passive,,,,,,,,,,,infected_dps=5; infected_s=10,,Debuff; Resist:Toughness,,
 Turn on Death,Passive,,,,,,,,,,,,,NotRandom,,Infected entities rise as zombies
 Treads,Passive,,,,,,,,,,,move_speed=-0.1; hp_bonus=0.5,,,,
-Cannons,Active,Finesse,Heavy,6,,,None,,,,Long,,,Ranged; Telegraph,,
+Cannons,Active,Finesse,Heavy,6,,,None,,,,Long,,Physical,Ranged; Telegraph,,
 Turrets,Active,Intelligence,,30,,,Strong,,,,,mini_turrets=2,,Summon,,
 Repossess,Active,Intelligence,,15,,,Strong,Medium,,,Medium,,,Debuff; Resist:Intelligence,,
 Final Notice,Active,Will,,15,,,Strong,,,,Medium,duration_s=6; marked_damage_dealt=-0.3; marked_damage_taken=0.25,,Debuff; Resist:Will,,

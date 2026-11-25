@@ -1,31 +1,36 @@
-<b>Milestone 5b: what to test</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
-Reset scene (bottom right) reloads the scene without leaving Play mode.
-Rush Hour: Strength 20 (Kick 50), Will 10. Dummies: 100 HP, 5 Armor. Building labels show their fire state.
+<b>Milestone 6a: what to test in Sandbox_AI</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
+Reset scene (bottom right) reloads the scene. "Enemy FF" (above it) is the enemy friendly fire dev toggle.
+Squad A (3 melee goons, Speed Punch) patrols north-east; Squad B (2 Energy Blaster goons and a Cannons goon)
+patrols north. Cover hides them and the Heavy Turret (south-west) from your start. Each goon's AI state is under it.
+One more goon is locked in the Stone shop's back room (its locked door is Wood here).
 
-<b>Fire</b> (hero select: Test module <b>Fire Wand</b>, Apply; it replaces Power 4)
-1. Fire Wand a Wood house wall: the house turns orange and its label counts "Burning N s".
-2. Every 5 s everyone inside gets Burn (stand inside: you lose 2 HP every 0.5 s, with no gap; it ignores
-   Armor). Every 10 s one random wall, window or door breaks.
-3. After 60 s it's burned out: what's left of it turns black, and the 3 bags inside melt: "Valuables lost: 3"
-   at the top of the screen.
-4. Spreading is on: while one building burns, every 15 s the other (19 m away) has a 25% chance to catch fire.
-5. Props: Fire Wand the dumpster (50 HP): the shot deals 15, then its label says Burning and it loses 2 HP
-   every 0.5 s until it breaks. Burn on props lasts 50 s (10x).
-6. Fire Wand the car: Burn ignores its Armor, so it reaches 0 in about 25 s and explodes; the blast sets the
-   motorcycle on fire too.
-7. Scene view (Show NavMesh): a burning building's floor is cut out of the NavMesh, and comes back when it's
-   out or burned out.
+<b>Noticing</b>
+1. Watch in the Scene view: each squad walks between its 3 sockets at half speed and waits ~3 s at each (Idle).
+2. Unaware goons notice you only within 15 m: about 3 s at 10 m, faster closer, at once within 1 m. They see
+   all around. Step out within 15 m: the yellow bar fills; duck behind cover before it's full and it drains
+   (3 s from full). Once aware, they see you out to 100 m.
+3. Full bar: a "!" pops up and a grey 10 m circle shows; the goon stands still for 0.5 s, then acts. Unaware
+   squadmates inside the circle get their own "!" and circle (alerts chain).
+4. Sneak up on an unaware goon (Time Slow slows its bar too) and Kick it before its bar fills: it notices at once.
 
-<b>Putting fires out</b> (Test module <b>Water Cannon</b>; it replaces Gear 4 and costs 5 Ammo)
-8. Water Cannon a wall of a burning building: it goes out (its colors come back), and can burn again later
-   from a fresh 60 s.
-9. Water Cannon a burning prop: Burning goes from its label. Push a dummy into a burning building (Water
-   Cannon knocks back 15 m), wait for Burn on its label, then Water Cannon it: the Burn ends.
+<b>Fighting</b>
+5. Melee goons chase you and Speed Punch. Ranged goons stop at range and shoot; walk within 3 m of one and it
+   backs off. Labels read "Combat > Player".
+6. The Cannons goon turns red for 0.5 s before it fires, aimed where you stood when it turned red: sidestep it.
+7. Ranged shots that hit other goons hurt them, but goons never turn on each other. Click "Enemy FF" (off): no
+   more damage between goons.
+8. Hide behind a building: they go to where they last saw you, wander there ~10 s (Searching), then the bar
+   drains for 3 s and they go back to Idle and their patrol.
 
-<b>Valuables</b>
-10. Drag (F) next to a bag (two by your start): it's picked up at once. A "$1" shows under you; each bag adds
-    -5% speed (label: CarryingTreasure), up to -50% at 10.
-11. Kick with bags and no dragged prop: they all fly about 4 m along your aim, scattering. One that hits a
-    dummy deals 45 (Kick 50 minus 5 Armor). They land as bags you can pick up again.
-12. The dummy marked "carries 3 Valuables" shows "$3". Defeat it: "KA-CHING!", and 3 bags drop around it.
-13. Drag a prop and carry bags: the first Kick throws the prop, the next launches the bags.
+<b>World</b>
+9. Stand outside the Stone shop's west window (don't break it), within 15 m of the goon inside: it notices you
+   through the glass, walks to the locked door, punches it until it breaks (Wood, 100 HP), and comes for you.
+10. Test module Fire Wand: set the Wood house on fire. Goons path around it, and one inside walks out.
+11. The turret notices and shoots you and goons it can see, never the civilian beside it. Goons in Combat with
+    no one better in view attack the civilian.
+
+<b>Hero modules</b> (hero select)
+12. Major Overclock: Taunt goons in view, unaware ones too: they all go for you.
+13. Rune: Smoke Bomb (Gear) between you and goons: they can't see you through it, and unaware goons inside it
+    lose their bars.
+14. Rune: Ink Beast follows you, staying within ~10 m outside combat, and fights goons it notices.

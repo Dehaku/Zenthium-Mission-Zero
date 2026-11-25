@@ -25,6 +25,7 @@ namespace Zenthium.Tests.EditMode
                 dodgeCap: 0.75f,
                 visionRange: 100f,
                 awarenessInstantRange: 10f,
+                awarenessRange: 100f,
                 awarenessMaxTime: 10f,
                 resourceSecondsPerPoint: 1f,
                 enemyDefaultDamageTier: new TierValue("Light", 0.5f)));
@@ -83,6 +84,33 @@ namespace Zenthium.Tests.EditMode
         public void AwarenessFillSeconds_BeyondVisionRange_NeverFills()
         {
             Assert.That(CreateFormulas().AwarenessFillSeconds(101f), Is.EqualTo(float.PositiveInfinity));
+        }
+
+        // The user's tuning (2026-11-25): instant at 1 m, about 3 s at 10 m, nothing past 15 m though vision is 100 m.
+        [TestCase(1f, 0f, TestName = "AwarenessFillSeconds_ShortRange_InstantAt1m")]
+        [TestCase(10f, 3f, TestName = "AwarenessFillSeconds_ShortRange_About3sAt10m")]
+        [TestCase(20f, float.PositiveInfinity, TestName = "AwarenessFillSeconds_ShortRange_NeverPast15m")]
+        public void AwarenessFillSeconds_AwarenessRangeShorterThanVision_UsesTheAwarenessRange(float distance,
+            float expected)
+        {
+            var formulas = new BalanceFormulas(new FormulaConstants(
+                hpPerToughness: 10f,
+                leaderHpMultiplier: 2f,
+                armorPerToughness: 0.5f,
+                normalDamageBase: 10f,
+                normalDamagePerStat: 2f,
+                kickCooldown: 3f,
+                minDamageFraction: 0.05f,
+                dodgePerFinesse: 0.005f,
+                dodgeCap: 0.75f,
+                visionRange: 100f,
+                awarenessInstantRange: 1f,
+                awarenessRange: 15f,
+                awarenessMaxTime: 4.67f,
+                resourceSecondsPerPoint: 1f,
+                enemyDefaultDamageTier: new TierValue("Light", 0.5f)));
+
+            Assert.That(formulas.AwarenessFillSeconds(distance), Is.EqualTo(expected).Within(0.01f));
         }
     }
 }

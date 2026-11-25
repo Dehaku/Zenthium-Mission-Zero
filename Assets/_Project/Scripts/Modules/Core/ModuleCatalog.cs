@@ -31,6 +31,7 @@ namespace Zenthium.Modules
                 case DataIds.Modules.Megaphone:
                     return TryCreateAreaStatus(data, StatusType.Stun, out behaviour, out problem);
                 case DataIds.Modules.EnergyBlaster:
+                case DataIds.Modules.Cannons:
                 case DataIds.Modules.FireWand:
                 case DataIds.Modules.HeavyGun:
                     return TryCreateProjectile(data, out behaviour, out problem);

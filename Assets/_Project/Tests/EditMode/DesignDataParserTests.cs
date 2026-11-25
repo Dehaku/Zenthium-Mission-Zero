@@ -221,6 +221,23 @@ namespace Zenthium.Tests.EditMode
         }
 
         [Test]
+        public void Parse_AiConstants_AreRead()
+        {
+            DesignDataParseResult result = DesignDataTestCsv.Parse();
+
+            Assert.That(result.Errors, Is.Empty);
+            Assert.That(result.Data.Ai.AlertDelaySeconds, Is.EqualTo(0.5f));
+            Assert.That(result.Data.Ai.AlertRadius, Is.EqualTo(10f));
+            Assert.That(result.Data.Ai.SearchSeconds, Is.EqualTo(10f));
+            Assert.That(result.Data.Ai.AwarenessDrainSeconds, Is.EqualTo(3f));
+            Assert.That(result.Data.Ai.RangedBackoffDistance, Is.EqualTo(3f));
+            Assert.That(result.Data.Ai.AllyFollowDistance, Is.EqualTo(10f));
+            Assert.That(result.Data.Ai.TelegraphSeconds, Is.EqualTo(0.5f));
+            Assert.That(result.Data.Ai.PatrolSpeedFraction, Is.EqualTo(0.5f));
+            Assert.That(result.Data.Formula.AwarenessRange, Is.EqualTo(15f));
+        }
+
+        [Test]
         public void Parse_MaterialWithoutHp_Fails()
         {
             string constants = DesignDataTestCsv.Constants.Replace("world,material_hp.Metal,600,\n", string.Empty);

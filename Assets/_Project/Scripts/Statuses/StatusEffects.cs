@@ -63,6 +63,26 @@ namespace Zenthium.Statuses
             return false;
         }
 
+        /// <summary>
+        /// Who applied the status, such as the taunter of Taunted: of the instance with the most time left, if
+        /// several are on. False if the status isn't on, or came from no one.
+        /// </summary>
+        public bool TryGetSource(StatusType type, out Entity source)
+        {
+            source = null;
+            float longest = -1f;
+            foreach (Instance instance in instances)
+            {
+                if (instance.Type == type && instance.IsOn && instance.Remaining > longest)
+                {
+                    longest = instance.Remaining;
+                    source = instance.Source;
+                }
+            }
+
+            return source != null;
+        }
+
         /// <summary>Layers of an Intensity status, or the number of Independent instances; 0 if absent.</summary>
         public int Layers(StatusType type)
         {

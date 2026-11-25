@@ -136,7 +136,7 @@ namespace Zenthium.Modules
 
         private bool CanSee(Vector3 origin, EntityBehaviour target)
         {
-            return LineOfSight.IsClear(origin, target.transform.position, sightHits);
+            return Context.World.CanSee(origin, target.transform.position, sightHits);
         }
 
         private static string Percent(float fraction)

@@ -60,6 +60,7 @@ namespace Zenthium.Modules
         private readonly IRandomSource random = new UnityRandomSource();
         private readonly Dictionary<Entity, EntityBehaviour> behaviours = new Dictionary<Entity, EntityBehaviour>();
         private readonly List<ShieldZone> shields = new List<ShieldZone>();
+        private readonly List<SmokeCloud> smokes = new List<SmokeCloud>();
         private Transform spawnHolder;
 
         /// <summary>
@@ -188,6 +189,37 @@ namespace Zenthium.Modules
             return false;
         }
 
+        /// <summary>
+        /// Whether one point can see another: <see cref="LineOfSight"/>, and no smoke cloud between them
+        /// (modules.md, Smoke Bomb: the cloud blocks line of sight).
+        /// </summary>
+        /// <param name="buffer">Reused for the raycast, so a check allocates nothing.</param>
+        public bool CanSee(Vector3 from, Vector3 to, RaycastHit[] buffer)
+        {
+            foreach (SmokeCloud smoke in smokes)
+            {
+                if (smoke != null && smoke.BlocksSight(from, to))
+                {
+                    return false;
+                }
+            }
+
+            return LineOfSight.IsClear(from, to, buffer);
+        }
+
+        /// <summary>Fills the list with every entity whose modules are running, anywhere on the map.</summary>
+        public void CollectAll(List<EntityBehaviour> results)
+        {
+            results.Clear();
+            foreach (KeyValuePair<Entity, EntityBehaviour> pair in behaviours)
+            {
+                if (pair.Value != null)
+                {
+                    results.Add(pair.Value);
+                }
+            }
+        }
+
         internal void Register(Entity entity, EntityBehaviour behaviour)
         {
             behaviours[entity] = behaviour;
@@ -206,6 +238,16 @@ namespace Zenthium.Modules
         internal void UnregisterShield(ShieldZone shield)
         {
             shields.Remove(shield);
+        }
+
+        internal void RegisterSmoke(SmokeCloud smoke)
+        {
+            smokes.Add(smoke);
+        }
+
+        internal void UnregisterSmoke(SmokeCloud smoke)
+        {
+            smokes.Remove(smoke);
         }
 
         private T Spawn<T>(T prefab, Vector3 position, Quaternion rotation) where T : Component

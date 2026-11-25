@@ -21,6 +21,7 @@ namespace Zenthium.Tests.EditMode
             "formula,dodge_cap,0.75,\n" +
             "formula,vision_range,100,\n" +
             "formula,awareness_instant_range,10,\n" +
+            "formula,awareness_range,15,\n" +
             "formula,awareness_max_time,10,\n" +
             "formula,resource_seconds_per_point,1,\n" +
             "formula,enemy_default_damage_tier,Light,\n" +
@@ -83,7 +84,15 @@ namespace Zenthium.Tests.EditMode
             "world,carrying_treasure_slow_cap,0.5,\n" +
             "world,valuable_icon_growth_per_valuable,0.05,\n" +
             "world,valuable_icon_growth_cap,0.5,\n" +
-            "world,valuable_pickup_s,5,\n";
+            "world,valuable_pickup_s,5,\n" +
+            "ai,alert_delay_s,0.5,\n" +
+            "ai,alert_radius_m,10,\n" +
+            "ai,search_s,10,\n" +
+            "ai,awareness_drain_s,3,\n" +
+            "ai,ranged_backoff_m,3,\n" +
+            "ai,ally_follow_m,10,\n" +
+            "ai,telegraph_s,0.5,\n" +
+            "ai,patrol_speed_fraction,0.5,\n";
 
         private const string ModulesHeader =
             "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,damage_type,tags,budget_ok,notes\n";

@@ -29,6 +29,7 @@ namespace Zenthium.Tests.EditMode
                     dodgeCap: 0.75f,
                     visionRange: 100f,
                     awarenessInstantRange: 10f,
+                    awarenessRange: 100f,
                     awarenessMaxTime: 10f,
                     resourceSecondsPerPoint: 1f,
                     enemyDefaultDamageTier: new TierValue("Light", 0.5f)),

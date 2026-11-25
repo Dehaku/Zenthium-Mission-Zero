@@ -13,7 +13,8 @@
         "Zenthium.Combat",
         "Zenthium.Movement",
         "Zenthium.Modules",
-        "Zenthium.World"
+        "Zenthium.World",
+        "Zenthium.AI"
     ],
     "includePlatforms": [
         "Editor"

@@ -11,5 +11,8 @@ namespace Zenthium.Entities
 
         /// <summary>Never moves: no walking, knockback or being dragged, such as a Heavy Turret (world.md).</summary>
         Immobile,
+
+        /// <summary>Never targets or notices civilians, such as a Heavy Turret (enemies.md, world.md).</summary>
+        SparesCivilians,
     }
 }

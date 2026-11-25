@@ -20,6 +20,7 @@ namespace Zenthium.Data
         [SerializeField] private float dodgeCap;
         [SerializeField] private float visionRange;
         [SerializeField] private float awarenessInstantRange;
+        [SerializeField] private float awarenessRange;
         [SerializeField] private float awarenessMaxTime;
         [SerializeField] private float resourceSecondsPerPoint;
         [SerializeField] private TierValue enemyDefaultDamageTier;
@@ -41,6 +42,7 @@ namespace Zenthium.Data
             float dodgeCap,
             float visionRange,
             float awarenessInstantRange,
+            float awarenessRange,
             float awarenessMaxTime,
             float resourceSecondsPerPoint,
             TierValue enemyDefaultDamageTier)
@@ -56,6 +58,7 @@ namespace Zenthium.Data
             this.dodgeCap = dodgeCap;
             this.visionRange = visionRange;
             this.awarenessInstantRange = awarenessInstantRange;
+            this.awarenessRange = awarenessRange;
             this.awarenessMaxTime = awarenessMaxTime;
             this.resourceSecondsPerPoint = resourceSecondsPerPoint;
             this.enemyDefaultDamageTier = enemyDefaultDamageTier;
@@ -76,13 +79,16 @@ namespace Zenthium.Data
         public float DodgePerFinesse => dodgePerFinesse;
         public float DodgeCap => dodgeCap;
 
-        /// <summary>Meters.</summary>
+        /// <summary>Meters an aware entity sees, and Taunt reaches.</summary>
         public float VisionRange => visionRange;
 
-        /// <summary>Meters.</summary>
+        /// <summary>Meters within which the awareness bar fills at once.</summary>
         public float AwarenessInstantRange => awarenessInstantRange;
 
-        /// <summary>Seconds to fill the awareness bar at <see cref="VisionRange"/>.</summary>
+        /// <summary>Meters beyond which an unaware entity doesn't notice anyone: its bar doesn't fill.</summary>
+        public float AwarenessRange => awarenessRange;
+
+        /// <summary>Seconds to fill the awareness bar at <see cref="AwarenessRange"/>.</summary>
         public float AwarenessMaxTime => awarenessMaxTime;
 
         public float ResourceSecondsPerPoint => resourceSecondsPerPoint;

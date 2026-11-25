@@ -11,6 +11,7 @@
         "Zenthium.Movement",
         "Zenthium.Modules",
         "Zenthium.World",
+        "Zenthium.AI",
         "Zenthium.Sandbox",
         "UnityEngine.UI",
         "Unity.TextMeshPro",

@@ -6,6 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
+using Zenthium.AI;
 using Zenthium.Data;
 using Zenthium.Entities;
 using Zenthium.Modules;
@@ -170,6 +171,11 @@ namespace Zenthium.Editor
             public const string Target = "target";
         }
 
+        private static class BehaviourFields
+        {
+            public const string Enabled = "m_Enabled";
+        }
+
         /// <summary>A prop to place: its props.csv row, a look and a box size.</summary>
         private readonly struct PropSpec
         {
@@ -199,7 +205,7 @@ namespace Zenthium.Editor
         };
 
         /// <summary>Scene objects the structures need.</summary>
-        private sealed class BuildContext
+        internal sealed class BuildContext
         {
             public PlayerSandboxSceneCreator.Room Room;
             public BuildingRegistry Registry;
@@ -227,10 +233,37 @@ namespace Zenthium.Editor
             Wire(room.Player, so => Find(so, CombatSandboxSceneCreator.EntityFields.UnlockedSlots).intValue =
                 database.ModuleConstants.SlotsPerType);
 
+            BuildContext context = BuildTestBuildings(room, StructureMaterial.Metal);
+            BuildSampleWalls(context);
+            BuildProps(context);
+            PlaceValuables(room);
+            CreateLostCounter(room.Valuables);
+            EntityBehaviour turretTarget =
+                PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, TurretTargetPosition, room);
+            turretTarget.name = "Turret Target Dummy";
+            EntityBehaviour turret = PlaceTurret(room, turretData, heavyGun, TurretPosition, turretTarget);
+
+            // The panel inspects the player, so you can raise your Strength to lift Large props.
+            CombatSandboxSceneCreator.BindDebugPanel(room.DebugPanel, room.Player, turret);
+            ModulesSandboxSceneCreator.CreateModulesCanvas(room);
+            BakeNavMesh(room.Geometry, NavMeshPath);
+
+            EditorSceneManager.SaveScene(room.Scene, ScenePath);
+            Debug.Log($"Created {ScenePath}, {NavMeshPath} and {TurretPrefabPath}.");
+        }
+
+        /// <summary>
+        /// The building registry, with spreading on, and the two test buildings: the Wood house and the L-shaped Stone
+        /// shop. Also used by the AI sandbox.
+        /// </summary>
+        /// <param name="shopDoorMaterial">The material of the shop's locked door.</param>
+        internal static BuildContext BuildTestBuildings(PlayerSandboxSceneCreator.Room room,
+            StructureMaterial shopDoorMaterial)
+        {
             var registry = new GameObject("Building Registry").AddComponent<BuildingRegistry>();
             Wire(registry, so =>
             {
-                SetReference(so, RegistryFields.Database, database);
+                SetReference(so, RegistryFields.Database, room.Database);
                 SetReference(so, RegistryFields.World, room.World);
                 Find(so, RegistryFields.IsSpreadOn).boolValue = true;
             });
@@ -242,23 +275,8 @@ namespace Zenthium.Editor
             };
 
             BuildWoodHouse(context);
-            BuildStoneShop(context);
-            BuildSampleWalls(context);
-            BuildProps(context);
-            PlaceValuables(room);
-            CreateLostCounter(room.Valuables);
-            EntityBehaviour turretTarget =
-                PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, TurretTargetPosition, room);
-            turretTarget.name = "Turret Target Dummy";
-            EntityBehaviour turret = PlaceTurret(room, turretData, heavyGun, turretTarget);
-
-            // The panel inspects the player, so you can raise your Strength to lift Large props.
-            CombatSandboxSceneCreator.BindDebugPanel(room.DebugPanel, room.Player, turret);
-            ModulesSandboxSceneCreator.CreateModulesCanvas(room);
-            BakeNavMesh(room.Geometry);
-
-            EditorSceneManager.SaveScene(room.Scene, ScenePath);
-            Debug.Log($"Created {ScenePath}, {NavMeshPath} and {TurretPrefabPath}.");
+            BuildStoneShop(context, shopDoorMaterial);
+            return context;
         }
 
         /// <summary>A 10 x 10 m Wood house: an unlocked Wood door south, a Glass window west.</summary>
@@ -287,10 +305,10 @@ namespace Zenthium.Editor
         }
 
         /// <summary>
-        /// An L-shaped Stone shop with two interior zones: a locked Metal door south, a Glass window west. 19 m from
-        /// the Wood house, so they're neighbors.
+        /// An L-shaped Stone shop with two interior zones: a locked door south, a Glass window west. 19 m from the
+        /// Wood house, so they're neighbors.
         /// </summary>
-        private static void BuildStoneShop(BuildContext context)
+        private static void BuildStoneShop(BuildContext context, StructureMaterial doorMaterial)
         {
             Transform root = CreateBuilding(context, "Stone Shop (L-shaped)", LocationType.Store);
             var southWest = new Vector3(-22f, 0f, 8f);
@@ -301,7 +319,7 @@ namespace Zenthium.Editor
             var northWest = new Vector3(-22f, 0f, 22f);
 
             WallWithOpening(context, root, StructureMaterial.Stone, southWest, southEast, 9f,
-                opening => CreateDoor(context, root, opening, StructureMaterial.Metal, true, Vector3.back));
+                opening => CreateDoor(context, root, opening, doorMaterial, true, Vector3.back));
             Wall(context, root, StructureMaterial.Stone, southEast, innerEast);
             Wall(context, root, StructureMaterial.Stone, innerEast, innerCorner);
             Wall(context, root, StructureMaterial.Stone, innerCorner, northEast);
@@ -390,8 +408,12 @@ namespace Zenthium.Editor
             });
         }
 
-        private static EntityBehaviour PlaceTurret(PlayerSandboxSceneCreator.Room room, EntityData turretData,
-            ModuleData heavyGun, EntityBehaviour target)
+        /// <summary>
+        /// Saves the Heavy Turret prefab (Neutral; Hackable, Immobile and SparesCivilians; Heavy Gun; the AI) and places
+        /// one. With an auto-cast target, the placed turret's AI is off and it just fires at that target instead.
+        /// </summary>
+        internal static EntityBehaviour PlaceTurret(PlayerSandboxSceneCreator.Room room, EntityData turretData,
+            ModuleData heavyGun, Vector3 position, EntityBehaviour autoCastTarget)
         {
             GameObject body = PlayerSandboxSceneCreator.BuildEntityBody("Heavy Turret", room.Database, null,
                 turretData, Team.Neutral);
@@ -403,15 +425,23 @@ namespace Zenthium.Editor
                 modules.arraySize = 1;
                 modules.GetArrayElementAtIndex(0).objectReferenceValue = heavyGun;
                 SerializedProperty tags = Find(so, TurretFields.Tags);
-                tags.arraySize = 2;
+                tags.arraySize = 3;
                 tags.GetArrayElementAtIndex(0).enumValueIndex = (int)EntityTag.Hackable;
                 tags.GetArrayElementAtIndex(1).enumValueIndex = (int)EntityTag.Immobile;
+                tags.GetArrayElementAtIndex(2).enumValueIndex = (int)EntityTag.SparesCivilians;
             });
+            body.AddComponent<AiNavigator>();
+            body.AddComponent<AiBrain>();
             GameObject prefab = PlayerSandboxSceneCreator.SaveAsPrefab(body, TurretPrefabPath);
 
-            EntityBehaviour turret = PlayerSandboxSceneCreator.PlaceEntity(prefab, TurretPosition, room);
-            Wire(turret.gameObject.AddComponent<SandboxAutoCaster>(),
-                so => SetReference(so, AutoCasterFields.Target, target));
+            EntityBehaviour turret = PlayerSandboxSceneCreator.PlaceEntity(prefab, position, room);
+            if (autoCastTarget != null)
+            {
+                Wire(turret.GetComponent<AiBrain>(), so => Find(so, BehaviourFields.Enabled).boolValue = false);
+                Wire(turret.gameObject.AddComponent<SandboxAutoCaster>(),
+                    so => SetReference(so, AutoCasterFields.Target, autoCastTarget));
+            }
+
             return turret;
         }
 
@@ -659,13 +689,13 @@ namespace Zenthium.Editor
         /// Bakes the room's floor, outer walls and pillars only: buildings and props carve the NavMesh at runtime,
         /// and doors stay walkable, as enemies plan paths as if doors weren't there (world.md, Doors).
         /// </summary>
-        private static void BakeNavMesh(Transform geometry)
+        internal static void BakeNavMesh(Transform geometry, string navMeshPath)
         {
             var surface = geometry.gameObject.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.Children;
             surface.BuildNavMesh();
-            AssetDatabase.DeleteAsset(NavMeshPath);
-            AssetDatabase.CreateAsset(surface.navMeshData, NavMeshPath);
+            AssetDatabase.DeleteAsset(navMeshPath);
+            AssetDatabase.CreateAsset(surface.navMeshData, navMeshPath);
         }
 
         private static Vector3 Midpoint((Vector3 From, Vector3 To) opening)

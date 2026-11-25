@@ -7,7 +7,8 @@ namespace Zenthium.Modules
     /// <summary>
     /// Smoke Bomb (modules.md): throws a cloud to the aimed point, as far as the range tier. For the duration tier,
     /// opponents inside are Stunned while they stay in it (pulsing on Leaders and the player); each rolls its
-    /// Toughness resist once on entering. Blocking line of sight and resetting awareness come in Milestone 6.
+    /// Toughness resist once on entering. The cloud also blocks line of sight and empties awareness bars
+    /// (<see cref="SmokeCloud"/>).
     /// </summary>
     public sealed class SmokeBombModule : ModuleBehaviour
     {

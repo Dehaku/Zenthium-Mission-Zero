@@ -23,8 +23,9 @@ MonoBehaviour:
     dodgePerFinesse: 0.005
     dodgeCap: 0.75
     visionRange: 100
-    awarenessInstantRange: 10
-    awarenessMaxTime: 10
+    awarenessInstantRange: 1
+    awarenessRange: 15
+    awarenessMaxTime: 4.67
     resourceSecondsPerPoint: 1
     enemyDefaultDamageTier:
       word: Light
@@ -98,6 +99,15 @@ MonoBehaviour:
     iconGrowthPerValuable: 0.05
     iconGrowthCap: 0.5
     pickupSeconds: 5
+  aiConstants:
+    alertDelaySeconds: 0.5
+    alertRadius: 10
+    searchSeconds: 10
+    awarenessDrainSeconds: 3
+    rangedBackoffDistance: 3
+    allyFollowDistance: 10
+    telegraphSeconds: 0.5
+    patrolSpeedFraction: 0.5
   tiers:
     entries:
     - scale: 0

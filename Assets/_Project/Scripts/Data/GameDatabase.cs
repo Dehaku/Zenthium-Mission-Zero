@@ -17,6 +17,7 @@ namespace Zenthium.Data
         [SerializeField] private WorldConstants worldConstants = new WorldConstants();
         [SerializeField] private FireConstants fireConstants = new FireConstants();
         [SerializeField] private ValuableConstants valuableConstants = new ValuableConstants();
+        [SerializeField] private AiConstants aiConstants = new AiConstants();
         [SerializeField] private TierTables tiers = new TierTables();
         [SerializeField] private DataTable<ModuleData> modules = new DataTable<ModuleData>();
         [SerializeField] private DataTable<FactionData> factions = new DataTable<FactionData>();
@@ -35,6 +36,7 @@ namespace Zenthium.Data
         public WorldConstants WorldConstants => worldConstants;
         public FireConstants FireConstants => fireConstants;
         public ValuableConstants ValuableConstants => valuableConstants;
+        public AiConstants AiConstants => aiConstants;
         public TierTables Tiers => tiers;
         public DataTable<ModuleData> Modules => modules;
         public DataTable<FactionData> Factions => factions;
@@ -65,6 +67,7 @@ namespace Zenthium.Data
             WorldConstants newWorldConstants,
             FireConstants newFireConstants,
             ValuableConstants newValuableConstants,
+            AiConstants newAiConstants,
             TierTables newTiers,
             List<ModuleData> newModules,
             List<FactionData> newFactions,
@@ -81,6 +84,7 @@ namespace Zenthium.Data
             worldConstants = newWorldConstants;
             fireConstants = newFireConstants;
             valuableConstants = newValuableConstants;
+            aiConstants = newAiConstants;
             tiers = newTiers;
             modules.SetEntries(newModules);
             factions.SetEntries(newFactions);

@@ -21,6 +21,7 @@ namespace Zenthium.Editor.DataImport
         private const string EconomyGroup = "economy";
         private const string TierGroup = "tier";
         private const string WorldGroup = "world";
+        private const string AiGroup = "ai";
 
         private const string IncomeMixPrefix = "income_mix.";
         private const string MaterialHpPrefix = "material_hp.";
@@ -62,6 +63,7 @@ namespace Zenthium.Editor.DataImport
                     case MirrorGroup:
                     case EconomyGroup:
                     case WorldGroup:
+                    case AiGroup:
                         if (name.StartsWith(IncomeMixPrefix, StringComparison.Ordinal))
                         {
                             ReadIncomeMix(row, name, incomeMixes, errors);
@@ -95,6 +97,7 @@ namespace Zenthium.Editor.DataImport
                 dodgeCap: reader.Float("dodge_cap"),
                 visionRange: reader.Float("vision_range"),
                 awarenessInstantRange: reader.Float("awareness_instant_range"),
+                awarenessRange: reader.Float("awareness_range"),
                 awarenessMaxTime: reader.Float("awareness_max_time"),
                 resourceSecondsPerPoint: reader.Float("resource_seconds_per_point"),
                 enemyDefaultDamageTier: reader.Tier("enemy_default_damage_tier", TierScale.Damage, tiers));
@@ -149,6 +152,15 @@ namespace Zenthium.Editor.DataImport
                 iconGrowthPerValuable: reader.Float("valuable_icon_growth_per_valuable"),
                 iconGrowthCap: reader.Float("valuable_icon_growth_cap"),
                 pickupSeconds: reader.Float("valuable_pickup_s"));
+            data.Ai = new AiConstants(
+                alertDelaySeconds: reader.Float("alert_delay_s"),
+                alertRadius: reader.Float("alert_radius_m"),
+                searchSeconds: reader.Float("search_s"),
+                awarenessDrainSeconds: reader.Float("awareness_drain_s"),
+                rangedBackoffDistance: reader.Float("ranged_backoff_m"),
+                allyFollowDistance: reader.Float("ally_follow_m"),
+                telegraphSeconds: reader.Float("telegraph_s"),
+                patrolSpeedFraction: reader.Float("patrol_speed_fraction"));
             reader.ReportUnused();
         }
 

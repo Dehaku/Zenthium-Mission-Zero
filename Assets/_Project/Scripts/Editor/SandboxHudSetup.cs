@@ -100,16 +100,26 @@ namespace Zenthium.Editor
         /// <summary>A "Reset scene" button in the bottom right corner, which reloads the scene in Play mode.</summary>
         private static void CreateResetButton(Transform canvas)
         {
-            var buttonObject = new GameObject("Reset Scene Button", typeof(RectTransform), typeof(Image),
-                typeof(Button));
+            Button button = CreateButton(canvas, "Reset Scene Button", ResetButtonLabel,
+                new Vector2(-Padding, Padding), ResetButtonColor, out _);
+            Wire(button.gameObject.AddComponent<SandboxSceneReset>(),
+                so => SetReference(so, ResetFields.Button, button));
+        }
+
+        /// <summary>A button in the bottom right corner of a screen-space canvas, with a centered label.</summary>
+        /// <param name="anchoredPosition">From the bottom right corner to the button's bottom right corner.</param>
+        internal static Button CreateButton(Transform canvas, string objectName, string text,
+            Vector2 anchoredPosition, Color color, out TMP_Text label)
+        {
+            var buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
             var rect = (RectTransform)buttonObject.transform;
             rect.SetParent(canvas, false);
             rect.anchorMin = Vector2.right;
             rect.anchorMax = Vector2.right;
             rect.pivot = Vector2.right;
-            rect.anchoredPosition = new Vector2(-Padding, Padding);
+            rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = ResetButtonSize;
-            buttonObject.GetComponent<Image>().color = ResetButtonColor;
+            buttonObject.GetComponent<Image>().color = color;
 
             var labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
             var labelRect = (RectTransform)labelObject.transform;
@@ -118,16 +128,15 @@ namespace Zenthium.Editor
             labelRect.anchorMax = Vector2.one;
             labelRect.offsetMin = Vector2.zero;
             labelRect.offsetMax = Vector2.zero;
-            var label = labelObject.GetComponent<TextMeshProUGUI>();
-            label.font = TMP_Settings.defaultFontAsset;
-            label.fontSize = ResetButtonTextSize;
-            label.alignment = TextAlignmentOptions.Center;
-            label.color = Color.white;
-            label.raycastTarget = false;
-            label.text = ResetButtonLabel;
-
-            Wire(buttonObject.AddComponent<SandboxSceneReset>(),
-                so => SetReference(so, ResetFields.Button, buttonObject.GetComponent<Button>()));
+            var labelText = labelObject.GetComponent<TextMeshProUGUI>();
+            labelText.font = TMP_Settings.defaultFontAsset;
+            labelText.fontSize = ResetButtonTextSize;
+            labelText.alignment = TextAlignmentOptions.Center;
+            labelText.color = Color.white;
+            labelText.raycastTarget = false;
+            labelText.text = text;
+            label = labelText;
+            return buttonObject.GetComponent<Button>();
         }
 
         /// <param name="anchor">The screen point the panel hangs from, which is also its pivot.</param>

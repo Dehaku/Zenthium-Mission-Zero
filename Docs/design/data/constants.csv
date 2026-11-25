@@ -8,9 +8,10 @@ formula,kick_cooldown,3,Seconds. The 1x reference for the power budget
 formula,min_damage_fraction,0.05,Every hit deals at least this fraction
 formula,dodge_per_finesse,0.005,Dodge chance per point of Finesse
 formula,dodge_cap,0.75,
-formula,vision_range,100,Meters
-formula,awareness_instant_range,10,Meters
-formula,awareness_max_time,10,Seconds to fill at vision_range
+formula,vision_range,100,Meters an aware entity sees and Taunt reaches
+formula,awareness_instant_range,1,Meters. A local design decision (stats.md says 10)
+formula,awareness_range,15,Meters beyond which an unaware entity notices no one. A local design decision (stats.md has none)
+formula,awareness_max_time,4.67,Seconds to fill at awareness_range: about 3 s at 10 m. A local design decision (stats.md says 10 s at 100 m)
 formula,resource_seconds_per_point,1,1 resource point = this many seconds of cooldown
 formula,enemy_default_damage_tier,Light,Provisional (balance.md)
 formula,base_stat,10,Every entity starts at this in every stat (stats.md)
@@ -94,3 +95,11 @@ world,carrying_treasure_slow_cap,0.5,Most move speed Valuables can take (world.m
 world,valuable_icon_growth_per_valuable,0.05,The money bag icon grows this much per Valuable (world.md)
 world,valuable_icon_growth_cap,0.5,Most the icon can grow (world.md)
 world,valuable_pickup_s,5,Seconds a non-player entity takes to pick up a Valuable; damage resets it (world.md)
+ai,alert_delay_s,0.5,Seconds from becoming aware to the alert going out (enemies.md)
+ai,alert_radius_m,10,Allies within this many meters are alerted when the delay ends (enemies.md)
+ai,search_s,10,Seconds spent searching around the last known position (enemies.md)
+ai,awareness_drain_s,3,Seconds for a full awareness bar to drain: after searching or with nothing in view (enemies.md)
+ai,ranged_backoff_m,3,Ranged attackers back off from targets closer than this (enemies.md)
+ai,ally_follow_m,10,Allies outside combat stay within about this many meters of the player (enemies.md)
+ai,telegraph_s,0.5,Seconds a Telegraph module flashes red before it hits (enemies.md)
+ai,patrol_speed_fraction,0.5,Idle squads patrol at this fraction of their move speed (enemies.md)

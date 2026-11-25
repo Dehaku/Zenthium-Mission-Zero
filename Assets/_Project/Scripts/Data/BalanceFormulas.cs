@@ -46,12 +46,12 @@ namespace Zenthium.Data
 
         /// <summary>
         /// Seconds an enemy's awareness bar takes to fill at default Detectability: instant within
-        /// the instant range, the max time at vision range, linear between.
+        /// the instant range, the max time at the awareness range, linear between.
         /// </summary>
-        /// <returns>Infinity beyond vision range, where enemies can't see.</returns>
+        /// <returns>Infinity beyond the awareness range, where an unaware enemy notices no one.</returns>
         public float AwarenessFillSeconds(float distance)
         {
-            if (distance > constants.VisionRange)
+            if (distance > constants.AwarenessRange)
             {
                 return float.PositiveInfinity;
             }
@@ -62,7 +62,7 @@ namespace Zenthium.Data
             }
 
             float fraction = (distance - constants.AwarenessInstantRange)
-                / (constants.VisionRange - constants.AwarenessInstantRange);
+                / (constants.AwarenessRange - constants.AwarenessInstantRange);
             return fraction * constants.AwarenessMaxTime;
         }
 

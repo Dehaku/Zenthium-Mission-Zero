@@ -526,7 +526,7 @@ namespace Zenthium.Editor
             return room;
         }
 
-        private static void CreateBlock(Transform parent, string objectName, Vector3 position, Vector3 size)
+        internal static void CreateBlock(Transform parent, string objectName, Vector3 position, Vector3 size)
         {
             GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
             block.name = objectName;

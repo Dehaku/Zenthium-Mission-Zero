@@ -1,0 +1,23 @@
+{
+    "name": "Zenthium.AI",
+    "rootNamespace": "Zenthium.AI",
+    "references": [
+        "Zenthium.Core",
+        "Zenthium.Data",
+        "Zenthium.Time",
+        "Zenthium.Entities",
+        "Zenthium.Combat",
+        "Zenthium.Movement",
+        "Zenthium.Modules",
+        "Zenthium.World"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

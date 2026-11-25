@@ -7,8 +7,8 @@ namespace Zenthium.Sandbox
 {
     /// <summary>
     /// Makes a dummy attack a target every few seconds: Kick when the target is within Kick's range, otherwise its
-    /// first active slot. So projectiles, knockback, Time Stop and statuses can be tested before enemy AI exists
-    /// (Milestone 6). Its timer runs on the dummy's game time, so
+    /// first active slot. So projectiles, knockback, Time Stop and statuses can be tested on a fixed target, without
+    /// the AI choosing its own. Its timer runs on the dummy's game time, so
     /// Time Slow and Time Stop affect it. Test tool only.
     /// </summary>
     [RequireComponent(typeof(EntityModules))]

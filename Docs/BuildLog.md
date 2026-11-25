@@ -958,3 +958,158 @@ Milestone 5 is split, as approved. **5a** (this entry) builds walls, doors, wind
 
 ### Test fix (approved by the user, 2026-11-24)
 - The EditMode run had 1 failure in 339: `StatusEffectsTests.SetLayers_ThreeValuables_Slow15Percent` expected 4.2 m/s, but three Valuables (15% slow on 6 m/s) give 5.1, which the code returned. The test's literal was miscalculated when it was written; with the user's approval its expected value is now 5.1. The game code is unchanged.
+
+---
+
+## Milestone 6a: Enemy AI, noticing and fighting (checked by the user, 2026-11-25)
+
+Milestone 6 is split, as approved. **6a** (this entry) builds detection, awareness and alerts, the Idle, Combat and Searching states, module choice, targeting, NavMesh movement, telegraphs, the friendly fire toggle, the Taunted, Hypnotized and Smoke Bomb reads, the Heavy Turret's AI, allies following and `Sandbox_AI`. **6b** builds Looting, Objective (carrying loot, fleeing the map), cowardice, citizens and `ICharmable`.
+
+### Done
+- **Data (local edits, approved):**
+  - `constants.csv`: a new `ai` group from enemies.md: `alert_delay_s` 0.5, `alert_radius_m` 10, `search_s` 10, `awareness_drain_s` 3, `ranged_backoff_m` 3, `ally_follow_m` 10, `telegraph_s` 0.5, `patrol_speed_fraction` 0.5. The 6b numbers (cowardice, fear range, Stubborn) aren't added yet.
+  - `modules.csv`: Cannons gets `damage_type` Physical (an assumption, like Heavy Gun: confirm it), so it can be built as a projectile.
+  - Code: `AiConstants` (`GameDatabase.AiConstants`), read by the constants parser.
+- **New `Zenthium.AI` assembly (`Scripts/AI/`, approved):**
+  - Plain C#:
+    - `Awareness`: the bar fills at Detectability divided by `AwarenessFillSeconds(distance)` per second (the existing formula: instant at 10 m, 10 s at 100 m). It drains over 3 s with no one in view. Then come the 0.5 s wait and the alert, forgetting over 3 s, and a reset when defeated (so no alert goes out).
+    - `AlertRules`: who an alert wakes.
+    - `AiSides`: who each team fights and notices, preferences, and Hypnotized.
+    - `TargetSelector`: who to attack.
+    - `ModuleChooser`: which module to use, and its reach.
+  - `AiBrain`:
+    - Looks around every 0.2 s of game time: sight to 100 m, through `ModuleWorld.CanSee`.
+    - Runs the Idle, Combat and Searching states, and alerts.
+    - Uses the first ready module in reach (actives, then gear).
+    - Telegraph modules wind up for 0.5 s first, with the aim locked.
+    - Melee attackers chase; ranged attackers stop at range and back off within 3 m. A locked door in the way is attacked.
+    - Turns on whoever hit it, follows Taunt, and searches the last known position, then forgets.
+    - Allies follow the player.
+    - Raises `OnNoticed` and `OnTelegraphStarted`. Implements `IAwarenessReset` for smoke.
+  - `AiNavigator`: NavMesh paths (no NavMeshAgent) steering the `EntityMotor`. Reports a locked door it's walking into. Starting on a carved-out floor (a burning building), it walks out first.
+  - `AiSquad`: patrols between its `MapSocket`s, members in a ring, waiting 3 s once everyone on patrol has arrived.
+- **Shared code:**
+  - `EntityTag.SparesCivilians` (the Heavy Turret).
+  - `StatusEffects.TryGetSource` (who Taunted or Hypnotized it).
+  - `ModuleWorld.CanSee` (line of sight, plus smoke) and `CollectAll`.
+  - `SmokeCloud` blocks sight through its circle and, when it spreads, empties the awareness bars of opponents inside it (`IAwarenessReset`, new in Modules). Taunt's sight check uses `CanSee`, so smoke blocks Taunt too.
+  - Cannons is in the catalog as a projectile.
+- **Summons and the turret:**
+  - `PlaceholderSummonBrain` is deleted (with its `.meta`). The summon prefab has `AiNavigator` and `AiBrain`: it follows the player and fights.
+  - `HeavyTurret.prefab` gets the AI and `SparesCivilians`. In `Sandbox_World`, the placed turret's AI is switched off and it keeps firing at its dummy (`SandboxAutoCaster`, kept as a test tool).
+- **Sandbox:** `AwarenessView` (bar, "!", grey alert circle, made see-through), `TelegraphFlashView` (red tint), `AiStateLabel`, and `EnemyFriendlyFireToggle` (the dev toggle). The Sandbox asmdef references AI.
+- **Editor:**
+  - New **Zenthium > Setup > Create AI Sandbox Scene** (`AiSandboxSceneCreator`), on a 60 m room. It holds:
+    - the World sandbox's two buildings;
+    - cover north and south of the player;
+    - Squad A (3 Speed Punch goons) and Squad B (2 Energy Blaster goons and a Cannons goon), each with 3 patrol sockets;
+    - a Heavy Turret with the AI, and a civilian dummy beside it;
+    - the hero select and MoreInfo panels;
+    - the Enemy FF button;
+    - its own NavMesh asset (`Scenes/Sandbox_AI_NavMesh.asset`).
+  - Shared helpers made internal or extracted:
+    - `WorldSandboxSceneCreator`: `BuildTestBuildings`, `PlaceTurret` (now takes a position and an optional auto-cast target) and `BakeNavMesh(geometry, path)`;
+    - `PlayerSandboxSceneCreator.CreateBlock`;
+    - `SandboxHudSetup.CreateButton`.
+  - The Editor and test asmdefs reference AI.
+- **Checklist:** `MilestoneChecklist.txt` holds 6a's tests (14).
+- **Tests (EditMode):**
+  - New classes: `AwarenessTests`, `AlertRulesTests` (including a chain test), `ModuleChooserTests` and `TargetSelectorTests` (with the AiSides rules and Hypnotized).
+  - New case (no assertions changed): `DesignDataParserTests.Parse_AiConstants_AreRead`. The fixture `DesignDataTestCsv` has the `ai` rows.
+
+### Decisions (approved by the user)
+- The 6a/6b split, the new assembly and the `ai` constants.
+- **Awareness bar:** one per entity, filled by whoever it sees that fills it fastest. It drains over 3 s while it sees no one.
+- **Who gets noticed:** enemies notice only the player and allies. Other teams notice whoever they fight. The turret's `SparesCivilians` tag keeps it off civilians.
+- **Target order:**
+  1. the taunter;
+  2. the last attacker, if on another side and still in view;
+  3. the nearest player or ally;
+  4. civilians;
+  5. neutrals.
+- **Telegraph:** a 0.5 s wind-up with the aim locked at the start. Cannons is the test module.
+- **Searching:** wander about 6 m around the last known position. Seeing a target again goes straight back to Combat.
+- **Hypnotized:** changes only whom it targets, not the damage rules.
+- **For 6b:**
+  - Leaderless goons carrying Valuables try to leave the map (world.md line 107 wins over line 101).
+  - Scared citizens drop their Valuables once, when they start fleeing, and flee straight away from the nearest enemy within 20 m.
+  - Coward stays an Inspector tag until Milestone 7.
+
+### Choices made in code (not asked)
+- **Detectability:**
+  - It scales the fill speed: double Detectability fills twice as fast.
+  - Within 10 m it's instant at any Detectability above 0.
+- **Smoke:** it empties the bars of unaware entities only. Aware ones inside lose sight through it and search.
+- **Taunt:** a Taunted entity that was unaware notices at once, and goes for the taunter even out of sight.
+- **When it notices:**
+  - Being hit makes it notice only if the attacker is on another side, so friendly fire between enemies never alerts or turns them.
+  - An alerted entity searches where its alerter last saw the target.
+- **Searching:** the 10 s counts from the start of the search, so an unreachable last known position can't stall it.
+- **Module order:** actives in slot order, then gear actives, since slots don't keep a cross-type list order. A module that still refuses (a reason of its own) is skipped for the next.
+- **Reach:**
+  - A module's reach is its range tier. With no range, it's its radius tier; with neither (self-buffs), it reaches anywhere.
+  - Attack range (for movement) is the longest reach among its Melee and Ranged modules, and it fights at range if any has `Ranged`.
+- **Feel values (Inspector):** think 0.2 s, stop at 85% of attack range, back-off step 2 m, ally follow slack 3 m, squad wait 3 s, NavMesh sample radius 20 m, repath 0.5 s.
+- **Idle:** allies follow the player only when Idle; an Immobile entity never moves.
+- **Defeated:** it forgets everything and is unaware if revived.
+- **Turret:** the shared `HeavyTurret.prefab` has the AI; the World sandbox turns it off on its instance.
+
+### Stubs and deferred
+- **6b:**
+  - Looting (`ValuablePickupTimer`), carrying loot to a Leader, a `LootDestination` or the map edge, fleeing and escaping.
+  - Cowardice; citizens (Scared, Incapacitated, Stubborn) and their drops; grabbing standing citizens.
+  - First Aid Spray getting citizens up Scared; Charming on Stubborn citizens; `ICharmable`.
+  - The 6b constants.
+- **Stubborn citizens (the user's answer, 2026-11-24):** "While you're dragging them, they slow you down by 20%". missions.md says 25%. Confirm in 6b which applies, and whether "much slower to grab" then needs no grab time.
+- **Invasion** (enemies attack civilians outside Combat), reinforcement waves and Leaders' special behaviors: Milestones 7 and 9.
+- **Allies:** they don't notice or fight neutrals differently from enemies; Hypnotic Gaze and Card Throw, which apply Hypnotized, come later.
+- **Dev options menu:** add the enemy friendly fire toggle to it when it exists.
+
+### Editor steps for the user
+1. **Let Unity compile.** If the Console says a type is missing although its file exists, tell Claude.
+2. **Run Zenthium > Data > Import Design CSVs.** The `ai` constants are required, and Cannons changed.
+3. **Run Zenthium > Setup > Create AI Sandbox Scene** and choose Replace. It rebuilds the shared prefabs (the summon now has the AI, and so does `HeavyTurret.prefab`), then creates `Sandbox_AI.unity` and its NavMesh asset.
+4. **Rebuild the other sandboxes** you use (Create Player, Modules and World Sandbox Scene), since the shared prefabs changed.
+5. **Press Play in `Sandbox_AI`** and work through the checklist (Caps Lock).
+
+### What to check
+- [ ] The Console has no errors after compiling, importing and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`StatusEffects`, `ModuleWorld`, `SmokeCloud`, `TauntModule`, the constants parser).
+  - New classes: `AwarenessTests`, `AlertRulesTests`, `ModuleChooserTests`, `TargetSelectorTests`.
+  - Changed class: `DesignDataParserTests`.
+- [ ] Every item on the in-game checklist (14).
+
+### Open questions and findings
+- **Cannons' damage type** wasn't in `modules.csv`; it's set to Physical. Confirm or change it.
+- **Design mirror:** `constants.csv` and `modules.csv` differ further from the design branch.
+
+### First run (2026-11-25)
+- The user passed checklist items 1-3, 5-8, 10, 11 and 14. Item 13 is not tested yet.
+- **Item 4:** the user couldn't sneak up on a goon, even with Time Slow. Enemies see in all directions (stats.md), and the 10 m instant range made sneaking impossible. The new awareness numbers below fix that.
+- **Item 9:** couldn't be tested. Goons that can't see you never pathed to the door; they searched, then went back to Idle.
+- **Item 12:** too hard to test with the old fill rates.
+
+### Changes after the first run (asked by the user, 2026-11-25)
+- **Awareness numbers** (a local design decision; stats.md says instant at 10 m and 10 s at 100 m):
+  - `constants.csv`: `awareness_instant_range` 1 and `awareness_max_time` 4.67 (about 3 s at 10 m).
+  - A new `awareness_range` of 15 in the `formula` group: an unaware entity notices no one past 15 m.
+  - `vision_range` stays 100 m: how far an aware entity sees, and how far Taunt reaches.
+  - Code: `FormulaConstants.AwarenessRange`. `BalanceFormulas.AwarenessFillSeconds` runs from the instant range to the awareness range, not to the vision range.
+- **Locked-door test:**
+  - `BuildTestBuildings` takes the shop door's material: Metal in `Sandbox_World`, Wood (100 HP) in `Sandbox_AI`.
+  - `Sandbox_AI` places a "Door Test Goon" in the Stone shop's back room, by the west window. It sees you through the glass, and its only way out is the locked door.
+- **Searching attacks locked doors:** a goon that loses sight on its way still breaks a locked door between it and the last known position. Before, only Combat did.
+- **Tests:**
+  - `BalanceFormulasTests` gets a new parameterized case for the new numbers: instant at 1 m, about 3 s at 10 m, nothing past 15 m.
+  - `DesignDataParserTests.Parse_AiConstants_AreRead` also checks `awareness_range`.
+  - The fixtures (`BalanceFormulasTests`, `CombatTestSetup`, `DesignDataTestCsv`) have the new constant. The existing fixtures keep awareness range 100, so no existing assertions changed.
+- **Checklist:** items 2, 4 and 9 are updated, and the header mentions the door test goon.
+
+### Editor steps
+1. Let Unity compile, then run **Zenthium > Data > Import Design CSVs** (the new constant is required).
+2. Run **Create AI Sandbox Scene** (Replace), and **Create World Sandbox Scene** if you use it (its builder changed; its door is still Metal).
+3. Run `BalanceFormulasTests`, `AwarenessTests` and `DesignDataParserTests`, then retest checklist items 2, 4, 9, 12 and 13.
+
+### Second run (2026-11-25)
+- The user passed the retested items 2, 4, 9, 12 and 13. All 14 checklist items now pass.
+- Still open: Cannons' damage type (Physical, an assumption), and the Stubborn drag slow for 6b (the user chose 20%; missions.md says 25%).
