@@ -60,6 +60,7 @@ namespace Zenthium.Editor
                 if (root.TryGetComponent(out Camera _))
                 {
                     root.AddComponent<OverheadCameraRig>();
+                    root.AddComponent<CameraZoomInput>();
                     return;
                 }
             }

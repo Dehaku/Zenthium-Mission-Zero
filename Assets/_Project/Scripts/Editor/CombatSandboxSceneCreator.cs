@@ -165,6 +165,7 @@ namespace Zenthium.Editor
                 {
                     root.transform.SetPositionAndRotation(Vector3.up * CameraHeight, Quaternion.Euler(90f, 0f, 0f));
                     root.AddComponent<OverheadCameraRig>();
+                    root.AddComponent<CameraZoomInput>();
                     return;
                 }
             }

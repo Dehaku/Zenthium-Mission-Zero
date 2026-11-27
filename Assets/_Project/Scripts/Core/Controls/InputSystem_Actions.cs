@@ -1307,6 +1307,57 @@ namespace Zenthium.Core.Controls
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""View"",
+            ""id"": ""441509e1-d9bb-4b69-837d-8988a7d6c33a"",
+            ""actions"": [
+                {
+                    ""name"": ""Zoom"",
+                    ""type"": ""Value"",
+                    ""id"": ""4c56d149-c93c-4f9c-a883-56646538e56d"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true,
+                    ""priority"": 0
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": ""Alt+Wheel"",
+                    ""id"": ""0311e9da-c31e-47a9-90ce-3ff43420ac86"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Zoom"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""61231622-cd39-434a-9652-7e0b8ed58e03"",
+                    ""path"": ""<Keyboard>/alt"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""Zoom"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""129dcd5c-831d-4dde-9152-e71aa560aa8b"",
+                    ""path"": ""<Mouse>/scroll/y"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""Zoom"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -1372,6 +1423,9 @@ namespace Zenthium.Core.Controls
             // Sandbox
             m_Sandbox = asset.FindActionMap("Sandbox", throwIfNotFound: true);
             m_Sandbox_ToggleChecklist = m_Sandbox.FindAction("ToggleChecklist", throwIfNotFound: true);
+            // View
+            m_View = asset.FindActionMap("View", throwIfNotFound: true);
+            m_View_Zoom = m_View.FindAction("Zoom", throwIfNotFound: true);
         }
 
         ~@InputSystem_Actions()
@@ -1379,6 +1433,7 @@ namespace Zenthium.Core.Controls
             UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, InputSystem_Actions.Player.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, InputSystem_Actions.UI.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_Sandbox.enabled, "This will cause a leak and performance issues, InputSystem_Actions.Sandbox.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_View.enabled, "This will cause a leak and performance issues, InputSystem_Actions.View.Disable() has not been called.");
         }
 
         /// <summary>
@@ -2002,6 +2057,102 @@ namespace Zenthium.Core.Controls
         /// Provides a new <see cref="SandboxActions" /> instance referencing this action map.
         /// </summary>
         public SandboxActions @Sandbox => new SandboxActions(this);
+
+        // View
+        private readonly InputActionMap m_View;
+        private List<IViewActions> m_ViewActionsCallbackInterfaces = new List<IViewActions>();
+        private readonly InputAction m_View_Zoom;
+        /// <summary>
+        /// Provides access to input actions defined in input action map "View".
+        /// </summary>
+        public struct ViewActions
+        {
+            private @InputSystem_Actions m_Wrapper;
+
+            /// <summary>
+            /// Construct a new instance of the input action map wrapper class.
+            /// </summary>
+            public ViewActions(@InputSystem_Actions wrapper) { m_Wrapper = wrapper; }
+            /// <summary>
+            /// Provides access to the underlying input action "View/Zoom".
+            /// </summary>
+            public InputAction @Zoom => m_Wrapper.m_View_Zoom;
+            /// <summary>
+            /// Provides access to the underlying input action map instance.
+            /// </summary>
+            public InputActionMap Get() { return m_Wrapper.m_View; }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+            public void Enable() { Get().Enable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+            public void Disable() { Get().Disable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+            public bool enabled => Get().enabled;
+            /// <summary>
+            /// Implicitly converts an <see ref="ViewActions" /> to an <see ref="InputActionMap" /> instance.
+            /// </summary>
+            public static implicit operator InputActionMap(ViewActions set) { return set.Get(); }
+            /// <summary>
+            /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <param name="instance">Callback instance.</param>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+            /// </remarks>
+            /// <seealso cref="ViewActions" />
+            public void AddCallbacks(IViewActions instance)
+            {
+                if (instance == null || m_Wrapper.m_ViewActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_ViewActionsCallbackInterfaces.Add(instance);
+                @Zoom.started += instance.OnZoom;
+                @Zoom.performed += instance.OnZoom;
+                @Zoom.canceled += instance.OnZoom;
+            }
+
+            /// <summary>
+            /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <remarks>
+            /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+            /// </remarks>
+            /// <seealso cref="ViewActions" />
+            private void UnregisterCallbacks(IViewActions instance)
+            {
+                @Zoom.started -= instance.OnZoom;
+                @Zoom.performed -= instance.OnZoom;
+                @Zoom.canceled -= instance.OnZoom;
+            }
+
+            /// <summary>
+            /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="ViewActions.UnregisterCallbacks(IViewActions)" />.
+            /// </summary>
+            /// <seealso cref="ViewActions.UnregisterCallbacks(IViewActions)" />
+            public void RemoveCallbacks(IViewActions instance)
+            {
+                if (m_Wrapper.m_ViewActionsCallbackInterfaces.Remove(instance))
+                    UnregisterCallbacks(instance);
+            }
+
+            /// <summary>
+            /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+            /// </summary>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+            /// </remarks>
+            /// <seealso cref="ViewActions.AddCallbacks(IViewActions)" />
+            /// <seealso cref="ViewActions.RemoveCallbacks(IViewActions)" />
+            /// <seealso cref="ViewActions.UnregisterCallbacks(IViewActions)" />
+            public void SetCallbacks(IViewActions instance)
+            {
+                foreach (var item in m_Wrapper.m_ViewActionsCallbackInterfaces)
+                    UnregisterCallbacks(item);
+                m_Wrapper.m_ViewActionsCallbackInterfaces.Clear();
+                AddCallbacks(instance);
+            }
+        }
+        /// <summary>
+        /// Provides a new <see cref="ViewActions" /> instance referencing this action map.
+        /// </summary>
+        public ViewActions @View => new ViewActions(this);
         private int m_KeyboardMouseSchemeIndex = -1;
         /// <summary>
         /// Provides access to the input control scheme.
@@ -2240,6 +2391,21 @@ namespace Zenthium.Core.Controls
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnToggleChecklist(InputAction.CallbackContext context);
+        }
+        /// <summary>
+        /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "View" which allows adding and removing callbacks.
+        /// </summary>
+        /// <seealso cref="ViewActions.AddCallbacks(IViewActions)" />
+        /// <seealso cref="ViewActions.RemoveCallbacks(IViewActions)" />
+        public interface IViewActions
+        {
+            /// <summary>
+            /// Method invoked when associated input action "Zoom" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnZoom(InputAction.CallbackContext context);
         }
     }
 }

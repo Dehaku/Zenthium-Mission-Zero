@@ -1240,3 +1240,14 @@ The second half of Milestone 6, as split in 6a: Looting, Objective (carrying loo
 - The user passed checklist items 1-8.
 - **Item 9:** mostly passed. A converted goon handing over its Valuables is hard to set up at Charming's 5% rate, so it's not tested.
 - The EditMode suite hasn't been run since 6b; the last saved results are from 6a.
+
+### Camera zoom (asked by the user, 2026-11-26)
+- **Input:** a new `View` action map in `InputSystem_Actions.inputactions`, with one action, `Zoom`, bound to Alt + mouse wheel (a OneModifier composite). It has no gamepad binding.
+- **`OverheadCameraRig`:** `Zoom(steps)`. Each step changes the view by 15%, between an orthographic size of 6 (closest) and 32 (farthest), starting at 12. It eases there over 0.08 real seconds. All of these are Inspector values.
+- **`CameraZoomInput`** (new, Player): reads the action and zooms one step per frame the wheel turns. The Player, Combat and Core scene builders add it beside the rig.
+- **Not in the design docs:** controls.md doesn't list zooming.
+- **Checked by the user (2026-11-26):** zoom works.
+- **Editor steps:**
+  1. Let Unity reimport the input actions, which regenerates `InputSystem_Actions.cs`, and compile.
+  2. Rebuild the sandboxes you use.
+  3. Scenes that already exist and aren't rebuilt (Boot, HQ and Mission) need `CameraZoomInput` added to their camera by hand.

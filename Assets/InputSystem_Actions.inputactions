@@ -1191,6 +1191,56 @@
                                           "isPartOfComposite":  false
                                       }
                                   ]
+                 },
+                 {
+                     "name":  "View",
+                     "id":  "441509e1-d9bb-4b69-837d-8988a7d6c33a",
+                     "actions":  [
+                                     {
+                                         "name":  "Zoom",
+                                         "type":  "Value",
+                                         "id":  "4c56d149-c93c-4f9c-a883-56646538e56d",
+                                         "expectedControlType":  "Axis",
+                                         "processors":  "",
+                                         "interactions":  "",
+                                         "initialStateCheck":  false
+                                     }
+                                 ],
+                     "bindings":  [
+                                      {
+                                          "name":  "Alt+Wheel",
+                                          "id":  "0311e9da-c31e-47a9-90ce-3ff43420ac86",
+                                          "path":  "OneModifier",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "",
+                                          "action":  "Zoom",
+                                          "isComposite":  true,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "modifier",
+                                          "id":  "61231622-cd39-434a-9652-7e0b8ed58e03",
+                                          "path":  "<Keyboard>/alt",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Keyboard&Mouse",
+                                          "action":  "Zoom",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  true
+                                      },
+                                      {
+                                          "name":  "binding",
+                                          "id":  "129dcd5c-831d-4dde-9152-e71aa560aa8b",
+                                          "path":  "<Mouse>/scroll/y",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Keyboard&Mouse",
+                                          "action":  "Zoom",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  true
+                                      }
+                                  ]
                  }
              ],
     "controlSchemes":  [
