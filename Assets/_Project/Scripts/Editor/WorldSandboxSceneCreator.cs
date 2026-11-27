@@ -69,6 +69,12 @@ namespace Zenthium.Editor
         private static readonly Color VehicleColor = new Color(0.2f, 0.55f, 0.3f);
         private static readonly Color RingColor = new Color(0.9f, 0.15f, 0.1f);
         private static readonly Color TurretColor = new Color(0.25f, 0.25f, 0.25f);
+        private static readonly Color DoorColor = new Color(0f, 0.75f, 0.65f);
+
+        // "LOCKED" floats just above the door's top, in the door's local space (its center is half a wall up).
+        private static readonly Vector3 LockedLabelPosition = new Vector3(0f, WallHeight * 0.5f + 0.3f, 0f);
+        private const float LockedLabelFontSize = 4f;
+        private static readonly Color LockedLabelColor = new Color(1f, 0.25f, 0.2f);
 
         // Valuables: three bags in the Wood house, two by the player, and a dummy carrying three.
         private const float BagHeight = 0.3f;
@@ -104,6 +110,12 @@ namespace Zenthium.Editor
         {
             public const string Panel = "panel";
             public const string IsLocked = "isLocked";
+        }
+
+        private static class LockedLabelFields
+        {
+            public const string Door = "door";
+            public const string Label = "label";
         }
 
         private static class BuildingFields
@@ -520,10 +532,24 @@ namespace Zenthium.Editor
 
             Transform panel = Panel(context, doorObject.transform, "Door Panel", material, opening.From, opening.To,
                 WallThickness);
-            Wire(doorObject.AddComponent<Door>(), so =>
+
+            // Doors get their own color, whatever their material, so they stand out from the walls.
+            panel.GetComponent<Renderer>().sharedMaterial =
+                ModulePrefabBuilder.SaveMaterial("Door", DoorColor, panel.gameObject);
+            var door = doorObject.AddComponent<Door>();
+            Wire(door, so =>
             {
                 SetReference(so, DoorFields.Panel, panel.GetComponent<BuildingPart>());
                 Find(so, DoorFields.IsLocked).boolValue = isLocked;
+            });
+
+            TextMeshPro lockedText = AiSandboxSceneCreator.FlatText(doorObject.transform, "Locked Label",
+                LockedLabelPosition, LockedLabelFontSize, LockedLabelColor);
+            lockedText.text = "LOCKED";
+            Wire(doorObject.AddComponent<LockedDoorLabel>(), so =>
+            {
+                SetReference(so, LockedLabelFields.Door, door);
+                SetReference(so, LockedLabelFields.Label, lockedText);
             });
             string doorTitle = (isLocked ? "Locked " : string.Empty) + material + " door";
             AddLabel(context, panel.GetComponent<Structure>(), doorTitle);
