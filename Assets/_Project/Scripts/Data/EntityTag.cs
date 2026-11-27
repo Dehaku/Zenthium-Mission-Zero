@@ -1,4 +1,4 @@
-namespace Zenthium.Entities
+namespace Zenthium.Data
 {
     /// <summary>
     /// Tags on entities rather than modules (modules.md, factions.md). Systems check for a tag,
@@ -18,5 +18,11 @@ namespace Zenthium.Entities
 
         /// <summary><c>LootDestination:MapEdge</c>: carries Valuables off the map, Leader or not (world.md, Goon behavior).</summary>
         LootDestinationMapEdge,
+
+        /// <summary>
+        /// <c>LootDestination:CropCircle</c>: takes Valuables and dragged citizens to the nearest Repo Agency crop
+        /// circle (Factions/GalacticRepoAgency.md).
+        /// </summary>
+        LootDestinationCropCircle,
     }
 }

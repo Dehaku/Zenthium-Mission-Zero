@@ -34,8 +34,8 @@ MonoBehaviour:
     word: 
     value: 0
   knockbackTier:
-    word: 
-    value: 0
+    word: Heavy
+    value: 8
   rangeTier:
     word: Medium
     value: 15

@@ -24,6 +24,10 @@ namespace Zenthium.Editor.DataImport
         public List<string> FactionIds { get; } = new List<string>();
 
         public List<EntityRecord> Entities { get; } = new List<EntityRecord>();
+
+        /// <summary>factions.csv's rows; a faction can have none.</summary>
+        public List<FactionRecord> Factions { get; } = new List<FactionRecord>();
+
         public List<HeroRecord> Heroes { get; } = new List<HeroRecord>();
         public List<PropRecord> Props { get; } = new List<PropRecord>();
         public List<PriceRecord> Prices { get; } = new List<PriceRecord>();
@@ -86,6 +90,34 @@ namespace Zenthium.Editor.DataImport
         public Rank? MinRank { get; internal set; }
         public int? BudgetCost { get; internal set; }
         public List<ValueRecord> Values { get; internal set; }
+
+        /// <summary>Module ids in AI priority order.</summary>
+        public List<string> ModuleIds { get; internal set; }
+
+        public List<ModuleLockRecord> Locks { get; internal set; }
+        public List<EntityTag> Tags { get; internal set; }
+
+        /// <summary>The file and line it came from, for error messages.</summary>
+        public string Location { get; internal set; }
+    }
+
+    public sealed class ModuleLockRecord
+    {
+        public string ModuleId { get; internal set; }
+        public Rank Rank { get; internal set; }
+    }
+
+    public sealed class FactionRecord
+    {
+        public string Id { get; internal set; }
+        public List<EntityTag> Tags { get; internal set; }
+        public ArrivalTag? Arrival { get; internal set; }
+        public List<ValueRecord> MissionWeights { get; internal set; }
+        public List<ValueRecord> LocationWeights { get; internal set; }
+        public List<ValueRecord> Values { get; internal set; }
+
+        /// <summary>The file and line it came from, for error messages.</summary>
+        public string Location { get; internal set; }
     }
 
     public sealed class HeroRecord

@@ -38,6 +38,26 @@ namespace Zenthium.Modules
 
         public int CarriedCount => carried.Count;
 
+        /// <summary>Meters it grabs from (Drag's range).</summary>
+        public float Reach => reach;
+
+        /// <summary>Whether a citizen is among what it drags.</summary>
+        public bool IsDraggingCitizen
+        {
+            get
+            {
+                foreach (IDragTarget target in carried)
+                {
+                    if (target.Kind == DragTargetKind.Citizen)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         /// <summary>Lets go of everything and lists what was carried, such as for Power Throw.</summary>
         public void ReleaseAll(List<IDragTarget> released)
         {

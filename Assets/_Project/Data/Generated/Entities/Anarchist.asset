@@ -21,3 +21,6 @@ MonoBehaviour:
   budgetCost: 5
   values:
     values: []
+  modules: []
+  locks: []
+  tags: 

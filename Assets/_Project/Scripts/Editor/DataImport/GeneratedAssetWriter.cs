@@ -58,9 +58,40 @@ namespace Zenthium.Editor.DataImport
             foreach (EntityRecord record in data.Entities)
             {
                 EntityData asset = entities[record.Id];
+                var locks = new List<ModuleLock>(record.Locks.Count);
+                foreach (ModuleLockRecord moduleLock in record.Locks)
+                {
+                    locks.Add(new ModuleLock(modules[moduleLock.ModuleId], moduleLock.Rank));
+                }
+
                 asset.Populate(factions[record.FactionId], record.RankTier, record.MinRank, record.BudgetCost,
-                    BuildValues(record.Values, modules));
+                    BuildValues(record.Values, modules), Resolve(record.ModuleIds, modules), locks,
+                    new List<EntityTag>(record.Tags));
                 EditorUtility.SetDirty(asset);
+            }
+
+            // Every faction is written, so one whose factions.csv row was removed loses its old rules.
+            var factionRecords = new Dictionary<string, FactionRecord>(StringComparer.Ordinal);
+            foreach (FactionRecord record in data.Factions)
+            {
+                factionRecords.Add(record.Id, record);
+            }
+
+            foreach (KeyValuePair<string, FactionData> pair in factions)
+            {
+                if (factionRecords.TryGetValue(pair.Key, out FactionRecord record))
+                {
+                    pair.Value.Populate(new List<EntityTag>(record.Tags), record.Arrival,
+                        BuildValues(record.MissionWeights, modules), BuildValues(record.LocationWeights, modules),
+                        BuildValues(record.Values, modules));
+                }
+                else
+                {
+                    pair.Value.Populate(new List<EntityTag>(), null, new DataValueList(), new DataValueList(),
+                        new DataValueList());
+                }
+
+                EditorUtility.SetDirty(pair.Value);
             }
 
             foreach (HeroRecord record in data.Heroes)

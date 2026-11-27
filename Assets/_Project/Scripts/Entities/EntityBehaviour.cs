@@ -28,10 +28,11 @@ namespace Zenthium.Entities
         [Tooltip("Mission ranks above D: 0 at D, 4 at S, 5 at S2. Only faction entities use it.")]
         [SerializeField, Min(0)] private int difficultyLevel;
 
-        [Tooltip("A faction entity's fixed module list, each in the next slot of its type. Heroes use their kit.")]
+        [Tooltip("Testing: replaces a faction entity's module list from entities.csv, each in the next slot of its type. "
+            + "Empty uses the data's. Heroes use their kit.")]
         [SerializeField] private List<ModuleData> modules = new List<ModuleData>();
 
-        [Tooltip("Entity tags, such as Hackable and Immobile for a Heavy Turret. Set here until entities.csv carries them.")]
+        [Tooltip("Entity tags added to the ones from entities.csv and factions.csv, such as Immobile for a Heavy Turret.")]
         [SerializeField] private List<EntityTag> tags = new List<EntityTag>();
 
         [Tooltip("Testing: slots of each type unlocked for a hero. 0 uses the preset's starting slots.")]
@@ -47,6 +48,12 @@ namespace Zenthium.Entities
 
         /// <summary>The scene's clock, which this entity's other components run on.</summary>
         public GameClockDriver ClockDriver => clock;
+
+        /// <summary>The faction entity it's built from; null for a hero.</summary>
+        public EntityData FactionEntity => hero == null ? factionEntity : null;
+
+        /// <summary>Mission ranks above D it's built for (0 at D).</summary>
+        public int DifficultyLevel => difficultyLevel;
 
         /// <summary>Raised when the entity is created or replaced by <see cref="ResetEntity"/>.</summary>
         public event Action<Entity> OnEntityCreated;
@@ -84,6 +91,23 @@ namespace Zenthium.Entities
             modules.AddRange(newModules);
         }
 
+        /// <summary>
+        /// Sets up a spawned faction entity in code, with its modules and tags from the data, such as backup from
+        /// Call for Backup. Call it before the object activates, as with <see cref="ConfigureSummon"/>.
+        /// </summary>
+        public void ConfigureFactionEntity(GameDatabase newDatabase, GameClockDriver newClock, EntityData newEntity,
+            Team newTeam, int newDifficultyLevel)
+        {
+            database = newDatabase;
+            clock = newClock;
+            hero = null;
+            factionEntity = newEntity;
+            team = newTeam;
+            difficultyLevel = Mathf.Max(0, newDifficultyLevel);
+            summoner = null;
+            modules.Clear();
+        }
+
         private void Awake()
         {
             CreateEntity();
@@ -119,12 +143,20 @@ namespace Zenthium.Entities
             {
                 setup = EntitySetup.ForFactionEntity(factionEntity, team, difficultyLevel, database.EntityConstants);
                 setup.Summoner = summoner;
-                foreach (ModuleData module in modules)
+
+                // A list set here replaces the data's, such as a sandbox goon's test kit or a summon's attack.
+                if (modules.Count > 0)
                 {
-                    if (module != null)
+                    setup.Modules.Clear();
+                    foreach (ModuleData module in modules)
                     {
-                        setup.Modules.Add(module);
+                        if (module != null)
+                        {
+                            setup.Modules.Add(module);
+                        }
                     }
+
+                    setup.MinimumSlotsPerType = EntitySetup.MostOfOneType(setup.Modules);
                 }
             }
             else

@@ -21,3 +21,8 @@ MonoBehaviour:
   budgetCost: 1
   values:
     values: []
+  modules:
+  - {fileID: 11400000, guid: 64b0d33e67b25c04ca311e278fc70dbb, type: 2}
+  - {fileID: 11400000, guid: 3b71863688869d74bb6087eef36e1c1a, type: 2}
+  locks: []
+  tags: 01000000i

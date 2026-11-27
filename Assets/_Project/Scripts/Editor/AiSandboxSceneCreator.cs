@@ -280,7 +280,7 @@ namespace Zenthium.Editor
             Debug.Log($"Created {ScenePath} and {NavMeshPath}.");
         }
 
-        private static AiSquad CreateSquad(PlayerSandboxSceneCreator.Room room, string squadName, Vector3[] socketPositions)
+        internal static AiSquad CreateSquad(PlayerSandboxSceneCreator.Room room, string squadName, Vector3[] socketPositions)
         {
             var squad = new GameObject(squadName).AddComponent<AiSquad>();
             var sockets = new MapSocket[socketPositions.Length];
@@ -335,21 +335,29 @@ namespace Zenthium.Editor
                 }
             });
 
-            goon.gameObject.AddComponent<AiNavigator>();
-            goon.gameObject.AddComponent<AiLooter>();
-            goon.gameObject.AddComponent<CharmConversion>();
-            var brain = goon.gameObject.AddComponent<AiBrain>();
+            AddGoonAi(goon.gameObject, squad, mapBounds);
+            return goon;
+        }
+
+        /// <summary>The AI with its squad and the map's edge, looting, Charming's conversion, and the AI views.</summary>
+        /// <param name="squad">Null for none; so is <paramref name="mapBounds"/>, such as on a prefab.</param>
+        internal static AiBrain AddGoonAi(GameObject goon, AiSquad squad, MapBounds mapBounds)
+        {
+            goon.AddComponent<AiNavigator>();
+            goon.AddComponent<AiLooter>();
+            goon.AddComponent<CharmConversion>();
+            var brain = goon.AddComponent<AiBrain>();
             Wire(brain, so =>
             {
                 SetReference(so, BrainFields.Squad, squad);
                 SetReference(so, BrainFields.MapBounds, mapBounds);
             });
             AddAiViews(brain);
-            return goon;
+            return brain;
         }
 
         /// <summary>A training dummy turned citizen: its kind, the Valuables it carries, and a label.</summary>
-        private static void PlaceCitizen(PlayerSandboxSceneCreator.Room room, string citizenName, Vector3 position,
+        internal static void PlaceCitizen(PlayerSandboxSceneCreator.Room room, string citizenName, Vector3 position,
             CitizenKind kind, int valuables)
         {
             EntityBehaviour citizen = PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, position, room);
@@ -373,7 +381,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>A stash of loose Valuables around a point.</summary>
-        private static void PlaceBags(PlayerSandboxSceneCreator.Room room, string stashName, Vector3 center, int count)
+        internal static void PlaceBags(PlayerSandboxSceneCreator.Room room, string stashName, Vector3 center, int count)
         {
             var bagPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerSandboxSceneCreator.ValuableBagPrefabPath);
             var root = new GameObject(stashName).transform;
@@ -453,7 +461,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>A primitive with no collider (it would join the entity's body), in the parent's space.</summary>
-        private static Transform Visual(PrimitiveType type, string objectName, Transform parent, Vector3 localPosition,
+        internal static Transform Visual(PrimitiveType type, string objectName, Transform parent, Vector3 localPosition,
             Vector3 localScale, Material material)
         {
             GameObject visual = GameObject.CreatePrimitive(type);
@@ -493,7 +501,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>A saved flat-color material that lets its alpha show through (URP Lit, transparent surface).</summary>
-        private static Material TransparentMaterial(string materialName, Color color)
+        internal static Material TransparentMaterial(string materialName, Color color)
         {
             Material material = ModuleMaterial(materialName, color);
             material.SetFloat(UrpLit.Surface, 1f);

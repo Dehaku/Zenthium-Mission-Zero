@@ -21,3 +21,17 @@ MonoBehaviour:
   budgetCost: 0
   values:
     values: []
+  modules:
+  - {fileID: 11400000, guid: 5e212ab94521fc348bdd22e47571846e, type: 2}
+  - {fileID: 11400000, guid: c185ed58ac7cb1744b0a21b1d75d2c1c, type: 2}
+  - {fileID: 11400000, guid: 9492d75d1a39091499bafe72e903f433, type: 2}
+  - {fileID: 11400000, guid: 16e985028708a6b4ca91dfc77d3551f5, type: 2}
+  - {fileID: 11400000, guid: e1eff96f78869954b80173ec509abe15, type: 2}
+  locks:
+  - module: {fileID: 11400000, guid: 9492d75d1a39091499bafe72e903f433, type: 2}
+    rank: 1
+  - module: {fileID: 11400000, guid: c185ed58ac7cb1744b0a21b1d75d2c1c, type: 2}
+    rank: 1
+  - module: {fileID: 11400000, guid: 5e212ab94521fc348bdd22e47571846e, type: 2}
+    rank: 2
+  tags: 

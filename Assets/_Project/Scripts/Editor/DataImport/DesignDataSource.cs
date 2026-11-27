@@ -11,8 +11,10 @@ namespace Zenthium.Editor.DataImport
         public const string HeroesFile = "heroes.csv";
         public const string PropsFile = "props.csv";
         public const string PricesFile = "prices.csv";
+        public const string FactionsFile = "factions.csv";
 
-        public DesignDataSource(string constants, string modules, string entities, string heroes, string props, string prices)
+        public DesignDataSource(string constants, string modules, string entities, string heroes, string props, string prices,
+            string factions)
         {
             Constants = constants;
             Modules = modules;
@@ -20,6 +22,7 @@ namespace Zenthium.Editor.DataImport
             Heroes = heroes;
             Props = props;
             Prices = prices;
+            Factions = factions;
         }
 
         public string Constants { get; }
@@ -28,5 +31,6 @@ namespace Zenthium.Editor.DataImport
         public string Heroes { get; }
         public string Props { get; }
         public string Prices { get; }
+        public string Factions { get; }
     }
 }

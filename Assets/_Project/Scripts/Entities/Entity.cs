@@ -50,7 +50,7 @@ namespace Zenthium.Entities
             Defiance = new Defiance(Stats, rules.EntityConstants, Team == Team.Player);
             Invulnerability = new Invulnerability();
             Resources = new ResourcePools(rules.EntityConstants);
-            Slots = CreateSlots(setup, rules.ModuleConstants.SlotsPerType);
+            Slots = CreateSlots(setup, Math.Max(rules.ModuleConstants.SlotsPerType, setup.MinimumSlotsPerType));
             Statuses = new StatusEffects(this, rules.ModuleConstants, random);
 
             Stats.OnStatsChanged += UpdateMaxHp;
@@ -79,6 +79,9 @@ namespace Zenthium.Entities
 
         /// <summary>Left the map (enemies.md, Limits).</summary>
         public event Action OnEscaped;
+
+        /// <summary>Taken for good, such as a citizen in a Repo Agency crop circle.</summary>
+        public event Action OnAbducted;
 
         /// <summary>Switched sides, such as a goon won over by Charming.</summary>
         public event Action OnTeamChanged;
@@ -109,6 +112,9 @@ namespace Zenthium.Entities
 
         /// <summary>It left the map, which counts as defeated (enemies.md, Limits).</summary>
         public bool IsEscaped { get; private set; }
+
+        /// <summary>Taken for good (see <see cref="Abduct"/>).</summary>
+        public bool IsAbducted { get; private set; }
 
         public bool IsInvulnerable => Invulnerability.IsActive;
 
@@ -237,6 +243,24 @@ namespace Zenthium.Entities
             IsEscaped = true;
             Statuses.ClearAll();
             OnEscaped?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// Taken off the map for good, such as a citizen in a Repo Agency crop circle (Factions/GalacticRepoAgency.md),
+        /// Incapacitated or not, so a dragged citizen is taken too. Its statuses end. The scene removes it.
+        /// </summary>
+        /// <returns>False if it's captured or already gone.</returns>
+        public bool Abduct()
+        {
+            if (IsCaptured || IsEscaped || IsAbducted)
+            {
+                return false;
+            }
+
+            IsAbducted = true;
+            Statuses.ClearAll();
+            OnAbducted?.Invoke();
             return true;
         }
 

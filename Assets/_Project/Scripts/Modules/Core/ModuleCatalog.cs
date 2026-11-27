@@ -22,7 +22,18 @@ namespace Zenthium.Modules
                     return TryCreateKick(data, out behaviour, out problem);
                 case DataIds.Modules.SpeedPunch:
                 case DataIds.Modules.Uppercut:
+                case DataIds.Modules.TabletSlap:
                     return TryCreateMelee(data, false, out behaviour, out problem);
+                case DataIds.Modules.FinalNotice:
+                    return TryCreateMarkingBeam(data, out behaviour, out problem);
+                case DataIds.Modules.Repossess:
+                    return TryCreateStatusBeam(data, StatusType.SlotDisable, out behaviour, out problem);
+                case DataIds.Modules.TractorPull:
+                    return TryCreatePull(data, PullDestination.LootDestination, false, out behaviour, out problem);
+                case DataIds.Modules.TractorBeam:
+                    return TryCreatePull(data, PullDestination.User, true, out behaviour, out problem);
+                case DataIds.Modules.CallForBackup:
+                    return TryCreateBackup(data, out behaviour, out problem);
                 case DataIds.Modules.InkLash:
                     // modules.md: Ink Lash scales with Rune's Will, the summoner's.
                     return TryCreateMelee(data, true, out behaviour, out problem);
@@ -176,6 +187,75 @@ namespace Zenthium.Modules
             }
 
             behaviour = new BeamModule(data, effects);
+            return true;
+        }
+
+        /// <summary>A beam that applies a status to the first entity it hits, for the duration tier (Repossess).</summary>
+        private static bool TryCreateStatusBeam(ModuleData data, StatusType status, out ModuleBehaviour behaviour,
+            out string problem)
+        {
+            behaviour = null;
+            if (!Require(data.RangeTier.IsSet && data.DurationTier.IsSet, "a range tier and a duration tier",
+                    out problem))
+            {
+                return false;
+            }
+
+            behaviour = new BeamModule(data, StatusOnly(data, status));
+            return true;
+        }
+
+        /// <summary>A beam that Marks the first entity it hits (Final Notice), with Taunt's Marked keys.</summary>
+        private static bool TryCreateMarkingBeam(ModuleData data, out ModuleBehaviour behaviour, out string problem)
+        {
+            behaviour = null;
+            DataValueList values = data.Values;
+            bool complete = values.TryGetNumber(TauntModule.DurationKey, out float seconds)
+                & values.TryGetNumber(TauntModule.MarkedDealtKey, out float dealt)
+                & values.TryGetNumber(TauntModule.MarkedTakenKey, out float taken);
+            if (!Require(complete && data.RangeTier.IsSet,
+                    "a range tier, duration_s, marked_damage_dealt and marked_damage_taken", out problem))
+            {
+                return false;
+            }
+
+            data.TryGetDamageType(out DamageType type);
+            var marked = new[]
+            {
+                new StatusModifier(StatusModifierTarget.DamageDealt, dealt),
+                new StatusModifier(StatusModifierTarget.DamageTaken, taken),
+            };
+            behaviour = new BeamModule(data, new HitEffects(data, null, type, StatusType.Marked, seconds,
+                statusModifiers: marked));
+            return true;
+        }
+
+        private static bool TryCreatePull(ModuleData data, PullDestination destination, bool pullsEveryOpponent,
+            out ModuleBehaviour behaviour, out string problem)
+        {
+            behaviour = null;
+            if (!Require(data.RangeTier.IsSet && data.KnockbackTier.IsSet,
+                    "a range tier and a knockback tier (the pull distance)", out problem))
+            {
+                return false;
+            }
+
+            data.TryGetDamageType(out DamageType type);
+            behaviour = new PullModule(data, new HitEffects(data, null, type), destination, pullsEveryOpponent);
+            return true;
+        }
+
+        private static bool TryCreateBackup(ModuleData data, out ModuleBehaviour behaviour, out string problem)
+        {
+            behaviour = null;
+            bool complete = data.Values.TryGet(BackupRoster.GoonsKey, out DataValue goons)
+                & data.Values.TryGet(BackupRoster.ChampionsKey, out DataValue champions);
+            if (!Require(complete, $"{BackupRoster.GoonsKey} and {BackupRoster.ChampionsKey}", out problem))
+            {
+                return false;
+            }
+
+            behaviour = new CallForBackupModule(data, goons, champions);
             return true;
         }
 

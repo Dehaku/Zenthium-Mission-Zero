@@ -13,3 +13,12 @@ MonoBehaviour:
   m_Name: HexboundCoven
   m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.FactionData
   id: Hexbound Coven
+  tags: 
+  hasArrival: 0
+  arrival: 0
+  missionWeights:
+    values: []
+  locationWeights:
+    values: []
+  values:
+    values: []

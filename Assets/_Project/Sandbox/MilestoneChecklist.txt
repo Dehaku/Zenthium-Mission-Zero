@@ -1,29 +1,25 @@
-<b>Milestone 6b: what to test in Sandbox_AI</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
+<b>Milestone 7a: what to test in Sandbox_Repo</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
 Reset scene (bottom right) reloads the scene. The lost Valuables count is at the top center.
-Squad A (3 melee goons and their Leader, GleebPeep) patrols north-east. Squad B (2 Energy Blaster goons and a
-Cannons goon) patrols north, beside a stash of 3 Valuables. A second stash of 4 lies east of your start.
-Citizens: Scared (2 Valuables) south, downed (1 Valuable) west of your start, Stubborn by the turret (south-west).
-Labels show each goon's state (with pickup %) and each citizen's kind.
+The Repo squad (GleebPeep, 2 Greys, a Tractor Drone, a Shield Bearer) patrols the north, all at rank B. Green discs
+are crop circles (east and west). Citizens: downed (1 Valuable) and Stubborn north of you, Scared to the east.
+A stash of 3 Valuables lies north-west. Labels show each entity's state and each citizen's kind.
 
-<b>Looting</b>
-1. At the start, Squad B walks to its stash, and each goon picks up a bag (about 5 s, "Looting 50%"). Hit a
-   looter: its pickup starts over.
-2. "Ranged Goon 2 (loot off the map)" carries its bag to the north edge and vanishes: lost count +1. The others
-   carry theirs to the Leader ("Objective"), hand them over (the Leader's bag count goes up), then patrol again.
-3. Fight by the east stash: melee goons loot it while you're out of their punch reach and turn on you when you
-   come close. Ranged goons keep shooting while you're within their range.
-4. Defeat the Leader, then let a goon pick up a bag: with no Leader standing, it carries it off the map.
+<b>Crop circles and dragging</b>
+1. At the start, a Grey walks to the downed citizen, drags it ("Looting", then "Objective") into the nearest crop
+   circle, and the citizen vanishes for good. Its Valuable lies where it was downed.
+2. The other Grey drags the Stubborn citizen (it walks slower while dragging it) into a crop circle.
+3. Repo entities that pick up Valuables carry them into a crop circle, GleebPeep included: lost count goes up.
+4. Walk into a crop circle carrying Valuables: you lose them all (lost count goes up). You aren't abducted.
+5. Drag a citizen yourself into a crop circle: it's abducted. Come within range of a Grey dragging a citizen: it
+   stops to shoot you, still holding the citizen, and carries on to the crop circle once you back off.
 
-<b>Cowardice</b>
-5. Get a goon (not the Leader or the locked-in goon) below 20% HP. About 1 time in 4 its label shows "(panic)":
-   it ignores you, runs for the nearest map edge and vanishes (what it carried counts as lost). It rolls once.
-
-<b>Citizens</b>
-6. Lead goons toward the Scared citizen: when it sees one within 20 m, it drops its 2 Valuables (once) and runs
-   straight away ("Scared (fleeing)"). It doesn't react to goons it can't see.
-7. The downed citizen lies with its Valuable beside it. Rush Hour's First Aid Spray (Gear) next to it gets it up
-   as "Scared".
-8. Drag grabs citizens standing or down. Dragging the Stubborn citizen slows you by 20%; it never walks on its own.
-9. Rush Hour has Charming. Walk near the Stubborn citizen: one 50% roll to turn it Scared (Reset scene to roll
-   again). Each goon you get near rolls once at 5%: a converted goon follows you as an ally and hands you its
-   Valuables.
+<b>Modules (in priority order)</b>
+6. GleebPeep fights with Call for Backup (3-5 goons and 2 Champions appear around it, every 30 s), Repossess (one of
+   your Gear slots is disabled for 5 s), Final Notice (Marked for 6 s), Tractor Beam (you're pulled toward it;
+   its own goons aren't), then Tablet Slap (melee with knockback). MoreInfo shows the disabled slot.
+7. Set GleebPeep's Difficulty Level to 0 (rank D) in the Inspector before Play: it only uses Tractor Beam and
+   Tablet Slap. At 1 (rank C) it adds Repossess and Final Notice, but not Call for Backup.
+8. The Tractor Drone pulls you (or a citizen) toward the nearest crop circle. The Shield Bearer can't be knocked
+   back (Kick it), and raises its Energy Shield.
+9. Greys are Cowards from the data: below 20% HP, 1 in 4 runs for the map edge. Backup at rank B can include a Tow
+   Saucer, which does nothing yet (Milestone 7b).

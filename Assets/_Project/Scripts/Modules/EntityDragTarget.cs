@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Zenthium.Data;
 using Zenthium.Entities;
 using Zenthium.Movement;
 

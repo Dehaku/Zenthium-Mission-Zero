@@ -35,6 +35,9 @@ namespace Zenthium.Modules
         [Tooltip("The body for summons (Ink Beast). Its entity, team and modules are set when it's spawned.")]
         [SerializeField] private EntityBehaviour summonPrefab;
 
+        [Tooltip("Spawns faction entities with their AI (Call for Backup). Empty: modules that need it do nothing.")]
+        [SerializeField] private EntitySpawner entitySpawner;
+
         [SerializeField] private PlacedGlyph glyphPrefab;
         [SerializeField] private SmokeCloud smokePrefab;
         [SerializeField] private TimedCharge chargePrefab;
@@ -61,6 +64,7 @@ namespace Zenthium.Modules
         private readonly Dictionary<Entity, EntityBehaviour> behaviours = new Dictionary<Entity, EntityBehaviour>();
         private readonly List<ShieldZone> shields = new List<ShieldZone>();
         private readonly List<SmokeCloud> smokes = new List<SmokeCloud>();
+        private readonly List<ILootDestination> lootDestinations = new List<ILootDestination>();
         private Transform spawnHolder;
 
         /// <summary>
@@ -160,6 +164,19 @@ namespace Zenthium.Modules
             return summon;
         }
 
+        /// <summary>Spawns a faction entity on a team, such as backup (<see cref="EntitySpawner"/>).</summary>
+        /// <returns>Null if the scene has no spawner, or it couldn't spawn one.</returns>
+        public EntityBehaviour SpawnFactionEntity(EntityData entity, Team team, int difficultyLevel, Vector3 position)
+        {
+            if (entitySpawner == null)
+            {
+                Debug.LogError($"{name}: {nameof(ModuleWorld)} has no {nameof(EntitySpawner)}.", this);
+                return null;
+            }
+
+            return entitySpawner.Spawn(entity, team, difficultyLevel, position);
+        }
+
         /// <summary>Shows a beam's path briefly (presentation only).</summary>
         public void ShowBeam(Vector3 from, Vector3 to)
         {
@@ -218,6 +235,45 @@ namespace Zenthium.Modules
                     results.Add(pair.Value);
                 }
             }
+        }
+
+        /// <summary>The nearest loot destination for the tag, measured on the XZ plane.</summary>
+        /// <returns>False if the map has none for it.</returns>
+        public bool TryFindLootDestination(EntityTag tag, Vector3 from, out ILootDestination nearest)
+        {
+            nearest = null;
+            float nearestDistance = float.PositiveInfinity;
+            foreach (ILootDestination destination in lootDestinations)
+            {
+                if (destination.Tag != tag)
+                {
+                    continue;
+                }
+
+                Vector3 offset = destination.Position - from;
+                offset.y = 0f;
+                float distance = offset.sqrMagnitude;
+                if (distance < nearestDistance)
+                {
+                    nearest = destination;
+                    nearestDistance = distance;
+                }
+            }
+
+            return nearest != null;
+        }
+
+        public void RegisterLootDestination(ILootDestination destination)
+        {
+            if (!lootDestinations.Contains(destination))
+            {
+                lootDestinations.Add(destination);
+            }
+        }
+
+        public void UnregisterLootDestination(ILootDestination destination)
+        {
+            lootDestinations.Remove(destination);
         }
 
         internal void Register(Entity entity, EntityBehaviour behaviour)

@@ -13,3 +13,111 @@ MonoBehaviour:
   m_Name: GalacticRepoAgency
   m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.FactionData
   id: Galactic Repo Agency
+  tags: 05000000i
+  hasArrival: 1
+  arrival: 3
+  missionWeights:
+    values:
+    - key: rescue
+      kind: 0
+      number: 3
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: invasion
+      kind: 0
+      number: 2
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: countdown
+      kind: 0
+      number: 1
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: arson_riot
+      kind: 0
+      number: 1
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+  locationWeights:
+    values:
+    - key: bank
+      kind: 0
+      number: 2
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: museum
+      kind: 0
+      number: 2
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: park
+      kind: 0
+      number: 2
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+  values:
+    values:
+    - key: crop_circles_base
+      kind: 0
+      number: 1
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: crop_circles_per_rank
+      kind: 0
+      number: 1
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: crop_circles_max
+      kind: 0
+      number: 5
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: crop_circle_radius_m
+      kind: 0
+      number: 3
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}

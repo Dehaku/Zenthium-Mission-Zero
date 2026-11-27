@@ -39,3 +39,7 @@ MonoBehaviour:
         word: 
         value: 0
       module: {fileID: 0}
+  modules:
+  - {fileID: 11400000, guid: 75b08464cf58b4e40a009965e0d1bf0a, type: 2}
+  locks: []
+  tags: 0100000000000000i

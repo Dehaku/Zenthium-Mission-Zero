@@ -118,6 +118,7 @@ namespace Zenthium.World
             entity = newEntity;
             entity.OnIncapacitated += DropAll;
             entity.OnEscaped += LoseAll;
+            entity.OnAbducted += LoseAll;
             if (!hasStartingValuables)
             {
                 hasStartingValuables = true;
@@ -135,12 +136,16 @@ namespace Zenthium.World
             {
                 entity.OnIncapacitated -= DropAll;
                 entity.OnEscaped -= LoseAll;
+                entity.OnAbducted -= LoseAll;
                 entity = null;
             }
         }
 
-        /// <summary>Carried off the map: they count as lost (world.md, Valuables secondary goal).</summary>
-        private void LoseAll()
+        /// <summary>
+        /// Carried off the map or into a loot destination that counts as lost, such as a crop circle (world.md,
+        /// Valuables secondary goal).
+        /// </summary>
+        public void LoseAll()
         {
             if (Count == 0)
             {

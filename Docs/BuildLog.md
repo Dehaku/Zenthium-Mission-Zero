@@ -1114,7 +1114,7 @@ Milestone 6 is split, as approved. **6a** (this entry) builds detection, awarene
 - The user passed the retested items 2, 4, 9, 12 and 13. All 14 checklist items now pass.
 - Still open: Cannons' damage type (Physical, an assumption), and the Stubborn drag slow for 6b (the user chose 20%; missions.md says 25%).
 
-## Milestone 6b: Enemy AI, looting, cowardice and citizens (implemented, not yet checked, 2026-11-25)
+## Milestone 6b: Enemy AI, looting, cowardice and citizens (checked by the user, 2026-11-26)
 
 The second half of Milestone 6, as split in 6a: Looting, Objective (carrying loot, fleeing the map), cowardice, citizens, `ICharmable`, and the sandbox for them.
 
@@ -1258,3 +1258,132 @@ The second half of Milestone 6, as split in 6a: Looting, Objective (carrying loo
 - **First fix:** compare the HP fraction instead (`currentHp / maxHp >= hpFraction`). It still failed: Mono can keep float math at higher precision, where 20 / 100 is exactly 0.2 but the float 0.2f is slightly above it.
 - **Second fix:** an explicit cast, `(float)(currentHp / maxHp) >= hpFraction`, which C# rounds to float precision. The test is unchanged.
 - **Rerun:** all 426 EditMode tests pass.
+
+## Milestone 7a: Galactic Repo Agency, faction data, crop circles and the first four entities (checked by the user, 2026-11-26)
+
+The first half of Milestone 7, split as approved: faction data, crop circles, the loot destination, dragging citizens, and GleebPeep, Grey, Tractor Drone and Shield Bearer with their modules. 7b does Auditor, Notary, Tow Saucer (Audit, Notarized, Tow Beam, the crash), Mothership Strike and `Docs/HowTo_AddFaction.md`.
+
+### Done
+- **Data (local edits, approved):**
+  - `entities.csv` gets three columns before `notes`: `modules` (AI priority order), `locked_until` (`Module:Rank; ...`) and `tags`. Only the Repo Agency's rows are filled, from `Factions/GalacticRepoAgency.md`.
+  - New `factions.csv`: `faction, tags, arrival, mission_weights, location_weights, values, notes`. One row: the Repo Agency, with `LootDestination:CropCircle`, arrival `Beam`, the Mission and Location Weights, and `crop_circles_base=1; crop_circles_per_rank=1; crop_circles_max=5; crop_circle_radius_m=3`. A faction without a row has no tags, arrival or weights.
+  - `modules.csv`:
+    - Tractor Pull gets knockback tier Heavy (8 m) and Tractor Beam Normal (4 m), used as the pull distance (the user's choice).
+    - Tablet Slap gets `damage_type` Physical, an assumption like Cannons in 6a: **confirm it**.
+- **Importer:** reads the new columns and file into `EntityData` (modules, `ModuleLock`s, tags) and `FactionData` (tags, `ArrivalTag`, weights, values). It fails on:
+  - unknown modules or tags;
+  - a module listed twice;
+  - a lock on a module that isn't in the list;
+  - a faction row with no entities;
+  - a weight that isn't a number of 0 or more.
+- **Shared code:**
+  - `EntityTag.cs` moved (with its `.meta`) from `Entities/` to `Data/`, namespace `Zenthium.Data`, so `EntityData` can hold tags. The values keep their order.
+  - New tag at the end: `LootDestinationCropCircle`.
+  - New `ArrivalTag` and `RankRules.HasReached` (mission level against a `Rank`).
+  - `EntitySetup.ForFactionEntity`:
+    - adds the data modules in order, minus the ones locked at the mission rank;
+    - adds the entity's tags and its faction's;
+    - sets `MinimumSlotsPerType`, so a list longer than 4 of one type fits (GleebPeep has 5 actives).
+  - `EntityBehaviour`:
+    - a non-empty Inspector module list replaces the data list (sandbox test kits, summons);
+    - Inspector tags add to the data tags;
+    - `FactionEntity`, `DifficultyLevel` and `ConfigureFactionEntity`.
+  - `Entity.Abduct()`, `IsAbducted` and `OnAbducted`: taken for good, Incapacitated or not.
+  - `ValuableCarrier.LoseAll()` is public and runs on abduction too.
+  - `DragAction`: `Reach` and `IsDraggingCitizen`.
+  - `HitEffects`: optional status modifiers (Marked), and a maximum knockback distance, so a pull stops at its point.
+  - `ModuleWorld`:
+    - loot destinations register with it (`ILootDestination`, `TryFindLootDestination`);
+    - `SpawnFactionEntity` through a scene `EntitySpawner`.
+- **World:**
+  - `CropCircle` (component, `ILootDestination`): each physics step, every entity whose center is inside loses its Valuables (counted as lost), and a citizen is abducted and switched off. Heroes and enemies aren't abducted.
+  - `CropCircleRules`: the count per rank and the radius, from the faction's values.
+- **AI:**
+  - `LootRules`:
+    - `Delivery` gets a `CropCircle` result, which takes the Leader's loot too. A crop circle tag with no crop circle on the map falls back to the 6b rules.
+    - `CitizenDelivery`: only an entity with a loot destination drags citizens.
+    - `PrefersCitizen`: the nearer of a Valuable and a citizen wins.
+  - `AiCitizenSnatcher` (component): an entity whose data lists Drag finds the nearest grabbable citizen it can see and drags it.
+  - `AiBrain`, while free to loot (no opponent in attack range, like looting):
+    1. delivers a dragged citizen;
+    2. otherwise goes for the nearer of a Valuable or a citizen;
+    3. then delivers its Valuables, to a crop circle, its Leader or off the map.
+    - Leaving the map at the edge takes the citizens it drags along.
+    - `Configure(MapBounds)` is for spawned entities.
+  - `FactionEntitySpawner` (an `EntitySpawner`): builds a spawned entity from one AI body prefab, inactive, and gives it the clock, Module World, map edge and Valuable service.
+  - `ArrivalStub`: arrival tags do nothing until Milestone 9.
+- **Modules (in `ModuleCatalog`):**
+  - Tablet Slap: the melee strike, with its knockback.
+  - Final Notice: a beam that Marks the first entity it hits with its CSV values (Taunt's keys), resisted by Will.
+  - Repossess: a beam that applies Slot Disable (a gear slot) for the Medium duration, resisted by Intelligence.
+  - Tractor Pull: `PullModule`, which pulls the first entity hit toward the nearest crop circle, or toward the drone if there's none.
+  - Tractor Beam: `PullModule`, which pulls every opponent in its path toward GleebPeep, stopping 1.5 m short of it. Walls stop the beam.
+  - Call for Backup: `CallForBackupModule` and `BackupRoster`. `goons` and `champions` are drawn at random from the faction's entities that spawn at the mission's rank, and appear in a ring round the user. They stay until defeated.
+- **Sandbox:** `Zenthium > Setup > Create Repo Agency Sandbox Scene` builds `Sandbox_Repo` on the shared room:
+  - the Repo squad (GleebPeep, 2 Greys, Tractor Drone, Shield Bearer) from data, at rank B;
+  - 2 crop circles;
+  - downed, Stubborn and Scared citizens;
+  - a stash of 3 Valuables and the lost counter;
+  - `MapBounds`;
+  - the spawner and its `AiEntity.prefab`;
+  - the hero select and MoreInfo panels, and the NavMesh.
+  - `AiSandboxSceneCreator`'s goon, citizen, squad, stash and visual helpers are internal now. `PlaceGoon`'s AI part is `AddGoonAi`.
+- **Checklist:** `MilestoneChecklist.txt` holds 7a's tests (9).
+- **Tests (EditMode):**
+  - New classes: `FactionDataParserTests`, `EntitySetupTests`, `CropCircleRulesTests` and `BackupRosterTests`, with the helper `TestFactions`.
+  - New tests in `LootRulesTests` (crop circle delivery, `CitizenDelivery`, `PrefersCitizen`) and `EntityTests` (abduction).
+  - Fixture: `DesignDataTestCsv` has the new entity columns, an empty `factions.csv`, and optional extra entity and faction rows.
+  - No existing assertions changed.
+
+### Decisions (approved by the user, 2026-11-26)
+- The data goes in the new entities.csv columns and `factions.csv`. The crop circle values go in `factions.csv`, with a 3 m radius.
+- The pull distances are the knockback tiers above.
+- Tractor Beam pulls only opponents.
+- Snatching citizens works like looting: only while no opponent is in attack range, and the nearer of a citizen or a Valuable wins.
+- Call for Backup brings only entities that spawn at the mission's rank, and doesn't count toward enemy totals.
+- Tractor Pull with no crop circle pulls toward the drone.
+
+### Choices made in code (not asked)
+- **Slots:** a faction entity gets as many slots of a type as its list needs. The design doesn't cap enemies at 4, and GleebPeep lists 5 actives.
+- **Who drags citizens:** only an entity whose data lists Drag, with `AiCitizenSnatcher` and a `DragAction`. Base actions such as Drag are still outside the slots.
+- **Inside a crop circle** means the entity's center is within the radius.
+- **Backup** appears instantly (the arrival stub) and gets no squad. It fights where it lands.
+- **Tractor Beam** doesn't pull props yet. That's left for 7b, with Tow Beam's props.
+- **A Leader with Valuables** heads for a crop circle when it has the tag and one exists. Otherwise it keeps them, as in 6b.
+
+### Side effects on older sandboxes
+- Training dummies and sandbox citizens are built from Grey, so they now carry Grey's data kit (Energy Blaster) and tags (Coward, `LootDestination:CropCircle`). Without an AI they never use them.
+- In `Sandbox_AI`, the locked-in goon is now a Coward too, since Grey's data has the tag. There's no crop circle there, so looting is unchanged.
+
+### Stubs and deferred
+- **7b:**
+  - Auditor, Notary and Tow Saucer, with Audit, Notarized, Tow Beam and the crash.
+  - Mothership Strike, built but switched off.
+  - `Docs/HowTo_AddFaction.md`.
+  - Tractor Beam pulling props.
+  - Backup at rank B can draw a Tow Saucer, which has no behavior until then.
+- **Milestone 8:** the map builder places crop circles at random, `CropCircleRules.Count` of them.
+- **Milestone 9:**
+  - Arrival tags (`ArrivalStub`).
+  - The picker using Mission and Location Weights.
+  - Abducted citizens counting against Rescue.
+
+### Editor steps for the user
+1. **Let Unity compile.**
+2. **Run Zenthium > Data > Import Design CSVs.** `factions.csv` is new, and entities.csv and modules.csv changed.
+3. **Run Zenthium > Setup > Create Repo Agency Sandbox Scene** and choose Replace.
+4. **Press Play in `Sandbox_Repo`** and work through the checklist (Caps Lock).
+
+### What to check
+- [ ] The Console has no errors after compiling, importing and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`EntityTag`'s move, `EntitySetup`, `Entity`, `EntityBehaviour`, `HitEffects`, `LootRules`, the importer).
+  - New classes: `FactionDataParserTests`, `EntitySetupTests`, `CropCircleRulesTests`, `BackupRosterTests`.
+  - Changed classes: `LootRulesTests`, `EntityTests`, and the `DesignDataTestCsv` fixture.
+- [ ] Every item on the in-game checklist (9).
+
+### Open questions and findings
+- **Tablet Slap's damage type:** Physical is an assumption.
+- **Design mirror:** `entities.csv`, `modules.csv` and the new `factions.csv` now differ from the design branch.
+
+### Test run (2026-11-26)
+- All 473 EditMode tests pass. The user passed the in-game checklist.

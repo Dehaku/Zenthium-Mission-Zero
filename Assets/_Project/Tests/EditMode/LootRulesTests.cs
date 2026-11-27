@@ -41,5 +41,37 @@ namespace Zenthium.Tests.EditMode
         {
             Assert.That(LootRules.Delivery(carried, isLeader, hasMapEdgeTag, hasLeader), Is.EqualTo(expected));
         }
+
+        [TestCase(3, false, false, true, true, LootDelivery.CropCircle)]
+        [TestCase(3, true, false, false, true, LootDelivery.CropCircle)]
+        [TestCase(3, false, false, true, false, LootDelivery.Leader)]
+        [TestCase(3, true, false, true, false, LootDelivery.None)]
+        [TestCase(0, false, false, true, true, LootDelivery.None)]
+        public void Delivery_CropCircle_TakesEveryonesLootIncludingTheLeaders(int carried, bool isLeader,
+            bool hasMapEdgeTag, bool hasLeader, bool hasCropCircle, LootDelivery expected)
+        {
+            Assert.That(LootRules.Delivery(carried, isLeader, hasMapEdgeTag, hasLeader, hasCropCircle),
+                Is.EqualTo(expected));
+        }
+
+        [TestCase(false, true, LootDelivery.CropCircle)]
+        [TestCase(true, true, LootDelivery.CropCircle)]
+        [TestCase(true, false, LootDelivery.MapEdge)]
+        [TestCase(false, false, LootDelivery.None)]
+        public void CitizenDelivery_OnlyWithALootDestination(bool hasMapEdgeTag, bool hasCropCircle,
+            LootDelivery expected)
+        {
+            Assert.That(LootRules.CitizenDelivery(hasMapEdgeTag, hasCropCircle), Is.EqualTo(expected));
+        }
+
+        [TestCase(4f, 6f, true)]
+        [TestCase(6f, 4f, false)]
+        [TestCase(5f, 5f, true)]
+        [TestCase(5f, float.PositiveInfinity, true)]
+        [TestCase(float.PositiveInfinity, float.PositiveInfinity, false)]
+        public void PrefersCitizen_WhenItsNearer(float citizenDistance, float valuableDistance, bool expected)
+        {
+            Assert.That(LootRules.PrefersCitizen(citizenDistance, valuableDistance), Is.EqualTo(expected));
+        }
     }
 }

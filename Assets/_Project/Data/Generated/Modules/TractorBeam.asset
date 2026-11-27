@@ -34,8 +34,8 @@ MonoBehaviour:
     word: 
     value: 0
   knockbackTier:
-    word: 
-    value: 0
+    word: Normal
+    value: 4
   rangeTier:
     word: Long
     value: 30

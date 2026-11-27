@@ -46,6 +46,12 @@ namespace Zenthium.Entities
         /// <summary>The entity that summoned this one, such as Rune for an Ink Beast; null for everyone else.</summary>
         public Entity Summoner { get; set; }
 
+        /// <summary>
+        /// Slots of each type it gets at least, beyond <c>slots_per_type</c>: a faction entity's fixed list can be
+        /// longer than a hero's slots (GleebPeep has five actives).
+        /// </summary>
+        public int MinimumSlotsPerType { get; set; }
+
         /// <summary>A preset hero: its own stats, no rank scaling, and its fixed kit in slot order.</summary>
         /// <param name="unlockedSlotsPerType">Usually the preset's starting unlocks (<c>preset_slots_unlocked</c>).</param>
         public static EntitySetup ForHero(HeroData hero, Team team, int unlockedSlotsPerType)
@@ -62,7 +68,11 @@ namespace Zenthium.Entities
             return setup;
         }
 
-        /// <summary>A faction entity: the base stat in every stat, with its rank tier and the mission's rank scaling.</summary>
+        /// <summary>
+        /// A faction entity: the base stat in every stat, with its rank tier and the mission's rank scaling; its
+        /// modules in priority order, leaving out the ones still locked at the mission's rank (factions.md, Locked
+        /// modules); and its own tags with its faction's.
+        /// </summary>
         public static EntitySetup ForFactionEntity(
             EntityData entity, Team team, int difficultyLevel, EntityConstants constants)
         {
@@ -71,7 +81,45 @@ namespace Zenthium.Entities
                 throw new ArgumentNullException(nameof(entity));
             }
 
-            return new EntitySetup(team, StatBlock.Uniform(constants.BaseStat), entity.RankTier, difficultyLevel);
+            var setup = new EntitySetup(team, StatBlock.Uniform(constants.BaseStat), entity.RankTier, difficultyLevel);
+            foreach (ModuleData module in entity.Modules)
+            {
+                if (module != null && entity.IsUnlocked(module, difficultyLevel))
+                {
+                    setup.Modules.Add(module);
+                }
+            }
+
+            setup.MinimumSlotsPerType = MostOfOneType(setup.Modules);
+            setup.Tags.AddRange(entity.Tags);
+            if (entity.Faction != null)
+            {
+                foreach (EntityTag tag in entity.Faction.Tags)
+                {
+                    if (!setup.Tags.Contains(tag))
+                    {
+                        setup.Tags.Add(tag);
+                    }
+                }
+            }
+
+            return setup;
+        }
+
+        /// <summary>The most modules of one slot type in the list; base actions don't take slots.</summary>
+        public static int MostOfOneType(IReadOnlyList<ModuleData> modules)
+        {
+            var perType = new int[Enum.GetValues(typeof(SlotType)).Length];
+            int most = 0;
+            foreach (ModuleData module in modules)
+            {
+                if (module != null && module.TryGetSlotType(out SlotType type))
+                {
+                    most = Math.Max(most, ++perType[(int)type]);
+                }
+            }
+
+            return most;
         }
     }
 }

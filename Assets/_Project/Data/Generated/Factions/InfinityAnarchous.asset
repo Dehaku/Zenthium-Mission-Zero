@@ -13,3 +13,12 @@ MonoBehaviour:
   m_Name: InfinityAnarchous
   m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.FactionData
   id: Infinity Anarchous
+  tags: 
+  hasArrival: 0
+  arrival: 0
+  missionWeights:
+    values: []
+  locationWeights:
+    values: []
+  values:
+    values: []

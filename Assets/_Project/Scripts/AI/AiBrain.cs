@@ -16,8 +16,9 @@ namespace Zenthium.AI
     /// use. In order:
     /// <list type="number">
     /// <item>A panicked coward runs for the map edge until it escapes.</item>
-    /// <item>An enemy with no opponent in its attack range loots Valuables it can see (<see cref="AiLooter"/>), then
-    /// takes them to its Leader or off the map (Objective).</item>
+    /// <item>An enemy with no opponent in its attack range loots Valuables it can see (<see cref="AiLooter"/>) or
+    /// drags citizens (<see cref="AiCitizenSnatcher"/>), then takes them to a crop circle, its Leader or off the map
+    /// (Objective).</item>
     /// <item>Aware with a target in view, it fights; with none, it searches the last known position, then
     /// forgets.</item>
     /// <item>Idle, it patrols with its squad (an ally follows the player).</item>
@@ -73,6 +74,7 @@ namespace Zenthium.AI
         private EntityBehaviour self;
         private AiNavigator navigator;
         private AiLooter looter;
+        private AiCitizenSnatcher snatcher;
         private Entity entity;
         private Awareness awareness;
         private Cowardice cowardice;
@@ -146,6 +148,16 @@ namespace Zenthium.AI
             self = GetComponent<EntityBehaviour>();
             navigator = GetComponent<AiNavigator>();
             TryGetComponent(out looter);
+            TryGetComponent(out snatcher);
+        }
+
+        /// <summary>
+        /// Sets up a spawned entity in code, since a prefab can't hold the scene's map (Call for Backup). Call it
+        /// before the object activates.
+        /// </summary>
+        public void Configure(MapBounds newMapBounds)
+        {
+            mapBounds = newMapBounds;
         }
 
         private void OnEnable()
@@ -252,7 +264,8 @@ namespace Zenthium.AI
                 return;
             }
 
-            if (State == AiState.Looting)
+            // Snatching a citizen is Looting too, with no pickup timer to advance.
+            if (State == AiState.Looting && looter != null)
             {
                 looter.Advance(gameDelta);
             }
@@ -362,7 +375,7 @@ namespace Zenthium.AI
                     return;
                 }
 
-                if (isFreeToLoot && (TryLoot() || TryDeliverLoot()))
+                if (isFreeToLoot && TryLootOrDeliver())
                 {
                     return;
                 }
@@ -387,7 +400,7 @@ namespace Zenthium.AI
                 hasLastKnown = true;
             }
 
-            if (isFreeToLoot && (TryLoot() || TryDeliverLoot()))
+            if (isFreeToLoot && TryLootOrDeliver())
             {
                 return;
             }
@@ -677,20 +690,44 @@ namespace Zenthium.AI
         }
 
         /// <summary>
-        /// Goes for the nearest Valuable it can see and picks it up (world.md, Picking up). Unaware, it only spots
-        /// them as far as it would notice someone.
+        /// Looting, snatching citizens and delivering both, while free to loot. A citizen it drags goes first, since
+        /// Drag can't take another; otherwise it goes for whichever is nearer, a Valuable or a citizen (the user's
+        /// decision, Milestone 7), then delivers what it carries.
         /// </summary>
-        /// <returns>False if it doesn't loot, or sees no Valuable.</returns>
-        private bool TryLoot()
+        /// <returns>False if it does none of these.</returns>
+        private bool TryLootOrDeliver()
         {
-            if (looter == null
-                || !LootRules.CanLoot(AiSides.EffectiveTeam(entity), entity.HasTag(EntityTag.Immobile)))
+            if (!LootRules.CanLoot(AiSides.EffectiveTeam(entity), entity.HasTag(EntityTag.Immobile)))
             {
                 return false;
             }
 
+            return TryDeliverCitizens() || TryLootOrSnatch() || TryDeliverLoot();
+        }
+
+        /// <summary>
+        /// Goes for the nearest Valuable or citizen it can see: picks the Valuable up (world.md, Picking up), or drags
+        /// the citizen if it has Drag and somewhere to take it (enemies.md, Dragging citizens). Unaware, it only spots
+        /// them as far as it would notice someone.
+        /// </summary>
+        /// <returns>False if it sees neither, or does neither.</returns>
+        private bool TryLootOrSnatch()
+        {
             float range = awareness.Level == AwarenessLevel.Unaware ? awarenessRange : visionRange;
-            ValuableBag bag = looter.FindVisibleBag(transform.position, range, sightHits);
+            Vector3 eye = transform.position;
+            ValuableBag bag = looter != null ? looter.FindVisibleBag(eye, range, sightHits) : null;
+            EntityBehaviour citizen = CitizenDelivery() != LootDelivery.None
+                ? snatcher.FindVisibleCitizen(everyone, eye, range, sightHits)
+                : null;
+
+            float bagDistance = bag != null ? FlatDistance(eye, bag.transform.position) : float.PositiveInfinity;
+            float citizenDistance = citizen != null ? FlatDistance(eye, citizen.transform.position) : float.PositiveInfinity;
+            if (citizen != null && LootRules.PrefersCitizen(citizenDistance, bagDistance))
+            {
+                Snatch(citizen);
+                return true;
+            }
+
             if (bag == null)
             {
                 return false;
@@ -713,22 +750,100 @@ namespace Zenthium.AI
             return true;
         }
 
+        /// <summary>Walks to the citizen and drags it once in reach.</summary>
+        private void Snatch(EntityBehaviour citizen)
+        {
+            State = AiState.Looting;
+            Target = null;
+            if (looter != null)
+            {
+                looter.Cancel();
+            }
+
+            Vector3 citizenPosition = citizen.transform.position;
+            if (navigator.IsNear(citizenPosition, snatcher.Reach))
+            {
+                navigator.Stop();
+                snatcher.Grab();
+            }
+            else
+            {
+                navigator.MoveTo(citizenPosition, 1f);
+            }
+        }
+
+        /// <summary>Where the citizens it would drag go; <see cref="LootDelivery.None"/> if it doesn't drag them.</summary>
+        private LootDelivery CitizenDelivery()
+        {
+            if (snatcher == null || !snatcher.HasDrag)
+            {
+                return LootDelivery.None;
+            }
+
+            return LootRules.CitizenDelivery(entity.HasTag(EntityTag.LootDestinationMapEdge),
+                TryFindCropCircle(out _));
+        }
+
+        /// <summary>Dragging a citizen, it takes it to its loot destination (enemies.md, Dragging citizens).</summary>
+        /// <returns>False if it drags none, or has nowhere to take them.</returns>
+        private bool TryDeliverCitizens()
+        {
+            if (snatcher == null || !snatcher.IsDraggingCitizen)
+            {
+                return false;
+            }
+
+            return GoTo(CitizenDelivery());
+        }
+
+        /// <summary>The nearest crop circle, if it has the tag and the map has one.</summary>
+        private bool TryFindCropCircle(out ILootDestination cropCircle)
+        {
+            cropCircle = null;
+            return entity.HasTag(EntityTag.LootDestinationCropCircle)
+                && modules.World.TryFindLootDestination(EntityTag.LootDestinationCropCircle, transform.position,
+                    out cropCircle);
+        }
+
         /// <summary>
-        /// Carrying Valuables and seeing no more, it takes them to its Leader or off the map (world.md, Goon
-        /// behavior).
+        /// Heads for a delivery: into the nearest crop circle, which takes what it brings, or off the map. A Leader
+        /// delivery is handled by <see cref="TryDeliverLoot"/>.
+        /// </summary>
+        /// <returns>False if there's nowhere to go.</returns>
+        private bool GoTo(LootDelivery delivery)
+        {
+            switch (delivery)
+            {
+                case LootDelivery.CropCircle when TryFindCropCircle(out ILootDestination cropCircle):
+                    State = AiState.Objective;
+                    Target = null;
+                    navigator.MoveTo(cropCircle.Position, 1f);
+                    return true;
+                case LootDelivery.MapEdge when mapBounds != null:
+                    State = AiState.Objective;
+                    Target = null;
+                    GoToMapEdge();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Carrying Valuables and seeing no more, it takes them to a crop circle, its Leader or off the map
+        /// (world.md, Goon behavior).
         /// </summary>
         /// <returns>False if it keeps them and carries on as normal.</returns>
         private bool TryDeliverLoot()
         {
-            if (looter == null
-                || !LootRules.CanLoot(AiSides.EffectiveTeam(entity), entity.HasTag(EntityTag.Immobile)))
+            if (looter == null)
             {
                 return false;
             }
 
             bool hasLeader = TryFindLeader(out ValuableCarrier leader);
             LootDelivery delivery = LootRules.Delivery(looter.Carrier.Count, entity.RankTier == RankTier.Leader,
-                entity.HasTag(EntityTag.LootDestinationMapEdge), hasLeader);
+                entity.HasTag(EntityTag.LootDestinationMapEdge), hasLeader, TryFindCropCircle(out _));
             switch (delivery)
             {
                 case LootDelivery.Leader:
@@ -746,23 +861,31 @@ namespace Zenthium.AI
                     }
 
                     return true;
-                case LootDelivery.MapEdge when mapBounds != null:
-                    State = AiState.Objective;
-                    Target = null;
-                    GoToMapEdge();
-                    return true;
                 default:
-                    return false;
+                    return GoTo(delivery);
             }
         }
 
-        /// <summary>Heads for the nearest map edge, and leaves the map once there (enemies.md, Limits).</summary>
+        /// <summary>
+        /// Heads for the nearest map edge, and leaves the map once there (enemies.md, Limits), taking the citizens it
+        /// drags with it.
+        /// </summary>
         private void GoToMapEdge()
         {
             if (!mapBounds.IsAtEdge(transform.position))
             {
                 navigator.MoveTo(mapBounds.NearestEdgePoint(transform.position), 1f);
                 return;
+            }
+
+            if (entity.IsIncapacitated || entity.IsCaptured)
+            {
+                return;
+            }
+
+            if (snatcher != null)
+            {
+                snatcher.TakeCitizensOffMap();
             }
 
             if (entity.Escape())

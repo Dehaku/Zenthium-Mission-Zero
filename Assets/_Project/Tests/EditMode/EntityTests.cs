@@ -80,5 +80,32 @@ namespace Zenthium.Tests.EditMode
             Assert.That(goon.Team, Is.EqualTo(Team.Ally));
             Assert.That(raised, Is.EqualTo(1));
         }
+
+        [Test]
+        public void Abduct_IncapacitatedCitizen_IsTakenOnce()
+        {
+            Entity citizen = CombatTestSetup.CreateEntity(Team.Civilian);
+            citizen.Incapacitate();
+            int raised = 0;
+            citizen.OnAbducted += () => raised++;
+
+            bool first = citizen.Abduct();
+            bool second = citizen.Abduct();
+
+            Assert.That(first, Is.True);
+            Assert.That(second, Is.False);
+            Assert.That(citizen.IsAbducted, Is.True);
+            Assert.That(raised, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Abduct_Captured_IsRefused()
+        {
+            Entity citizen = CombatTestSetup.CreateEntity(Team.Civilian);
+            citizen.Incapacitate();
+            citizen.Capture();
+
+            Assert.That(citizen.Abduct(), Is.False);
+        }
     }
 }

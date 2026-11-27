@@ -30,3 +30,6 @@ MonoBehaviour:
         word: 
         value: 0
       module: {fileID: 0}
+  modules: []
+  locks: []
+  tags: 

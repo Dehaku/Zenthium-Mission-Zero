@@ -110,8 +110,11 @@ namespace Zenthium.Tests.EditMode
             ModuleRow("Ink Lash", "Active", "Will", "Light", "1.5", "", "", "None", "", "", "", "Melee");
 
         private const string EntitiesCsv =
-            "faction,entity,rank_tier,min_rank,budget_cost,values,notes\n" +
-            "Galactic Repo Agency,Grey,Goon,D,1,,\n";
+            "faction,entity,rank_tier,min_rank,budget_cost,values,modules,locked_until,tags,notes\n" +
+            "Galactic Repo Agency,Grey,Goon,D,1,,,,,\n";
+
+        public const string FactionsHeader =
+            "faction,tags,arrival,mission_weights,location_weights,values,notes\n";
 
         private const string HeroesHeader =
             "hero,strength,will,intelligence,finesse,toughness,starter,actives,passives,gear,notes\n";
@@ -147,17 +150,19 @@ namespace Zenthium.Tests.EditMode
         }
 
         /// <param name="constants">Replaces the whole constants file, such as one with a row left out.</param>
+        /// <param name="factionRows">factions.csv rows after its header; none by default.</param>
         public static DesignDataParseResult Parse(
             string extraModuleRows = "", string extraHeroRows = "", string extraConstantRows = "",
-            string constants = Constants)
+            string constants = Constants, string extraEntityRows = "", string factionRows = "")
         {
             return DesignDataParser.Parse(new DesignDataSource(
                 constants + extraConstantRows,
                 ModulesHeader + KickRow + InkLashRow + extraModuleRows,
-                EntitiesCsv,
+                EntitiesCsv + extraEntityRows,
                 HeroesHeader + RushHourRow + extraHeroRows,
                 PropsCsv,
-                PricesCsv));
+                PricesCsv,
+                FactionsHeader + factionRows));
         }
     }
 }

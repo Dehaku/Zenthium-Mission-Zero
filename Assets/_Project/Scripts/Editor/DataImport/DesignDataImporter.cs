@@ -26,7 +26,8 @@ namespace Zenthium.Editor.DataImport
                 ReadFile(projectRoot, DesignDataSource.EntitiesFile, errors),
                 ReadFile(projectRoot, DesignDataSource.HeroesFile, errors),
                 ReadFile(projectRoot, DesignDataSource.PropsFile, errors),
-                ReadFile(projectRoot, DesignDataSource.PricesFile, errors));
+                ReadFile(projectRoot, DesignDataSource.PricesFile, errors),
+                ReadFile(projectRoot, DesignDataSource.FactionsFile, errors));
             if (errors.Count > 0)
             {
                 Fail(errors);

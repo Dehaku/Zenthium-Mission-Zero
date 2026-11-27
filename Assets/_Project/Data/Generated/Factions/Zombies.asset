@@ -13,3 +13,12 @@ MonoBehaviour:
   m_Name: Zombies
   m_EditorClassIdentifier: Zenthium.Data::Zenthium.Data.FactionData
   id: Zombies
+  tags: 
+  hasArrival: 0
+  arrival: 0
+  missionWeights:
+    values: []
+  locationWeights:
+    values: []
+  values:
+    values: []

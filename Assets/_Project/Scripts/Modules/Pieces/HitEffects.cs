@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using UnityEngine;
@@ -24,14 +25,17 @@ namespace Zenthium.Modules
         private readonly StatusType? status;
         private readonly float statusSeconds;
         private readonly bool usesSummonerStats;
+        private readonly IReadOnlyList<StatusModifier> statusModifiers;
 
         /// <param name="damage">Null for modules that deal no damage, such as Megaphone.</param>
         /// <param name="status">A status applied when the hit lands; resisted by the module's Resist tag.</param>
         /// <param name="usesSummonerStats">A summon's attack that scales with its summoner's stat (Ink Lash).</param>
+        /// <param name="statusModifiers">What the status changes, such as Marked's damage dealt and taken.</param>
         public HitEffects(ModuleData module, StatFormula damage, DamageType damageType, StatusType? status = null,
-            float statusSeconds = 0f, bool usesSummonerStats = false)
+            float statusSeconds = 0f, bool usesSummonerStats = false, IReadOnlyList<StatusModifier> statusModifiers = null)
         {
             this.usesSummonerStats = usesSummonerStats;
+            this.statusModifiers = statusModifiers;
             this.module = module;
             this.damage = damage;
             this.damageType = damageType;
@@ -40,8 +44,10 @@ namespace Zenthium.Modules
         }
 
         /// <param name="direction">Which way the target is knocked back.</param>
+        /// <param name="maxKnockback">Meters the knockback goes at most, such as a pull that stops at its point.</param>
         /// <returns>True if the hit landed.</returns>
-        public bool ApplyTo(ModuleContext context, EntityBehaviour target, Vector3 direction)
+        public bool ApplyTo(ModuleContext context, EntityBehaviour target, Vector3 direction,
+            float maxKnockback = float.PositiveInfinity)
         {
             Entity user = context.Owner;
             Entity victim = target.Entity;
@@ -69,7 +75,8 @@ namespace Zenthium.Modules
             if (rules.Knockback.TryGetDistance(module.KnockbackTier, result, out float distance)
                 && target.TryGetComponent(out EntityMotor motor))
             {
-                motor.ApplyKnockback(direction, distance, ImpactDamage.Cause(user, module, StatOwner(user)));
+                motor.ApplyKnockback(direction, Mathf.Min(distance, maxKnockback),
+                    ImpactDamage.Cause(user, module, StatOwner(user)));
             }
 
             bool landed = result.Outcome == DamageOutcome.Dealt;
@@ -164,7 +171,7 @@ namespace Zenthium.Modules
                 return;
             }
 
-            victim.Statuses.TryApply(new StatusApplication(status.Value, context.Owner, statusSeconds));
+            victim.Statuses.TryApply(new StatusApplication(status.Value, context.Owner, statusSeconds, statusModifiers));
         }
     }
 }

@@ -31,6 +31,13 @@ namespace Zenthium.Editor.DataImport
         private const string RankTierColumn = "rank_tier";
         private const string MinRankColumn = "min_rank";
         private const string BudgetCostColumn = "budget_cost";
+        private const string ModulesColumn = "modules";
+        private const string LockedUntilColumn = "locked_until";
+        private const char LockSeparator = ':';
+
+        private const string ArrivalColumn = "arrival";
+        private const string MissionWeightsColumn = "mission_weights";
+        private const string LocationWeightsColumn = "location_weights";
 
         private const string HeroColumn = "hero";
         private const string StrengthColumn = "strength";
@@ -75,6 +82,7 @@ namespace Zenthium.Editor.DataImport
             ReadHeroes(CsvTable.Parse(DesignDataSource.HeroesFile, source.Heroes, errors), data, errors);
             ReadProps(CsvTable.Parse(DesignDataSource.PropsFile, source.Props, errors), data, errors);
             ReadPrices(CsvTable.Parse(DesignDataSource.PricesFile, source.Prices, errors), data, errors);
+            ReadFactions(CsvTable.Parse(DesignDataSource.FactionsFile, source.Factions, errors), tiers, data, errors);
             CheckModuleReferences(data, errors);
 
             return new DesignDataParseResult(errors.Count == 0 ? data : null, errors);
@@ -128,7 +136,7 @@ namespace Zenthium.Editor.DataImport
         private static void ReadEntities(CsvTable table, TierTables tiers, ParsedDesignData data, List<string> errors)
         {
             if (table == null || !table.RequireColumns(errors, FactionColumn, EntityColumn, RankTierColumn, MinRankColumn,
-                    BudgetCostColumn, ValuesColumn))
+                    BudgetCostColumn, ValuesColumn, ModulesColumn, LockedUntilColumn, TagsColumn))
             {
                 return;
             }
@@ -157,8 +165,86 @@ namespace Zenthium.Editor.DataImport
                     MinRank = CellReader.EnumValue<Rank>(row, MinRankColumn, false, errors),
                     BudgetCost = CellReader.Int(row, BudgetCostColumn, false, errors),
                     Values = ValueParser.Parse(row, ValuesColumn, tiers, errors),
+                    ModuleIds = CellReader.ListItems(row, ModulesColumn),
+                    Locks = ReadLocks(row, errors),
+                    Tags = EntityTagParser.Parse(row, TagsColumn, errors),
+                    Location = row.Location,
                 });
             }
+        }
+
+        /// <summary>A <c>locked_until</c> cell such as <c>Final Notice:C; Call for Backup:B</c>.</summary>
+        private static List<ModuleLockRecord> ReadLocks(CsvRow row, List<string> errors)
+        {
+            var locks = new List<ModuleLockRecord>();
+            foreach (string item in CellReader.ListItems(row, LockedUntilColumn))
+            {
+                int separator = item.LastIndexOf(LockSeparator);
+                string moduleId = separator > 0 ? item.Substring(0, separator).Trim() : string.Empty;
+                string rankText = separator > 0 ? item.Substring(separator + 1).Trim() : string.Empty;
+                if (moduleId.Length == 0 || !CellReader.TryParseEnum(rankText, out Rank rank))
+                {
+                    errors.Add($"{row.Location}: {LockedUntilColumn} '{item}' should be <Module>{LockSeparator}<Rank>, "
+                        + $"with a rank of {string.Join(", ", Enum.GetNames(typeof(Rank)))}.");
+                    continue;
+                }
+
+                locks.Add(new ModuleLockRecord { ModuleId = moduleId, Rank = rank });
+            }
+
+            return locks;
+        }
+
+        private static void ReadFactions(CsvTable table, TierTables tiers, ParsedDesignData data, List<string> errors)
+        {
+            if (table == null || !table.RequireColumns(errors, FactionColumn, TagsColumn, ArrivalColumn,
+                    MissionWeightsColumn, LocationWeightsColumn, ValuesColumn))
+            {
+                return;
+            }
+
+            var known = new HashSet<string>(data.FactionIds, StringComparer.Ordinal);
+            var ids = new IdRegistry(errors);
+            foreach (CsvRow row in table.Rows)
+            {
+                string id = CellReader.Id(row, FactionColumn, errors);
+                if (id == null || !ids.Claim(row, id))
+                {
+                    continue;
+                }
+
+                if (!known.Contains(id))
+                {
+                    errors.Add($"{row.Location}: the faction '{id}' has no entities in {DesignDataSource.EntitiesFile}.");
+                    continue;
+                }
+
+                data.Factions.Add(new FactionRecord
+                {
+                    Id = id,
+                    Tags = EntityTagParser.Parse(row, TagsColumn, errors),
+                    Arrival = CellReader.EnumValue<ArrivalTag>(row, ArrivalColumn, false, errors),
+                    MissionWeights = ReadWeights(row, MissionWeightsColumn, tiers, errors),
+                    LocationWeights = ReadWeights(row, LocationWeightsColumn, tiers, errors),
+                    Values = ValueParser.Parse(row, ValuesColumn, tiers, errors),
+                    Location = row.Location,
+                });
+            }
+        }
+
+        /// <summary>Relative weights are plain numbers, 0 or more (factions.md, Weights).</summary>
+        private static List<ValueRecord> ReadWeights(CsvRow row, string column, TierTables tiers, List<string> errors)
+        {
+            List<ValueRecord> weights = ValueParser.Parse(row, column, tiers, errors);
+            foreach (ValueRecord weight in weights)
+            {
+                if (weight.Kind != DataValueKind.Number || weight.Number < 0f)
+                {
+                    errors.Add($"{row.Location}: {column} {weight.Key} should be a number of 0 or more.");
+                }
+            }
+
+            return weights;
         }
 
         private static void ReadHeroes(CsvTable table, ParsedDesignData data, List<string> errors)
@@ -277,6 +363,12 @@ namespace Zenthium.Editor.DataImport
             foreach (EntityRecord entity in data.Entities)
             {
                 CheckValues(entity.Values, moduleIds, errors);
+                CheckEntityModules(entity, moduleIds, errors);
+            }
+
+            foreach (FactionRecord faction in data.Factions)
+            {
+                CheckValues(faction.Values, moduleIds, errors);
             }
 
             // Without a valid slot count (its own error), only the count check is skipped.
@@ -318,6 +410,40 @@ namespace Zenthium.Editor.DataImport
                 if (!kit.Add(id))
                 {
                     errors.Add($"{hero.Location}: the kit lists '{id}' twice; a hero can't equip two copies.");
+                }
+            }
+        }
+
+        /// <summary>Each listed module exists once, and each lock names one of them (factions.md, Locked modules).</summary>
+        private static void CheckEntityModules(EntityRecord entity, HashSet<string> moduleIds, List<string> errors)
+        {
+            var listed = new HashSet<string>(StringComparer.Ordinal);
+            foreach (string id in entity.ModuleIds)
+            {
+                if (!moduleIds.Contains(id))
+                {
+                    errors.Add($"{entity.Location}: {ModulesColumn} names the module '{id}', "
+                        + $"which isn't in {DesignDataSource.ModulesFile}.");
+                }
+
+                if (!listed.Add(id))
+                {
+                    errors.Add($"{entity.Location}: {ModulesColumn} lists '{id}' twice.");
+                }
+            }
+
+            var locked = new HashSet<string>(StringComparer.Ordinal);
+            foreach (ModuleLockRecord moduleLock in entity.Locks)
+            {
+                if (!listed.Contains(moduleLock.ModuleId))
+                {
+                    errors.Add($"{entity.Location}: {LockedUntilColumn} locks '{moduleLock.ModuleId}', "
+                        + $"which isn't in its {ModulesColumn}.");
+                }
+
+                if (!locked.Add(moduleLock.ModuleId))
+                {
+                    errors.Add($"{entity.Location}: {LockedUntilColumn} locks '{moduleLock.ModuleId}' twice.");
                 }
             }
         }
