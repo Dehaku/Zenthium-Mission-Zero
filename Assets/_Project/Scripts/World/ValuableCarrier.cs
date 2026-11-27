@@ -32,7 +32,7 @@ namespace Zenthium.World
         /// <summary>Raised when the number held changes.</summary>
         public event Action OnCountChanged;
 
-        /// <summary>Raised when a defeated carrier drops what it held.</summary>
+        /// <summary>Raised when it drops what it held: defeated, or a citizen starting to flee.</summary>
         public event Action OnDroppedAll;
 
         public int Count { get; private set; }
@@ -52,6 +52,31 @@ namespace Zenthium.World
             {
                 SetCount(Count + amount);
             }
+        }
+
+        /// <summary>Hands everything it holds to another carrier, such as a goon to its Leader or its charmer.</summary>
+        public void GiveAllTo(ValuableCarrier receiver)
+        {
+            if (receiver == null || receiver == this || Count == 0)
+            {
+                return;
+            }
+
+            receiver.Add(Count);
+            SetCount(0);
+        }
+
+        /// <summary>Drops everything it holds around itself, such as a Scared citizen starting to flee.</summary>
+        public void DropAll()
+        {
+            if (Count == 0 || service == null)
+            {
+                return;
+            }
+
+            service.DropAround(transform.position, Count);
+            SetCount(0);
+            OnDroppedAll?.Invoke();
         }
 
         public bool TryLaunchAll(in ThrowInfo info)
@@ -92,6 +117,7 @@ namespace Zenthium.World
             Unbind();
             entity = newEntity;
             entity.OnIncapacitated += DropAll;
+            entity.OnEscaped += LoseAll;
             if (!hasStartingValuables)
             {
                 hasStartingValuables = true;
@@ -108,20 +134,25 @@ namespace Zenthium.World
             if (entity != null)
             {
                 entity.OnIncapacitated -= DropAll;
+                entity.OnEscaped -= LoseAll;
                 entity = null;
             }
         }
 
-        private void DropAll()
+        /// <summary>Carried off the map: they count as lost (world.md, Valuables secondary goal).</summary>
+        private void LoseAll()
         {
-            if (Count == 0 || service == null)
+            if (Count == 0)
             {
                 return;
             }
 
-            service.DropAround(transform.position, Count);
+            if (service != null)
+            {
+                service.CountLost(Count);
+            }
+
             SetCount(0);
-            OnDroppedAll?.Invoke();
         }
 
         private void SetCount(int newCount)

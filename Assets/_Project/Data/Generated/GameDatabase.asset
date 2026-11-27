@@ -108,6 +108,10 @@ MonoBehaviour:
     allyFollowDistance: 10
     telegraphSeconds: 0.5
     patrolSpeedFraction: 0.5
+    cowardHpFraction: 0.2
+    cowardChance: 0.25
+    citizenFearRange: 20
+    stubbornDragSlow: 0.2
   tiers:
     entries:
     - scale: 0

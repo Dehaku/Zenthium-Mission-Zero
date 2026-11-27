@@ -5,8 +5,8 @@ using Zenthium.Entities;
 namespace Zenthium.Modules
 {
     /// <summary>
-    /// Something Drag can grab. Incapacitated entities implement it now (<see cref="EntityDragTarget"/>); citizens
-    /// (Milestone 6), and props and Valuables (Milestone 5) implement it when they arrive.
+    /// Something Drag can grab: downed entities and citizens (<see cref="EntityDragTarget"/>), props and Valuables.
+    /// Grabbing is instant for all of them; Stubborn citizens too (the user's decision, Milestone 6b).
     /// </summary>
     public interface IDragTarget
     {
@@ -19,15 +19,10 @@ namespace Zenthium.Modules
         bool UsesCapacity { get; }
 
         /// <summary>
-        /// The carrier's slow while dragging this, as a fraction. Stubborn citizens' hook (missions.md, Citizens);
-        /// <see cref="DragAction"/> applies it from Milestone 6, when citizens and slows exist.
+        /// The carrier's slow while dragging this, as a fraction, such as a Stubborn citizen's (missions.md, Citizens).
+        /// <see cref="DragAction"/> applies the sum of what it drags.
         /// </summary>
         float CarrierSlow { get; }
-
-        /// <summary>
-        /// Seconds to grab this; 0 is instant. Stubborn citizens' hook (missions.md, Citizens), applied from Milestone 6.
-        /// </summary>
-        float GrabSeconds { get; }
 
         /// <summary>Raised when this stops being draggable while dragged, so the carrier lets go.</summary>
         event Action<IDragTarget> OnDragBroken;

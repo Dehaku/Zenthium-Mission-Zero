@@ -92,7 +92,11 @@ namespace Zenthium.Tests.EditMode
             "ai,ranged_backoff_m,3,\n" +
             "ai,ally_follow_m,10,\n" +
             "ai,telegraph_s,0.5,\n" +
-            "ai,patrol_speed_fraction,0.5,\n";
+            "ai,patrol_speed_fraction,0.5,\n" +
+            "ai,coward_hp_fraction,0.2,\n" +
+            "ai,coward_chance,0.25,\n" +
+            "ai,citizen_fear_range_m,20,\n" +
+            "ai,stubborn_drag_slow,0.2,\n";
 
         private const string ModulesHeader =
             "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,damage_type,tags,budget_ok,notes\n";

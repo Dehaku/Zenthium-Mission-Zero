@@ -52,13 +52,21 @@ namespace Zenthium.World
         public Rigidbody Body => body;
         public bool UsesCapacity => false;
         public float CarrierSlow => 0f;
-        public float GrabSeconds => 0f;
         public bool IsFlying => flight.IsActive;
 
         /// <summary>For bags spawned in code: set before it's used.</summary>
         public void SetService(ValuableService newService)
         {
+            if (isActiveAndEnabled && service != null)
+            {
+                service.Unregister(this);
+            }
+
             service = newService;
+            if (isActiveAndEnabled && service != null)
+            {
+                service.Register(this);
+            }
         }
 
         public bool CanBeGrabbedBy(Entity carrier)
@@ -129,6 +137,22 @@ namespace Zenthium.World
             body = GetComponent<Rigidbody>();
             body.isKinematic = true;
             GetComponent<SphereCollider>().isTrigger = true;
+        }
+
+        private void OnEnable()
+        {
+            if (service != null)
+            {
+                service.Register(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (service != null)
+            {
+                service.Unregister(this);
+            }
         }
 
         private void FixedUpdate()

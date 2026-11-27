@@ -77,7 +77,13 @@ namespace Zenthium.Entities
         /// <summary>Defiance saved the entity at 1 HP.</summary>
         public event Action OnDefianceProc;
 
-        public Team Team { get; }
+        /// <summary>Left the map (enemies.md, Limits).</summary>
+        public event Action OnEscaped;
+
+        /// <summary>Switched sides, such as a goon won over by Charming.</summary>
+        public event Action OnTeamChanged;
+
+        public Team Team { get; private set; }
 
         /// <summary>The entity that summoned this one; null if it wasn't summoned.</summary>
         public Entity Summoner { get; }
@@ -100,6 +106,10 @@ namespace Zenthium.Entities
 
         /// <summary>Captured where it lies; nothing affects it any more (see <see cref="Capture"/>).</summary>
         public bool IsCaptured { get; private set; }
+
+        /// <summary>It left the map, which counts as defeated (enemies.md, Limits).</summary>
+        public bool IsEscaped { get; private set; }
+
         public bool IsInvulnerable => Invulnerability.IsActive;
 
         /// <summary>Leaders and the player take half-length crowd control, and pulsed "while inside" crowd control.</summary>
@@ -193,6 +203,53 @@ namespace Zenthium.Entities
             Statuses.ClearAll();
             OnCaptured?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// Knocks it out at once, with no damage and no Defiance roll, such as a citizen who starts the mission
+        /// Incapacitated (missions.md, Citizens).
+        /// </summary>
+        /// <returns>False if it's already Incapacitated, or has escaped.</returns>
+        public bool Incapacitate()
+        {
+            if (IsIncapacitated || IsEscaped)
+            {
+                return false;
+            }
+
+            Health.Lose(Health.Current);
+            OnIncapacitated?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// It leaves the map (enemies.md, Limits): it counts as defeated, its statuses end, and what it carries is
+        /// lost. The scene removes it.
+        /// </summary>
+        /// <returns>False if it's Incapacitated, captured or already gone.</returns>
+        public bool Escape()
+        {
+            if (IsIncapacitated || IsCaptured || IsEscaped)
+            {
+                return false;
+            }
+
+            IsEscaped = true;
+            Statuses.ClearAll();
+            OnEscaped?.Invoke();
+            return true;
+        }
+
+        /// <summary>Switches sides, such as a goon won over by Charming (modules.md).</summary>
+        public void ChangeTeam(Team newTeam)
+        {
+            if (newTeam == Team)
+            {
+                return;
+            }
+
+            Team = newTeam;
+            OnTeamChanged?.Invoke();
         }
 
         /// <summary>Gets an Incapacitated entity back up with the given HP (at least 1).</summary>

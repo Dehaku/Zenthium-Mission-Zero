@@ -20,7 +20,11 @@ namespace Zenthium.Tests.EditMode
                 rangedBackoffDistance: 3f,
                 allyFollowDistance: 10f,
                 telegraphSeconds: 0.5f,
-                patrolSpeedFraction: 0.5f);
+                patrolSpeedFraction: 0.5f,
+                cowardHpFraction: 0.2f,
+                cowardChance: 0.25f,
+                citizenFearRange: 20f,
+                stubbornDragSlow: 0.2f);
         }
 
         internal static Awareness CreateAwareness()

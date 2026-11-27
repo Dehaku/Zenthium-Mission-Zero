@@ -103,3 +103,7 @@ ai,ranged_backoff_m,3,Ranged attackers back off from targets closer than this (e
 ai,ally_follow_m,10,Allies outside combat stay within about this many meters of the player (enemies.md)
 ai,telegraph_s,0.5,Seconds a Telegraph module flashes red before it hits (enemies.md)
 ai,patrol_speed_fraction,0.5,Idle squads patrol at this fraction of their move speed (enemies.md)
+ai,coward_hp_fraction,0.2,Entities with the Coward tag roll once when their HP drops below this fraction (enemies.md)
+ai,coward_chance,0.25,Chance that roll makes them panic and run for the map edge (enemies.md)
+ai,citizen_fear_range_m,20,Scared citizens flee from enemies they can see within this many meters (missions.md)
+ai,stubborn_drag_slow,0.2,Dragging a Stubborn citizen slows the carrier by this fraction (user decision; missions.md says 0.25)

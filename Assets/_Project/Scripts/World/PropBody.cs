@@ -65,7 +65,6 @@ namespace Zenthium.World
         public Rigidbody Body => body;
         public bool UsesCapacity => true;
         public float CarrierSlow => 0f;
-        public float GrabSeconds => 0f;
 
         public bool CanBeGrabbedBy(Entity newCarrier)
         {

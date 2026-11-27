@@ -234,6 +234,10 @@ namespace Zenthium.Tests.EditMode
             Assert.That(result.Data.Ai.AllyFollowDistance, Is.EqualTo(10f));
             Assert.That(result.Data.Ai.TelegraphSeconds, Is.EqualTo(0.5f));
             Assert.That(result.Data.Ai.PatrolSpeedFraction, Is.EqualTo(0.5f));
+            Assert.That(result.Data.Ai.CowardHpFraction, Is.EqualTo(0.2f));
+            Assert.That(result.Data.Ai.CowardChance, Is.EqualTo(0.25f));
+            Assert.That(result.Data.Ai.CitizenFearRange, Is.EqualTo(20f));
+            Assert.That(result.Data.Ai.StubbornDragSlow, Is.EqualTo(0.2f));
             Assert.That(result.Data.Formula.AwarenessRange, Is.EqualTo(15f));
         }
 

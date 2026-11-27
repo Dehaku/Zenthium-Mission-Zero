@@ -10,7 +10,7 @@ namespace Zenthium.Modules
     /// <summary>
     /// First Aid Spray (modules.md): heals the user for its <c>heal</c> fraction of max HP. Used next to an
     /// Incapacitated citizen, it gets them up instead, at the same fraction of their max HP, at no cost and with no
-    /// cooldown. Getting up as Scared comes with citizens in Milestone 6.
+    /// cooldown. The citizen gets up Scared (<c>CitizenBrain</c>).
     /// </summary>
     public sealed class FirstAidSprayModule : ModuleBehaviour
     {

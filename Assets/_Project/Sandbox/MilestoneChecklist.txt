@@ -1,36 +1,29 @@
-<b>Milestone 6a: what to test in Sandbox_AI</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
-Reset scene (bottom right) reloads the scene. "Enemy FF" (above it) is the enemy friendly fire dev toggle.
-Squad A (3 melee goons, Speed Punch) patrols north-east; Squad B (2 Energy Blaster goons and a Cannons goon)
-patrols north. Cover hides them and the Heavy Turret (south-west) from your start. Each goon's AI state is under it.
-One more goon is locked in the Stone shop's back room (its locked door is Wood here).
+<b>Milestone 6b: what to test in Sandbox_AI</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
+Reset scene (bottom right) reloads the scene. The lost Valuables count is at the top center.
+Squad A (3 melee goons and their Leader, GleebPeep) patrols north-east. Squad B (2 Energy Blaster goons and a
+Cannons goon) patrols north, beside a stash of 3 Valuables. A second stash of 4 lies east of your start.
+Citizens: Scared (2 Valuables) south, downed (1 Valuable) west of your start, Stubborn by the turret (south-west).
+Labels show each goon's state (with pickup %) and each citizen's kind.
 
-<b>Noticing</b>
-1. Watch in the Scene view: each squad walks between its 3 sockets at half speed and waits ~3 s at each (Idle).
-2. Unaware goons notice you only within 15 m: about 3 s at 10 m, faster closer, at once within 1 m. They see
-   all around. Step out within 15 m: the yellow bar fills; duck behind cover before it's full and it drains
-   (3 s from full). Once aware, they see you out to 100 m.
-3. Full bar: a "!" pops up and a grey 10 m circle shows; the goon stands still for 0.5 s, then acts. Unaware
-   squadmates inside the circle get their own "!" and circle (alerts chain).
-4. Sneak up on an unaware goon (Time Slow slows its bar too) and Kick it before its bar fills: it notices at once.
+<b>Looting</b>
+1. At the start, Squad B walks to its stash, and each goon picks up a bag (about 5 s, "Looting 50%"). Hit a
+   looter: its pickup starts over.
+2. "Ranged Goon 2 (loot off the map)" carries its bag to the north edge and vanishes: lost count +1. The others
+   carry theirs to the Leader ("Objective"), hand them over (the Leader's bag count goes up), then patrol again.
+3. Fight by the east stash: melee goons loot it while you're out of their punch reach and turn on you when you
+   come close. Ranged goons keep shooting while you're within their range.
+4. Defeat the Leader, then let a goon pick up a bag: with no Leader standing, it carries it off the map.
 
-<b>Fighting</b>
-5. Melee goons chase you and Speed Punch. Ranged goons stop at range and shoot; walk within 3 m of one and it
-   backs off. Labels read "Combat > Player".
-6. The Cannons goon turns red for 0.5 s before it fires, aimed where you stood when it turned red: sidestep it.
-7. Ranged shots that hit other goons hurt them, but goons never turn on each other. Click "Enemy FF" (off): no
-   more damage between goons.
-8. Hide behind a building: they go to where they last saw you, wander there ~10 s (Searching), then the bar
-   drains for 3 s and they go back to Idle and their patrol.
+<b>Cowardice</b>
+5. Get a goon (not the Leader or the locked-in goon) below 20% HP. About 1 time in 4 its label shows "(panic)":
+   it ignores you, runs for the nearest map edge and vanishes (what it carried counts as lost). It rolls once.
 
-<b>World</b>
-9. Stand outside the Stone shop's west window (don't break it), within 15 m of the goon inside: it notices you
-   through the glass, walks to the locked door, punches it until it breaks (Wood, 100 HP), and comes for you.
-10. Test module Fire Wand: set the Wood house on fire. Goons path around it, and one inside walks out.
-11. The turret notices and shoots you and goons it can see, never the civilian beside it. Goons in Combat with
-    no one better in view attack the civilian.
-
-<b>Hero modules</b> (hero select)
-12. Major Overclock: Taunt goons in view, unaware ones too: they all go for you.
-13. Rune: Smoke Bomb (Gear) between you and goons: they can't see you through it, and unaware goons inside it
-    lose their bars.
-14. Rune: Ink Beast follows you, staying within ~10 m outside combat, and fights goons it notices.
+<b>Citizens</b>
+6. Lead goons toward the Scared citizen: when it sees one within 20 m, it drops its 2 Valuables (once) and runs
+   straight away ("Scared (fleeing)"). It doesn't react to goons it can't see.
+7. The downed citizen lies with its Valuable beside it. Rush Hour's First Aid Spray (Gear) next to it gets it up
+   as "Scared".
+8. Drag grabs citizens standing or down. Dragging the Stubborn citizen slows you by 20%; it never walks on its own.
+9. Rush Hour has Charming. Walk near the Stubborn citizen: one 50% roll to turn it Scared (Reset scene to roll
+   again). Each goon you get near rolls once at 5%: a converted goon follows you as an ally and hands you its
+   Valuables.

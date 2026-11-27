@@ -15,6 +15,10 @@ namespace Zenthium.Data
         [SerializeField] private float allyFollowDistance;
         [SerializeField] private float telegraphSeconds;
         [SerializeField] private float patrolSpeedFraction;
+        [SerializeField] private float cowardHpFraction;
+        [SerializeField] private float cowardChance;
+        [SerializeField] private float citizenFearRange;
+        [SerializeField] private float stubbornDragSlow;
 
         // Unity's serializer needs a parameterless constructor.
         public AiConstants()
@@ -29,7 +33,11 @@ namespace Zenthium.Data
             float rangedBackoffDistance,
             float allyFollowDistance,
             float telegraphSeconds,
-            float patrolSpeedFraction)
+            float patrolSpeedFraction,
+            float cowardHpFraction,
+            float cowardChance,
+            float citizenFearRange,
+            float stubbornDragSlow)
         {
             this.alertDelaySeconds = alertDelaySeconds;
             this.alertRadius = alertRadius;
@@ -39,6 +47,10 @@ namespace Zenthium.Data
             this.allyFollowDistance = allyFollowDistance;
             this.telegraphSeconds = telegraphSeconds;
             this.patrolSpeedFraction = patrolSpeedFraction;
+            this.cowardHpFraction = cowardHpFraction;
+            this.cowardChance = cowardChance;
+            this.citizenFearRange = citizenFearRange;
+            this.stubbornDragSlow = stubbornDragSlow;
         }
 
         /// <summary>Game seconds from becoming aware (the "!") to the alert going out.</summary>
@@ -64,5 +76,17 @@ namespace Zenthium.Data
 
         /// <summary>The fraction of their move speed idle squads patrol at.</summary>
         public float PatrolSpeedFraction => patrolSpeedFraction;
+
+        /// <summary>Coward entities roll once when their HP drops below this fraction of max HP.</summary>
+        public float CowardHpFraction => cowardHpFraction;
+
+        /// <summary>The chance that roll makes a coward panic and run for the map edge.</summary>
+        public float CowardChance => cowardChance;
+
+        /// <summary>Meters within which a Scared citizen flees from an enemy it can see.</summary>
+        public float CitizenFearRange => citizenFearRange;
+
+        /// <summary>The fraction a carrier is slowed while dragging a Stubborn citizen.</summary>
+        public float StubbornDragSlow => stubbornDragSlow;
     }
 }

@@ -610,7 +610,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>The lost count, at the top center of the screen.</summary>
-        private static void CreateLostCounter(ValuableService service)
+        internal static void CreateLostCounter(ValuableService service)
         {
             var canvasObject = new GameObject("Valuables Canvas", typeof(Canvas), typeof(CanvasScaler));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;

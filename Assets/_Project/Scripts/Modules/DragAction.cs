@@ -7,7 +7,8 @@ namespace Zenthium.Modules
 {
     /// <summary>
     /// Drag (modules.md, Drag row): grabs the best target in reach and pulls it behind the carrier. Carry capacity
-    /// grows with Strength. The carrier isn't slowed and can still fight. Dragged targets trail one behind another,
+    /// grows with Strength. The carrier can still fight, and is only slowed by what asks for it (a Stubborn citizen,
+    /// <see cref="IDragTarget.CarrierSlow"/>). Dragged targets trail one behind another,
     /// like beads on a rope. Pickups, such as Valuables, are taken at once instead (<see cref="IPickup"/>); they
     /// have trigger colliders, so the reach check includes triggers.
     /// </summary>
@@ -32,6 +33,8 @@ namespace Zenthium.Modules
         private Entity entity;
         private DragRules rules;
         private float reach;
+        private ModifierHandle carrierSlowHandle;
+        private float appliedCarrierSlow;
 
         public int CarriedCount => carried.Count;
 
@@ -139,6 +142,8 @@ namespace Zenthium.Modules
                 target.FollowTo(point);
                 ahead = point;
             }
+
+            UpdateCarrierSlow();
         }
 
         private void Bind(Entity newEntity)
@@ -151,6 +156,7 @@ namespace Zenthium.Modules
         private void Unbind()
         {
             ReleaseAll();
+            RemoveCarrierSlow();
             if (entity != null)
             {
                 entity.OnIncapacitated -= ReleaseAll;
@@ -236,6 +242,42 @@ namespace Zenthium.Modules
             target.OnDragBroken -= Release;
             SetCollisionIgnored(target, false);
             target.EndDrag();
+        }
+
+        /// <summary>
+        /// Slows the carrier by the sum of what it drags asks for. Checked every physics step, since a citizen's slow
+        /// can change while dragged, such as a Stubborn citizen charmed into Scared.
+        /// </summary>
+        private void UpdateCarrierSlow()
+        {
+            float slow = 0f;
+            foreach (IDragTarget target in carried)
+            {
+                slow += target.CarrierSlow;
+            }
+
+            slow = Mathf.Min(slow, 1f);
+            if (entity == null || Mathf.Approximately(slow, appliedCarrierSlow))
+            {
+                return;
+            }
+
+            RemoveCarrierSlow();
+            if (slow > 0f)
+            {
+                carrierSlowHandle = entity.MoveSpeed.AddSlow(slow);
+                appliedCarrierSlow = slow;
+            }
+        }
+
+        private void RemoveCarrierSlow()
+        {
+            if (entity != null && appliedCarrierSlow > 0f)
+            {
+                entity.MoveSpeed.RemoveSlow(carrierSlowHandle);
+            }
+
+            appliedCarrierSlow = 0f;
         }
 
         /// <summary>The carrier and what it drags pass through each other, so the trail doesn't shove the carrier.</summary>

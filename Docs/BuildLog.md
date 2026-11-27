@@ -1113,3 +1113,130 @@ Milestone 6 is split, as approved. **6a** (this entry) builds detection, awarene
 ### Second run (2026-11-25)
 - The user passed the retested items 2, 4, 9, 12 and 13. All 14 checklist items now pass.
 - Still open: Cannons' damage type (Physical, an assumption), and the Stubborn drag slow for 6b (the user chose 20%; missions.md says 25%).
+
+## Milestone 6b: Enemy AI, looting, cowardice and citizens (implemented, not yet checked, 2026-11-25)
+
+The second half of Milestone 6, as split in 6a: Looting, Objective (carrying loot, fleeing the map), cowardice, citizens, `ICharmable`, and the sandbox for them.
+
+### Done
+- **Data (local edits, approved):** four new rows in the `ai` group of `constants.csv`, read into `AiConstants`:
+  - `coward_hp_fraction` 0.2
+  - `coward_chance` 0.25
+  - `citizen_fear_range_m` 20
+  - `stubborn_drag_slow` 0.2 (the user's 20%; missions.md says 25%)
+- **AI (`Scripts/AI/`):**
+  - `AiState` gets `Looting` and `Objective`.
+  - `AiBrain` decides in this order:
+    1. A panicked coward runs for the map edge and escapes there.
+    2. An enemy with no player or ally it can see inside its attack range loots, or delivers what it carries.
+    3. Otherwise it behaves as in 6a: Combat, Searching, Idle.
+    - Taunt still overrides looting.
+    - New Inspector fields: `mapBounds`, pickup reach 1 m, hand-over reach 2 m.
+    - It reacts to a team change (Charming): it forgets the fight and leaves its squad.
+  - `AiLooter` (component): finds the nearest loose Valuable it can see and runs the existing `ValuablePickupTimer`. Damage that lands restarts the pickup.
+  - Plain C# classes:
+    - `LootRules`: who loots, when, and where the loot goes.
+    - `Cowardice`: the single roll.
+    - `CitizenFear`: when a citizen flees, and the drop that happens only once.
+  - `CharmConversion` (component, `ICharmable`): an enemy goon joins the charmer's side as an Ally and hands over its Valuables.
+  - `CitizenBrain` (component, `ICharmable`) and `CitizenKind`:
+    - Scared: flees from enemies it can see within 20 m.
+    - Incapacitated: starts down, with its Valuables dropped beside it. When revived it gets up Scared.
+    - Stubborn: never moves, sets the drag slow, and Charming can turn it Scared.
+- **Shared code:**
+  - `Entity`:
+    - `Escape()`, `IsEscaped` and `OnEscaped`.
+    - `Incapacitate()`: down with no damage and no Defiance roll.
+    - `ChangeTeam()` and `OnTeamChanged`: `Team` is no longer read-only.
+  - `EntityTag.LootDestinationMapEdge`, added at the end because tags are stored by index.
+  - `ICharmable`:
+    - Now `TryGetCharmTarget(out CharmTarget)` and `Charm(Entity)`.
+    - `CharmingPassive` rolls `goon_convert` or `stubborn_to_scared`, once per entity, and `ModuleCatalog` requires both keys.
+  - Drag:
+    - `EntityDragTarget` lets standing citizens be grabbed, and getting up no longer frees a dragged citizen.
+    - `EntityDragTarget` has `SetCarrierSlow`.
+    - `DragAction` slows the carrier by the sum of what it drags (`MoveSpeed.AddSlow`), checked every physics step.
+    - `IDragTarget.GrabSeconds` is removed, since every grab stays instant (the user's decision).
+  - `ValuableService.Bags`: the loose bags register while enabled.
+  - `ValuableCarrier`:
+    - `GiveAllTo()`.
+    - `DropAll()` is now public.
+    - Escaping counts what it carries as lost.
+  - World: `MapBounds` (component) and `MapEdge` (plain geometry).
+  - First Aid Spray needed no change: `CitizenBrain` listens for the revive.
+- **Sandbox:**
+  - `AiStateLabel` shows the pickup percentage and "(panic)".
+  - New `CitizenStateLabel`.
+  - `AiSandboxSceneCreator` adds:
+    - `MapBounds` (60 m);
+    - looting and Charming on every goon;
+    - the Coward tag on all goons except the Leader and the locked-in goon;
+    - a Leader (GleebPeep) in Squad A;
+    - `LootDestinationMapEdge` on Ranged Goon 2;
+    - two stashes (3 bags by Squad B, 4 east of the start) and the lost counter;
+    - three citizens: Scared with 2 Valuables, downed with 1, and Stubborn by the turret, which replaces 6a's civilian.
+  - `WorldSandboxSceneCreator.CreateLostCounter` is now internal.
+- **Checklist:** `MilestoneChecklist.txt` holds 6b's tests (9).
+- **Tests (EditMode):**
+  - New classes: `CowardiceTests`, `LootRulesTests`, `CitizenFearTests`, `MapEdgeTests` and `EntityTests`.
+  - `DesignDataParserTests.Parse_AiConstants_AreRead` gets four more asserts.
+  - The fixtures `DesignDataTestCsv` and `AwarenessTests.CreateConstants` have the new constants.
+  - No existing assertions changed.
+
+### Decisions (approved by the user, 2026-11-25)
+- The Stubborn drag slow is 20%, and Stubborn citizens are grabbed instantly.
+- Unaware, patrolling goons loot too.
+- "Outside their attack range" counts the player and the player's allies.
+- The Scared fear range needs line of sight.
+- Carried over from 6a: leaderless goons carry loot off the map; Scared citizens drop their Valuables once, when they start fleeing.
+
+### Choices made in code (not asked)
+- **Spotting Valuables:** unaware, a goon spots them only within the 15 m awareness range; aware, out to vision range. Otherwise idle goons would empty a bank across the map.
+- **Who loots:** every Enemy-team entity that can move, Leaders included. Leaders keep what they hold; their fleeing comes with the Valuables goal.
+- **Hand-over:** a goon carrying Valuables that sees no more takes them to the nearest standing Leader on its team (which must have a Valuable carrier). It goes off the map if it has the map-edge tag or no Leader is standing.
+- **Leaving the map:** the goon heads for the nearest edge of `MapBounds` and escapes within its 2.5 m margin. The entity escapes and its GameObject is switched off.
+- **A panicked coward** ignores everything, Taunt included, until it escapes. Without `MapBounds` it doesn't panic-run.
+- **Cowardice** doesn't roll on a hit that takes it straight to 0 HP. A revived coward that panicked keeps running.
+- **Converted goons** become `Team.Ally` (the charmer's team if that isn't the player). A Leader or Champion can't be converted.
+- **Citizens:**
+  - Only `Team.Enemy` scares them, not neutrals.
+  - A fleeing citizen aims 6 m directly away from the nearest enemy each 0.2 s.
+  - Any revive gets a citizen up Scared.
+- **Drag slow:** two Stubborn citizens slow by 40% (the sum, capped at 100%).
+- **Charmed marker:** a Stubborn citizen that rolls keeps the hidden Charmed marker, so it rolls only once.
+
+### Stubs and deferred
+- **Milestone 7:**
+  - `LootDestination:CropCircle` and Repo Agency Tow Beam/Drag.
+  - Enemies with Drag taking citizens to their destination, even while Idle.
+  - Coward on goons by default (entities.csv).
+- **Milestones 8 and 9:**
+  - The map builder sizes `MapBounds` and wires it to spawned goons.
+  - The 10% chance for a civilian to carry a Valuable, and citizens' kinds from the mission spawner.
+- **Milestone 9:**
+  - The Leader fleeing once it holds enough to fail the Valuables goal.
+  - Escaped enemies counting toward "defeat every enemy".
+- **Not built:** Infected citizens turning into zombies.
+
+### Editor steps for the user
+1. **Let Unity compile.**
+2. **Run Zenthium > Data > Import Design CSVs.** The four `ai` constants are required.
+3. **Run Zenthium > Setup > Create AI Sandbox Scene** and choose Replace.
+4. **Press Play in `Sandbox_AI`** and work through the checklist (Caps Lock). The default hero, Rush Hour, has Charming and First Aid Spray.
+
+### What to check
+- [ ] The Console has no errors after compiling, importing and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`Entity`, `ICharmable`, `CharmingPassive`, `ModuleCatalog`, the drag code, the Valuable code, the constants parser).
+  - New classes: `CowardiceTests`, `LootRulesTests`, `CitizenFearTests`, `MapEdgeTests`, `EntityTests`.
+  - Changed class: `DesignDataParserTests`.
+- [ ] Every item on the in-game checklist (9).
+
+### Open questions and findings
+- **Design mirror:** `constants.csv` now differs further from the design branch (the 6b `ai` rows).
+- Still open from 6a: Cannons' damage type (Physical, an assumption).
+
+### First run (2026-11-26)
+- Unity was still in Play mode when the scripts recompiled. Thousands of NullReferenceExceptions followed in `PlayerController` and `SandboxChecklistView`, which had lost their input actions in the reload. It wasn't a 6b bug. After leaving Play mode, the user rebuilt `Sandbox_AI`.
+- The user passed checklist items 1-8.
+- **Item 9:** mostly passed. A converted goon handing over its Valuables is hard to set up at Charming's 5% rate, so it's not tested.
+- The EditMode suite hasn't been run since 6b; the last saved results are from 6a.

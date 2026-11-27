@@ -2,7 +2,8 @@ namespace Zenthium.Entities
 {
     /// <summary>
     /// Tags on entities rather than modules (modules.md, factions.md). Systems check for a tag,
-    /// never for a specific entity. Parameterized tags such as <c>LootDestination:&lt;place&gt;</c> come with their systems.
+    /// never for a specific entity. A parameterized tag such as <c>LootDestination:&lt;place&gt;</c> is one value per place.
+    /// New values go at the end: scenes and prefabs store tags by index.
     /// </summary>
     public enum EntityTag
     {
@@ -14,5 +15,8 @@ namespace Zenthium.Entities
 
         /// <summary>Never targets or notices civilians, such as a Heavy Turret (enemies.md, world.md).</summary>
         SparesCivilians,
+
+        /// <summary><c>LootDestination:MapEdge</c>: carries Valuables off the map, Leader or not (world.md, Goon behavior).</summary>
+        LootDestinationMapEdge,
     }
 }

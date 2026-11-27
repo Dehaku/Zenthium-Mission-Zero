@@ -1,12 +1,13 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Zenthium.Modules;
 
 namespace Zenthium.World
 {
     /// <summary>
-    /// The scene's Valuables (world.md, Valuables): spawns bags when carriers drop or launch them, and keeps the
-    /// lost count for the Valuables secondary goal (Milestone 9). One per scene.
+    /// The scene's Valuables (world.md, Valuables): spawns bags when carriers drop or launch them, lists the loose
+    /// bags for the AI to loot, and keeps the lost count for the Valuables secondary goal (Milestone 9). One per scene.
     /// </summary>
     public sealed class ValuableService : MonoBehaviour
     {
@@ -24,13 +25,18 @@ namespace Zenthium.World
         [Tooltip("Degrees either side of the aim a launched bag can veer, at random.")]
         [SerializeField, Range(0f, 45f)] private float launchAngleSpread = 15f;
 
+        private readonly List<ValuableBag> bags = new List<ValuableBag>();
+
         /// <summary>Raised when a Valuable is lost.</summary>
         public event Action OnLostChanged;
 
         public ModuleWorld World => world;
 
-        /// <summary>Valuables lost so far: melted (and, from later milestones, carried off the map).</summary>
+        /// <summary>Valuables lost so far: melted, or carried off the map.</summary>
         public int LostCount { get; private set; }
+
+        /// <summary>The loose bags in the scene, flying ones included.</summary>
+        public IReadOnlyList<ValuableBag> Bags => bags;
 
         /// <returns>Null if the scene has no bag prefab.</returns>
         public ValuableBag Spawn(Vector3 position)
@@ -71,6 +77,19 @@ namespace Zenthium.World
                     bag.Launch(info.Thrower, direction, distance, info.KickDamage);
                 }
             }
+        }
+
+        internal void Register(ValuableBag bag)
+        {
+            if (!bags.Contains(bag))
+            {
+                bags.Add(bag);
+            }
+        }
+
+        internal void Unregister(ValuableBag bag)
+        {
+            bags.Remove(bag);
         }
 
         public void CountLost(int count)

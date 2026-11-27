@@ -14,12 +14,15 @@ using static Zenthium.Editor.SerializedWiring;
 namespace Zenthium.Editor
 {
     /// <summary>
-    /// Builds Sandbox_AI (Milestone 6a) on the World sandbox's 60 m room: the Wood house and the L-shaped Stone shop,
-    /// cover that hides the squads and the turret from the player's start, two squads patrolling sockets (melee goons
-    /// with Speed Punch; ranged goons with Energy Blaster and one with Cannons, a Telegraph module), a goon locked in
-    /// the Stone shop (its locked door is Wood here) to test breaking out through the door, a Heavy Turret
-    /// running the AI with a civilian beside it, the hero select and MoreInfo panels, an enemy friendly fire toggle,
-    /// and a baked NavMesh. Each goon shows its awareness bar, "!", alert circle, telegraph flash and AI state.
+    /// Builds Sandbox_AI (Milestones 6a and 6b) on the World sandbox's 60 m room: the Wood house and the L-shaped Stone
+    /// shop, cover that hides the squads and the turret from the player's start, two squads patrolling sockets (melee
+    /// goons with Speed Punch and their Leader; ranged goons with Energy Blaster, one taking loot off the map, and one
+    /// with Cannons, a Telegraph module), a goon locked in the Stone shop (its locked door is Wood here) to test
+    /// breaking out through the door, a Heavy Turret running the AI with a Stubborn citizen beside it, a Scared and
+    /// a downed citizen, two stashes of Valuables and the lost counter, the map's bounds, the hero select and
+    /// MoreInfo panels, an enemy friendly fire toggle, and a baked NavMesh. Goons are Cowards, except the Leader and
+    /// the locked-in goon. Each goon shows its awareness bar, "!", alert circle, telegraph flash and AI state; each
+    /// citizen its kind.
     /// </summary>
     internal static class AiSandboxSceneCreator
     {
@@ -69,7 +72,28 @@ namespace Zenthium.Editor
         // In the Stone shop's back room, by its west window: it sees out, but its only way out is the locked door.
         private static readonly Vector3 DoorTestGoonPosition = new Vector3(-19f, Height, 18f);
         private static readonly Vector3 TurretPosition = new Vector3(-25f, Height, -25f);
-        private static readonly Vector3 CivilianPosition = new Vector3(-21f, Height, -25f);
+        private static readonly Vector3 StubbornCitizenPosition = new Vector3(-21f, Height, -25f);
+
+        // Milestone 6b. The Leader patrols with Squad A, so the other goons have someone to hand their loot to.
+        private static readonly Vector3 LeaderPosition = new Vector3(14f, Height, 27f);
+
+        // Beside Squad B's first socket: idle goons see it and loot it at once.
+        private static readonly Vector3 SquadStashPosition = new Vector3(-7f, BagHeight, 27f);
+        private const int SquadStashBags = 3;
+
+        // Over 15 m from every patrol, so goons only spot it once they're aware, in the middle of a fight.
+        private static readonly Vector3 FightStashPosition = new Vector3(4f, BagHeight, -5f);
+        private const int FightStashBags = 4;
+        private const float BagHeight = 0.3f;
+        private const float BagSpacing = 0.8f;
+
+        private static readonly Vector3 ScaredCitizenPosition = new Vector3(2f, Height, -14f);
+        private static readonly Vector3 DownedCitizenPosition = new Vector3(-9f, Height, -6f);
+        private const int ScaredCitizenValuables = 2;
+        private const int DownedCitizenValuables = 1;
+        private const string EntityTagsField = "tags";
+        private const string StartingValuablesField = "startingValuables";
+        private const string BagServiceField = "service";
 
         // Goon visuals, in the goon's local space: the bar above the debug label (screen-up is +Z), the "!" above
         // that, the state under the goon, and the alert circle just above the ground.
@@ -97,6 +121,7 @@ namespace Zenthium.Editor
         private static class BrainFields
         {
             public const string Squad = "squad";
+            public const string MapBounds = "mapBounds";
         }
 
         private static class SquadFields
@@ -131,6 +156,23 @@ namespace Zenthium.Editor
         {
             public const string Brain = "brain";
             public const string Label = "label";
+            public const string Looter = "looter";
+        }
+
+        private static class CitizenFields
+        {
+            public const string StartingKind = "startingKind";
+        }
+
+        private static class CitizenLabelFields
+        {
+            public const string Citizen = "citizen";
+            public const string Label = "label";
+        }
+
+        private static class MapBoundsFields
+        {
+            public const string Size = "size";
         }
 
         private static class ToggleFields
@@ -165,9 +207,11 @@ namespace Zenthium.Editor
                 || !database.Modules.TryGet(DataIds.Modules.EnergyBlaster, out ModuleData energyBlaster)
                 || !database.Modules.TryGet(DataIds.Modules.Cannons, out ModuleData cannons)
                 || !database.Modules.TryGet(DataIds.Modules.HeavyGun, out ModuleData heavyGun)
-                || !database.Entities.TryGet(DataIds.Entities.HeavyTurret, out EntityData turretData))
+                || !database.Entities.TryGet(DataIds.Entities.HeavyTurret, out EntityData turretData)
+                || !database.Entities.TryGet(DataIds.Entities.GleebPeep, out EntityData leaderData))
             {
-                Debug.LogError($"The game data is missing a module or the Heavy Turret; {ScenePath} wasn't written.");
+                Debug.LogError(
+                    $"The game data is missing a module, the Heavy Turret or GleebPeep; {ScenePath} wasn't written.");
                 return;
             }
 
@@ -188,30 +232,44 @@ namespace Zenthium.Editor
             PlayerSandboxSceneCreator.CreateBlock(room.Geometry, "North Cover", NorthCoverPosition, NorthCoverSize);
             PlayerSandboxSceneCreator.CreateBlock(room.Geometry, "South Cover", SouthCoverPosition, SouthCoverSize);
 
+            // The room's walls stand on its edge, so goons escape within the bounds' margin of them.
+            var mapBounds = new GameObject("Map Bounds").AddComponent<MapBounds>();
+            Wire(mapBounds, so => Find(so, MapBoundsFields.Size).vector2Value = new Vector2(RoomSize, RoomSize));
+
             AiSquad melee = CreateSquad(room, "Squad A (melee)", MeleeSockets);
             AiSquad ranged = CreateSquad(room, "Squad B (ranged)", RangedSockets);
             EntityBehaviour firstGoon = null;
             for (int i = 0; i < MeleeGoonPositions.Length; i++)
             {
                 EntityBehaviour goon = PlaceGoon(room, $"Melee Goon {i + 1} (Speed Punch)", MeleeGoonPositions[i],
-                    speedPunch, melee);
+                    speedPunch, melee, mapBounds, EntityTag.Coward);
                 firstGoon = firstGoon != null ? firstGoon : goon;
             }
 
-            for (int i = 0; i < RangedGoonPositions.Length; i++)
-            {
-                PlaceGoon(room, $"Ranged Goon {i + 1} (Energy Blaster)", RangedGoonPositions[i], energyBlaster, ranged);
-            }
+            EntityBehaviour leader = PlaceGoon(room, "Leader (GleebPeep, Speed Punch)", LeaderPosition, speedPunch,
+                melee, mapBounds);
+            Wire(leader, so =>
+                SetReference(so, CombatSandboxSceneCreator.EntityFields.FactionEntity, leaderData));
 
-            PlaceGoon(room, "Telegraph Goon (Cannons)", TelegraphGoonPosition, cannons, ranged);
-            PlaceGoon(room, "Door Test Goon (locked in the shop)", DoorTestGoonPosition, speedPunch, null);
+            PlaceGoon(room, "Ranged Goon 1 (Energy Blaster)", RangedGoonPositions[0], energyBlaster, ranged, mapBounds,
+                EntityTag.Coward);
+            PlaceGoon(room, "Ranged Goon 2 (Energy Blaster, loot off the map)", RangedGoonPositions[1], energyBlaster,
+                ranged, mapBounds, EntityTag.Coward, EntityTag.LootDestinationMapEdge);
+            PlaceGoon(room, "Telegraph Goon (Cannons)", TelegraphGoonPosition, cannons, ranged, mapBounds,
+                EntityTag.Coward);
+            PlaceGoon(room, "Door Test Goon (locked in the shop)", DoorTestGoonPosition, speedPunch, null, mapBounds);
+
+            PlaceBags(room, "Squad B Stash", SquadStashPosition, SquadStashBags);
+            PlaceBags(room, "Fight Stash", FightStashPosition, FightStashBags);
+            WorldSandboxSceneCreator.CreateLostCounter(room.Valuables);
 
             EntityBehaviour turret = WorldSandboxSceneCreator.PlaceTurret(room, turretData, heavyGun, TurretPosition, null);
             AddAiViews(turret.GetComponent<AiBrain>());
-            EntityBehaviour civilian = PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, CivilianPosition, room);
-            civilian.name = "Civilian (no AI yet)";
-            Wire(civilian, so => Find(so, CombatSandboxSceneCreator.EntityFields.Team).enumValueIndex =
-                (int)Team.Civilian);
+            PlaceCitizen(room, "Stubborn Citizen (by the turret)", StubbornCitizenPosition, CitizenKind.Stubborn, 0);
+            PlaceCitizen(room, $"Scared Citizen ({ScaredCitizenValuables} Valuables)", ScaredCitizenPosition,
+                CitizenKind.Scared, ScaredCitizenValuables);
+            PlaceCitizen(room, $"Downed Citizen ({DownedCitizenValuables} Valuable)", DownedCitizenPosition,
+                CitizenKind.Incapacitated, DownedCitizenValuables);
 
             CombatSandboxSceneCreator.BindDebugPanel(room.DebugPanel, room.Player, firstGoon);
             ModulesSandboxSceneCreator.CreateModulesCanvas(room);
@@ -255,9 +313,12 @@ namespace Zenthium.Editor
             return squad;
         }
 
-        /// <summary>A training dummy turned goon: one module, the AI with its squad, and the AI views.</summary>
+        /// <summary>
+        /// A training dummy turned goon: one module, its tags, the AI with its squad and the map's edge, looting,
+        /// Charming's conversion, and the AI views.
+        /// </summary>
         private static EntityBehaviour PlaceGoon(PlayerSandboxSceneCreator.Room room, string goonName, Vector3 position,
-            ModuleData module, AiSquad squad)
+            ModuleData module, AiSquad squad, MapBounds mapBounds, params EntityTag[] tags)
         {
             EntityBehaviour goon = PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, position, room);
             goon.name = goonName;
@@ -266,13 +327,62 @@ namespace Zenthium.Editor
                 SerializedProperty modules = Find(so, CombatSandboxSceneCreator.EntityFields.Modules);
                 modules.arraySize = 1;
                 modules.GetArrayElementAtIndex(0).objectReferenceValue = module;
+                SerializedProperty tagList = Find(so, EntityTagsField);
+                tagList.arraySize = tags.Length;
+                for (int i = 0; i < tags.Length; i++)
+                {
+                    tagList.GetArrayElementAtIndex(i).enumValueIndex = (int)tags[i];
+                }
             });
 
             goon.gameObject.AddComponent<AiNavigator>();
+            goon.gameObject.AddComponent<AiLooter>();
+            goon.gameObject.AddComponent<CharmConversion>();
             var brain = goon.gameObject.AddComponent<AiBrain>();
-            Wire(brain, so => SetReference(so, BrainFields.Squad, squad));
+            Wire(brain, so =>
+            {
+                SetReference(so, BrainFields.Squad, squad);
+                SetReference(so, BrainFields.MapBounds, mapBounds);
+            });
             AddAiViews(brain);
             return goon;
+        }
+
+        /// <summary>A training dummy turned citizen: its kind, the Valuables it carries, and a label.</summary>
+        private static void PlaceCitizen(PlayerSandboxSceneCreator.Room room, string citizenName, Vector3 position,
+            CitizenKind kind, int valuables)
+        {
+            EntityBehaviour citizen = PlayerSandboxSceneCreator.PlaceEntity(room.DummyPrefab, position, room);
+            citizen.name = citizenName;
+            Wire(citizen, so => Find(so, CombatSandboxSceneCreator.EntityFields.Team).enumValueIndex =
+                (int)Team.Civilian);
+            Wire(citizen.GetComponent<ValuableCarrier>(), so =>
+                Find(so, StartingValuablesField).intValue = valuables);
+
+            citizen.gameObject.AddComponent<AiNavigator>();
+            var brain = citizen.gameObject.AddComponent<CitizenBrain>();
+            Wire(brain, so => Find(so, CitizenFields.StartingKind).enumValueIndex = (int)kind);
+
+            TextMeshPro label = FlatText(citizen.transform, "Citizen State", StateLabelPosition, StateFontSize,
+                Color.white);
+            Wire(label.gameObject.AddComponent<CitizenStateLabel>(), so =>
+            {
+                SetReference(so, CitizenLabelFields.Citizen, brain);
+                SetReference(so, CitizenLabelFields.Label, label);
+            });
+        }
+
+        /// <summary>A stash of loose Valuables around a point.</summary>
+        private static void PlaceBags(PlayerSandboxSceneCreator.Room room, string stashName, Vector3 center, int count)
+        {
+            var bagPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerSandboxSceneCreator.ValuableBagPrefabPath);
+            var root = new GameObject(stashName).transform;
+            for (int i = 0; i < count; i++)
+            {
+                var bag = (GameObject)PrefabUtility.InstantiatePrefab(bagPrefab, root);
+                bag.transform.position = center + new Vector3(i % 2 * BagSpacing, 0f, i / 2 * BagSpacing);
+                Wire(bag.GetComponent<ValuableBag>(), so => SetReference(so, BagServiceField, room.Valuables));
+            }
         }
 
         private static void AddAiViews(AiBrain brain)
@@ -317,6 +427,7 @@ namespace Zenthium.Editor
             {
                 SetReference(so, StateLabelFields.Brain, brain);
                 SetReference(so, StateLabelFields.Label, state);
+                SetReference(so, StateLabelFields.Looter, brain.GetComponent<AiLooter>());
             });
         }
 

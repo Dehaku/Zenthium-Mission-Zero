@@ -344,13 +344,15 @@ namespace Zenthium.Modules
         {
             behaviour = null;
             bool hasConvert = data.Values.TryGetNumber(CharmingPassive.GoonConvertKey, out float convert);
-            if (!Require(data.RangeTier.IsSet && hasConvert, "a range tier and " + CharmingPassive.GoonConvertKey,
+            bool hasScare = data.Values.TryGetNumber(CharmingPassive.StubbornToScaredKey, out float scare);
+            if (!Require(data.RangeTier.IsSet && hasConvert && hasScare,
+                    "a range tier, " + CharmingPassive.GoonConvertKey + " and " + CharmingPassive.StubbornToScaredKey,
                     out problem))
             {
                 return false;
             }
 
-            behaviour = new CharmingPassive(data, convert);
+            behaviour = new CharmingPassive(data, convert, scare);
             return true;
         }
 

@@ -13,8 +13,16 @@ namespace Zenthium.AI
     /// <summary>
     /// One entity's AI (enemies.md, AI), for enemies, neutrals and the player's allies alike, on the entity's game
     /// time. It looks around a few times a second: who it can see, its awareness, its target and which module to
-    /// use. Idle, it patrols with its squad (an ally follows the player). Aware with a target in view, it fights;
-    /// with none, it searches the last known position, then forgets. Presentation reads its state and events.
+    /// use. In order:
+    /// <list type="number">
+    /// <item>A panicked coward runs for the map edge until it escapes.</item>
+    /// <item>An enemy with no opponent in its attack range loots Valuables it can see (<see cref="AiLooter"/>), then
+    /// takes them to its Leader or off the map (Objective).</item>
+    /// <item>Aware with a target in view, it fights; with none, it searches the last known position, then
+    /// forgets.</item>
+    /// <item>Idle, it patrols with its squad (an ally follows the player).</item>
+    /// </list>
+    /// Presentation reads its state and events.
     /// </summary>
     [RequireComponent(typeof(EntityModules), typeof(EntityMotor), typeof(AiNavigator))]
     public sealed class AiBrain : MonoBehaviour, IAwarenessReset
@@ -24,6 +32,9 @@ namespace Zenthium.AI
 
         [Tooltip("The squad it patrols with while Idle. Empty: it stands still, or an ally follows the player.")]
         [SerializeField] private AiSquad squad;
+
+        [Tooltip("The map's edge, for panicked cowards and goons carrying Valuables off the map. Empty: they never leave.")]
+        [SerializeField] private MapBounds mapBounds;
 
         [Tooltip("Game seconds between looks around: who it sees, its target and its module.")]
         [SerializeField, Min(0.02f)] private float thinkSeconds = 0.2f;
@@ -43,6 +54,12 @@ namespace Zenthium.AI
         [Tooltip("Meters a ranged attacker steps away each time it backs off.")]
         [SerializeField, Min(0.5f)] private float backoffStep = 2f;
 
+        [Tooltip("Meters from a Valuable it picks it up from.")]
+        [SerializeField, Min(0.1f)] private float pickupReach = 1f;
+
+        [Tooltip("Meters from its Leader it hands its Valuables over from.")]
+        [SerializeField, Min(0.1f)] private float handOverReach = 2f;
+
         private readonly List<EntityBehaviour> everyone = new List<EntityBehaviour>();
         private readonly List<EntityBehaviour> nearby = new List<EntityBehaviour>();
         private readonly List<TargetCandidate> visible = new List<TargetCandidate>();
@@ -55,10 +72,13 @@ namespace Zenthium.AI
         private EntityModules modules;
         private EntityBehaviour self;
         private AiNavigator navigator;
+        private AiLooter looter;
         private Entity entity;
         private Awareness awareness;
+        private Cowardice cowardice;
         private AiConstants constants;
         private float visionRange;
+        private float awarenessRange;
         private float untilThink;
         private float sinceThink;
         private float fillRate;
@@ -99,6 +119,9 @@ namespace Zenthium.AI
 
         public bool IsTelegraphing => isTelegraphing;
 
+        /// <summary>A coward that panicked: it runs for the map edge.</summary>
+        public bool IsPanicking => cowardice != null && cowardice.IsPanicking;
+
         /// <summary>Idle and unaware on its feet: patrolling, so its squad waits for it.</summary>
         internal bool IsPatrolling => entity != null && !entity.IsIncapacitated && State == AiState.Idle
             && AwarenessLevel == AwarenessLevel.Unaware;
@@ -122,6 +145,7 @@ namespace Zenthium.AI
             modules = GetComponent<EntityModules>();
             self = GetComponent<EntityBehaviour>();
             navigator = GetComponent<AiNavigator>();
+            TryGetComponent(out looter);
         }
 
         private void OnEnable()
@@ -162,8 +186,11 @@ namespace Zenthium.AI
             entity = newEntity;
             constants = database.AiConstants;
             visionRange = database.FormulaConstants.VisionRange;
+            awarenessRange = database.FormulaConstants.AwarenessRange;
             awareness = new Awareness(database.Formulas, constants);
+            cowardice = new Cowardice(constants.CowardHpFraction, constants.CowardChance);
             entity.OnDamaged += HandleDamaged;
+            entity.OnTeamChanged += HandleTeamChanged;
             State = AiState.Idle;
             untilThink = 0f;
         }
@@ -173,6 +200,7 @@ namespace Zenthium.AI
             if (entity != null)
             {
                 entity.OnDamaged -= HandleDamaged;
+                entity.OnTeamChanged -= HandleTeamChanged;
             }
 
             entity = null;
@@ -224,9 +252,18 @@ namespace Zenthium.AI
                 return;
             }
 
+            if (State == AiState.Looting)
+            {
+                looter.Advance(gameDelta);
+            }
+
             if (thinks)
             {
                 Decide(elapsed);
+                if (State != AiState.Looting && looter != null)
+                {
+                    looter.Cancel();
+                }
             }
         }
 
@@ -240,6 +277,10 @@ namespace Zenthium.AI
             hasLastKnown = false;
             isTelegraphing = false;
             navigator.Stop();
+            if (looter != null)
+            {
+                looter.Cancel();
+            }
         }
 
         /// <summary>Who it can see, and how fast its awareness bar fills from them.</summary>
@@ -296,12 +337,33 @@ namespace Zenthium.AI
 
         private void Decide(float elapsed)
         {
+            BuildOptions();
+            if (entity.HasTag(EntityTag.Coward))
+            {
+                cowardice.Check(entity.Health.Current, entity.Health.Max, modules.World.Random);
+            }
+
+            // A panicked coward runs for the map edge until it escapes, whatever else is going on (enemies.md).
+            if (cowardice.IsPanicking && mapBounds != null && !entity.HasTag(EntityTag.Immobile))
+            {
+                State = AiState.Objective;
+                Target = null;
+                GoToMapEdge();
+                return;
+            }
+
             Entity taunter = entity.Statuses.TryGetSource(StatusType.Taunted, out Entity source) ? source : null;
+            bool isFreeToLoot = taunter == null && LootRules.IsFreeToLoot(NearestOpponentDistance(), attackReach);
             if (awareness.Level == AwarenessLevel.Unaware)
             {
                 if (taunter != null)
                 {
                     NoticeNow();
+                    return;
+                }
+
+                if (isFreeToLoot && (TryLoot() || TryDeliverLoot()))
+                {
                     return;
                 }
 
@@ -317,13 +379,23 @@ namespace Zenthium.AI
 
             Entity chosen = TargetSelector.Choose(AiSides.EffectiveTeam(entity),
                 entity.HasTag(EntityTag.SparesCivilians), taunter, lastAttacker, visible);
-            if (chosen != null && modules.World.TryGetBehaviour(chosen, out EntityBehaviour chosenBody))
+            EntityBehaviour chosenBody = null;
+            if (chosen != null && modules.World.TryGetBehaviour(chosen, out chosenBody))
             {
-                State = AiState.Combat;
-                Target = chosenBody;
                 awareness.KeepAware();
                 lastKnownPosition = chosenBody.transform.position;
                 hasLastKnown = true;
+            }
+
+            if (isFreeToLoot && (TryLoot() || TryDeliverLoot()))
+            {
+                return;
+            }
+
+            if (chosenBody != null)
+            {
+                State = AiState.Combat;
+                Target = chosenBody;
                 Fight(chosenBody);
                 return;
             }
@@ -394,8 +466,6 @@ namespace Zenthium.AI
             float distance = toTarget.magnitude;
             var aim = new ModuleAim(toTarget, distance);
             modules.SetAim(aim);
-            BuildOptions();
-
             if (navigator.BlockingDoor != null && TryAttackDoor(navigator.BlockingDoor))
             {
                 return;
@@ -584,7 +654,6 @@ namespace Zenthium.AI
             // Out of sight of its target, it still breaks a locked door on its way to the last known position.
             if (navigator.BlockingDoor != null)
             {
-                BuildOptions();
                 TryAttackDoor(navigator.BlockingDoor);
             }
 
@@ -605,6 +674,154 @@ namespace Zenthium.AI
             }
 
             navigator.MoveTo(wanderPoint, constants.PatrolSpeedFraction);
+        }
+
+        /// <summary>
+        /// Goes for the nearest Valuable it can see and picks it up (world.md, Picking up). Unaware, it only spots
+        /// them as far as it would notice someone.
+        /// </summary>
+        /// <returns>False if it doesn't loot, or sees no Valuable.</returns>
+        private bool TryLoot()
+        {
+            if (looter == null
+                || !LootRules.CanLoot(AiSides.EffectiveTeam(entity), entity.HasTag(EntityTag.Immobile)))
+            {
+                return false;
+            }
+
+            float range = awareness.Level == AwarenessLevel.Unaware ? awarenessRange : visionRange;
+            ValuableBag bag = looter.FindVisibleBag(transform.position, range, sightHits);
+            if (bag == null)
+            {
+                return false;
+            }
+
+            State = AiState.Looting;
+            Target = null;
+            Vector3 bagPosition = bag.transform.position;
+            if (navigator.IsNear(bagPosition, pickupReach))
+            {
+                navigator.Stop();
+                looter.PickUp(bag);
+            }
+            else
+            {
+                looter.Cancel();
+                navigator.MoveTo(bagPosition, 1f);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Carrying Valuables and seeing no more, it takes them to its Leader or off the map (world.md, Goon
+        /// behavior).
+        /// </summary>
+        /// <returns>False if it keeps them and carries on as normal.</returns>
+        private bool TryDeliverLoot()
+        {
+            if (looter == null
+                || !LootRules.CanLoot(AiSides.EffectiveTeam(entity), entity.HasTag(EntityTag.Immobile)))
+            {
+                return false;
+            }
+
+            bool hasLeader = TryFindLeader(out ValuableCarrier leader);
+            LootDelivery delivery = LootRules.Delivery(looter.Carrier.Count, entity.RankTier == RankTier.Leader,
+                entity.HasTag(EntityTag.LootDestinationMapEdge), hasLeader);
+            switch (delivery)
+            {
+                case LootDelivery.Leader:
+                    State = AiState.Objective;
+                    Target = null;
+                    Vector3 leaderPosition = leader.transform.position;
+                    if (navigator.IsNear(leaderPosition, handOverReach))
+                    {
+                        navigator.Stop();
+                        looter.Carrier.GiveAllTo(leader);
+                    }
+                    else
+                    {
+                        navigator.MoveTo(leaderPosition, 1f);
+                    }
+
+                    return true;
+                case LootDelivery.MapEdge when mapBounds != null:
+                    State = AiState.Objective;
+                    Target = null;
+                    GoToMapEdge();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>Heads for the nearest map edge, and leaves the map once there (enemies.md, Limits).</summary>
+        private void GoToMapEdge()
+        {
+            if (!mapBounds.IsAtEdge(transform.position))
+            {
+                navigator.MoveTo(mapBounds.NearestEdgePoint(transform.position), 1f);
+                return;
+            }
+
+            if (entity.Escape())
+            {
+                gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>The nearest standing Leader on its team with somewhere to put Valuables.</summary>
+        private bool TryFindLeader(out ValuableCarrier leader)
+        {
+            leader = null;
+            float nearest = float.PositiveInfinity;
+            foreach (EntityBehaviour body in everyone)
+            {
+                Entity other = body.Entity;
+                if (other == null || other == entity || other.Team != entity.Team || other.RankTier != RankTier.Leader
+                    || other.IsIncapacitated || other.IsCaptured
+                    || !body.TryGetComponent(out ValuableCarrier carrier))
+                {
+                    continue;
+                }
+
+                float distance = FlatDistance(transform.position, body.transform.position);
+                if (distance < nearest)
+                {
+                    nearest = distance;
+                    leader = carrier;
+                }
+            }
+
+            return leader != null;
+        }
+
+        /// <returns>Meters to the nearest player or ally it can see; positive infinity if none.</returns>
+        private float NearestOpponentDistance()
+        {
+            float nearest = float.PositiveInfinity;
+            foreach (TargetCandidate candidate in visible)
+            {
+                Team team = candidate.Entity.Team;
+                if ((team == Team.Player || team == Team.Ally) && candidate.Distance < nearest)
+                {
+                    nearest = candidate.Distance;
+                }
+            }
+
+            return nearest;
+        }
+
+        /// <summary>Won over (Charming): it forgets the fight and leaves its squad; as an ally it follows the player.</summary>
+        private void HandleTeamChanged()
+        {
+            Fall();
+            if (squad != null)
+            {
+                squad.Leave(this);
+                squad = null;
+            }
         }
 
         private void HandleDamaged(DamageEvent damage)

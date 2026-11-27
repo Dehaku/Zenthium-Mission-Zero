@@ -7,9 +7,9 @@ namespace Zenthium.Modules
 {
     /// <summary>
     /// Lets Drag grab this entity while it's Incapacitated, not captured and not Immobile, whatever its team
-    /// (modules.md, Drag row), and lets go if it gets back up or is captured. A civilian counts as a citizen, which Drag picks first;
-    /// grabbing citizens who are still on their feet comes in Milestone 6. While dragged, the entity can't be hurt
-    /// or knocked back, and its motor follows the carrier.
+    /// (modules.md, Drag row), and lets go if it gets back up or is captured. A civilian counts as a citizen, which
+    /// Drag picks first, and can be grabbed on its feet too (missions.md, Extraction), so getting up doesn't free it.
+    /// While dragged, the entity can't be hurt or knocked back, and its motor follows the carrier.
     /// </summary>
     [RequireComponent(typeof(EntityBehaviour), typeof(EntityMotor), typeof(Rigidbody))]
     public sealed class EntityDragTarget : MonoBehaviour, IDragTarget
@@ -22,17 +22,23 @@ namespace Zenthium.Modules
         public event Action<IDragTarget> OnDragBroken;
 
         public DragTargetKind Kind =>
-            entity != null && entity.Team == Team.Civilian ? DragTargetKind.Citizen : DragTargetKind.IncapacitatedEntity;
+            IsCitizen ? DragTargetKind.Citizen : DragTargetKind.IncapacitatedEntity;
         public Rigidbody Body => body;
+        private bool IsCitizen => entity != null && entity.Team == Team.Civilian;
         public bool UsesCapacity => true;
-        public float CarrierSlow => 0f;
-        public float GrabSeconds => 0f;
+        public float CarrierSlow { get; private set; }
 
         public bool CanBeGrabbedBy(Entity carrier)
         {
             return isActiveAndEnabled && entity != null && carrier != null && carrier != entity
-                && entity.IsIncapacitated && !entity.IsCaptured && !entity.IsBeingDragged
+                && (entity.IsIncapacitated || IsCitizen) && !entity.IsCaptured && !entity.IsBeingDragged
                 && !entity.HasTag(EntityTag.Immobile);
+        }
+
+        /// <summary>The carrier's slow while dragging it, such as a Stubborn citizen's; set by the citizen's AI.</summary>
+        public void SetCarrierSlow(float fraction)
+        {
+            CarrierSlow = fraction;
         }
 
         public void BeginDrag(Entity carrier)
@@ -86,7 +92,7 @@ namespace Zenthium.Modules
             BreakDragIfDragged();
             Unbind();
             entity = newEntity;
-            entity.OnRevived += BreakDragIfDragged;
+            entity.OnRevived += HandleRevived;
             entity.OnCaptured += BreakDragIfDragged;
         }
 
@@ -94,9 +100,17 @@ namespace Zenthium.Modules
         {
             if (entity != null)
             {
-                entity.OnRevived -= BreakDragIfDragged;
+                entity.OnRevived -= HandleRevived;
                 entity.OnCaptured -= BreakDragIfDragged;
                 entity = null;
+            }
+        }
+
+        private void HandleRevived()
+        {
+            if (!IsCitizen)
+            {
+                BreakDragIfDragged();
             }
         }
 

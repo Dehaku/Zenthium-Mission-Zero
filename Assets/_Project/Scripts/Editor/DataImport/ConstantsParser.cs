@@ -160,7 +160,11 @@ namespace Zenthium.Editor.DataImport
                 rangedBackoffDistance: reader.Float("ranged_backoff_m"),
                 allyFollowDistance: reader.Float("ally_follow_m"),
                 telegraphSeconds: reader.Float("telegraph_s"),
-                patrolSpeedFraction: reader.Float("patrol_speed_fraction"));
+                patrolSpeedFraction: reader.Float("patrol_speed_fraction"),
+                cowardHpFraction: reader.Float("coward_hp_fraction"),
+                cowardChance: reader.Float("coward_chance"),
+                citizenFearRange: reader.Float("citizen_fear_range_m"),
+                stubbornDragSlow: reader.Float("stubborn_drag_slow"));
             reader.ReportUnused();
         }
 

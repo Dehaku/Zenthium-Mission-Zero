@@ -271,9 +271,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Zenthium.AI::Zenthium.AI.AiBrain
   squad: {fileID: 0}
+  mapBounds: {fileID: 0}
   thinkSeconds: 0.2
   searchRadius: 6
   rangeMargin: 0.85
   followSlack: 3
   arriveDistance: 1
   backoffStep: 2
+  pickupReach: 1
+  handOverReach: 2
