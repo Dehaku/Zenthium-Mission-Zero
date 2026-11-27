@@ -492,7 +492,7 @@ namespace Zenthium.Editor
             return text;
         }
 
-        private static Material ModuleMaterial(string materialName, Color color)
+        internal static Material ModuleMaterial(string materialName, Color color)
         {
             GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
             Material material = ModulePrefabBuilder.SaveMaterial(materialName, color, primitive);

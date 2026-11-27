@@ -31,6 +31,13 @@ namespace Zenthium.World
         /// <summary>Meters; 0 until it's set up.</summary>
         public float Radius => radius;
 
+        /// <summary>For a crop circle placed in code, such as by the map builder: call it before it wakes.</summary>
+        public void Configure(ModuleWorld newWorld, FactionData newFaction)
+        {
+            world = newWorld;
+            faction = newFaction;
+        }
+
         public bool Contains(Vector3 point)
         {
             Vector3 offset = point - transform.position;

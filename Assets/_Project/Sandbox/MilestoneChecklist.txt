@@ -1,26 +1,23 @@
-<b>Milestone 7b: what to test in Sandbox_Repo</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
-Reset scene (bottom right) reloads the scene. The lost Valuables count is at the top center.
-The Repo squad (GleebPeep, 2 Greys, Tractor Drone, Shield Bearer, Auditor, Notary) patrols the north, all at rank
-B. A Tow Saucer waits by the prop row south of you. Green discs are crop circles (east and west). The red button
-switches the Mothership Strike on and off. 7a's behavior (dragging citizens, crop circles, GleebPeep) still holds.
+<b>Milestone 8a: what to test in Sandbox_Map</b>   (Caps Lock hides this. HUD bottom left, map launcher top right.)
+Reset scene (bottom right) reloads the scene and builds a new map. Alt + mouse wheel zooms the camera out.
+Lot colors show the district: gray Downtown (Stone walls), brown Industrial (Metal), green Residential (Wood).
+Blue squares are exit zones, green discs crop circles. Each building's name floats above it.
 
-<b>Tow Saucer</b>
-1. At the start, the Tow Saucer beams the bench (the only prop light enough) and tows it into a crop circle,
-   where it vanishes. It then tows or beams up anything else in 15 m: a citizen is abducted in the circle, a
-   Valuable goes into its bag count and is lost in the circle.
-2. Hit the Tow Saucer while it tows: it lets go where it is.
-3. Defeat the Tow Saucer next to a goon and a citizen: it crashes, hurting everyone within 5 m (you, its own
-   side and citizens too), for 50 before Armor.
+<b>Building maps</b>
+1. On Play, a Medium map builds around a Bank, with you on the street crossing nearest its center. The launcher
+   reads 3 x 3 blocks, 252 m, key building Bank. The Console has one "Map:" line and no errors.
+2. Pick Small and press Build: 2 x 2 blocks, 172 m. Pick Large: 5 x 5 blocks, 412 m. Build each a few times
+   (New seed): blocks never overlap, every block has streets on all four sides, and blocks appear turned.
+3. Pick Lab: every block is Industrial (brown). Pick House: every block is Residential (green). Pick Park: the
+   key building reads "none (outdoor)" and the map has a pond-and-trees block.
+4. Note the seed, press Build again: the same map. Press New seed: a different one.
+5. Pick SWIFT Tower and Build: the launcher says no Downtown block holds it, and the old map stays.
 
-<b>Auditor and Notary</b>
-4. Let the Auditor see you from far off while the rest of the squad hasn't: every squad member within 30 m gets
-   the "!" at once and comes for you, even behind cover.
-5. Next to the Notary, squad members' labels show Notarized, and they take 25% less damage. Pull one more than 10 m from the Notary: it loses Notarized within half a second. The Notary itself
-   never has it.
-
-<b>Tractor Beam props and the Mothership</b>
-6. Stand behind a prop in line with GleebPeep: Tractor Beam pulls the prop toward it too. It doesn't break
-   (the bench too) and hurts no one on the way.
-7. Press "Mothership: off": it turns on and counts down 30 s. Then a red ring with a 5 s countdown appears where
-   you stand; anyone still inside when it lands takes 300 Energy damage before defenses. It repeats every 30 s
-   until you switch it off.
+<b>Exits, crop circles and the NavMesh</b>
+6. The exit count sets how many blue squares appear, spread round the outer street on the map's edges.
+7. With Crop circles ticked, rank D gives 1 green disc, B gives 3 and S gives 5, each on open ground in a block.
+   Untick it: none.
+8. Press Spawn Grey: a Grey appears on the open ground nearest you (one per press, each in a new spot). Once it
+   notices you, it walks to you along streets and through doorways, round ponds and trees, never through walls.
+9. Break a building wall, then stand inside: a Grey now paths through the gap.
+10. Build a Large map and note the NavMesh bake time in the launcher. Tell Claude the Medium and Large times.

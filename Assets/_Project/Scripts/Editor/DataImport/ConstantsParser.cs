@@ -5,7 +5,7 @@ using Zenthium.Data;
 namespace Zenthium.Editor.DataImport
 {
     /// <summary>
-    /// Reads constants.csv into the formula, entity, module, rank scaling, economy and world constants and the tier tables.
+    /// Reads constants.csv into the formula, entity, module, rank scaling, economy, world, AI and map constants and the tier tables.
     /// Every constant the game uses must be present, and every name must be one it knows,
     /// so a typo can't go unnoticed.
     /// </summary>
@@ -22,6 +22,7 @@ namespace Zenthium.Editor.DataImport
         private const string TierGroup = "tier";
         private const string WorldGroup = "world";
         private const string AiGroup = "ai";
+        private const string MapGroup = "map";
 
         private const string IncomeMixPrefix = "income_mix.";
         private const string MaterialHpPrefix = "material_hp.";
@@ -64,6 +65,7 @@ namespace Zenthium.Editor.DataImport
                     case EconomyGroup:
                     case WorldGroup:
                     case AiGroup:
+                    case MapGroup:
                         if (name.StartsWith(IncomeMixPrefix, StringComparison.Ordinal))
                         {
                             ReadIncomeMix(row, name, incomeMixes, errors);
@@ -165,6 +167,13 @@ namespace Zenthium.Editor.DataImport
                 cowardChance: reader.Float("coward_chance"),
                 citizenFearRange: reader.Float("citizen_fear_range_m"),
                 stubbornDragSlow: reader.Float("stubborn_drag_slow"));
+            data.Map = new MapConstants(
+                smallSize: reader.Float("map_size_small_m"),
+                mediumSize: reader.Float("map_size_medium_m"),
+                largeSize: reader.Float("map_size_large_m"),
+                blockSize: reader.Float("block_size_m"),
+                streetWidth: reader.Float("street_width_m"),
+                exitZoneSize: reader.Float("exit_zone_size_m"));
             reader.ReportUnused();
         }
 

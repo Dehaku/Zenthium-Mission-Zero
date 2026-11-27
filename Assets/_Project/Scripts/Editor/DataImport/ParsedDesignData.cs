@@ -17,6 +17,7 @@ namespace Zenthium.Editor.DataImport
         public FireConstants Fire { get; internal set; }
         public ValuableConstants Valuables { get; internal set; }
         public AiConstants Ai { get; internal set; }
+        public MapConstants Map { get; internal set; }
         public TierTables Tiers { get; internal set; }
         public List<ModuleRecord> Modules { get; } = new List<ModuleRecord>();
 

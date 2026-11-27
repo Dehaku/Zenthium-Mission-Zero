@@ -204,12 +204,18 @@ namespace Zenthium.Editor
             new PropSpec(DataIds.Props.Motorcycle, "Motorcycle", 13f, new Vector3(0.8f, 1f, 2f), true),
         };
 
-        /// <summary>Scene objects the structures need.</summary>
+        /// <summary>
+        /// Scene objects the structures need. For a block prefab, Room and Registry are null: the map builder hands
+        /// them over at runtime.
+        /// </summary>
         internal sealed class BuildContext
         {
             public PlayerSandboxSceneCreator.Room Room;
             public BuildingRegistry Registry;
             public Transform Labels;
+
+            // Off for block prefabs: a map has hundreds of walls, and a label each would cost too much.
+            public bool LabelsStructures = true;
         }
 
         [MenuItem(MenuPath)]
@@ -451,7 +457,7 @@ namespace Zenthium.Editor
             return turret;
         }
 
-        private static Transform CreateBuilding(BuildContext context, string buildingName, LocationType location)
+        internal static Transform CreateBuilding(BuildContext context, string buildingName, LocationType location)
         {
             var root = new GameObject(buildingName);
             Wire(root.AddComponent<Building>(), so =>
@@ -463,7 +469,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>A wall from one corner to another along the ground. Building walls carve the NavMesh.</summary>
-        private static Transform Wall(BuildContext context, Transform parent, StructureMaterial material, Vector3 from,
+        internal static Transform Wall(BuildContext context, Transform parent, StructureMaterial material, Vector3 from,
             Vector3 to)
         {
             Transform wall = Panel(context, parent, material + " Wall", material, from, to, WallThickness);
@@ -476,7 +482,7 @@ namespace Zenthium.Editor
         /// A wall with a gap <see cref="OpeningWidth"/> wide, centered <paramref name="openingCenter"/> meters from
         /// <paramref name="from"/>, which the callback fills (with a door or a window).
         /// </summary>
-        private static void WallWithOpening(BuildContext context, Transform parent, StructureMaterial material,
+        internal static void WallWithOpening(BuildContext context, Transform parent, StructureMaterial material,
             Vector3 from, Vector3 to, float openingCenter, System.Action<(Vector3 From, Vector3 To)> fillOpening)
         {
             Vector3 along = (to - from).normalized;
@@ -487,7 +493,7 @@ namespace Zenthium.Editor
             fillOpening((openingFrom, openingTo));
         }
 
-        private static void CreateWindow(BuildContext context, Transform parent, (Vector3 From, Vector3 To) opening,
+        internal static void CreateWindow(BuildContext context, Transform parent, (Vector3 From, Vector3 To) opening,
             Vector3 outward)
         {
             Transform window = Panel(context, parent, "Window", StructureMaterial.Glass, opening.From, opening.To,
@@ -500,7 +506,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>A door: a trigger box around the doorway, with its panel as a child. Doors don't carve.</summary>
-        private static void CreateDoor(BuildContext context, Transform parent, (Vector3 From, Vector3 To) opening,
+        internal static void CreateDoor(BuildContext context, Transform parent, (Vector3 From, Vector3 To) opening,
             StructureMaterial material, bool isLocked, Vector3 outward)
         {
             Vector3 center = Midpoint(opening);
@@ -549,7 +555,8 @@ namespace Zenthium.Editor
         private static Structure AddStructure(BuildContext context, GameObject target)
         {
             var structure = target.AddComponent<Structure>();
-            Wire(structure, so => SetReference(so, StructureFields.World, context.Room.World));
+            Wire(structure, so => SetReference(so, StructureFields.World,
+                context.Room != null ? context.Room.World : null));
             return structure;
         }
 
@@ -561,7 +568,7 @@ namespace Zenthium.Editor
             obstacle.carving = true;
         }
 
-        private static void CreateZone(Transform building, string zoneName, Rect area)
+        internal static void CreateZone(Transform building, string zoneName, Rect area)
         {
             var zone = new GameObject(zoneName);
             zone.transform.SetParent(building, false);
@@ -579,7 +586,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>A label over the building with its fire state, and its orange and black fire colors.</summary>
-        private static void AddBuildingViews(BuildContext context, Transform root, string title, Vector3 labelPoint)
+        internal static void AddBuildingViews(BuildContext context, Transform root, string title, Vector3 labelPoint)
         {
             var building = root.GetComponent<Building>();
             Wire(root.gameObject.AddComponent<BuildingFireView>(),
@@ -644,24 +651,39 @@ namespace Zenthium.Editor
             });
         }
 
-        private static void CreateSocket(Transform building, string socketName, Vector3 position,
+        internal static void CreateSocket(Transform building, string socketName, Vector3 position,
             SocketContent content)
         {
+            CreateSocket(building, socketName, position, new SocketOption(content, 1f));
+        }
+
+        /// <summary>A socket with weighted options (maps.md, Sockets).</summary>
+        internal static void CreateSocket(Transform parent, string socketName, Vector3 position,
+            params SocketOption[] socketOptions)
+        {
             var socket = new GameObject(socketName);
-            socket.transform.SetParent(building, false);
+            socket.transform.SetParent(parent, false);
             socket.transform.position = position;
             Wire(socket.AddComponent<MapSocket>(), so =>
             {
                 SerializedProperty options = Find(so, SocketFields.Options);
-                options.arraySize = 1;
-                SerializedProperty option = options.GetArrayElementAtIndex(0);
-                option.FindPropertyRelative(SocketFields.Content).enumValueIndex = (int)content;
-                option.FindPropertyRelative(SocketFields.Weight).floatValue = 1f;
+                options.arraySize = socketOptions.Length;
+                for (int i = 0; i < socketOptions.Length; i++)
+                {
+                    SerializedProperty option = options.GetArrayElementAtIndex(i);
+                    option.FindPropertyRelative(SocketFields.Content).enumValueIndex = (int)socketOptions[i].Content;
+                    option.FindPropertyRelative(SocketFields.Weight).floatValue = socketOptions[i].Weight;
+                }
             });
         }
 
         private static void AddLabel(BuildContext context, Structure target, string title)
         {
+            if (!context.LabelsStructures)
+            {
+                return;
+            }
+
             TextMeshPro text = CreateWorldText(context.Labels, title + " Label",
                 target.transform.position + LabelOffset, title);
             Wire(text.gameObject.AddComponent<StructureDebugLabel>(), so =>

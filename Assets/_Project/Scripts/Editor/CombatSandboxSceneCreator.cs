@@ -326,7 +326,7 @@ namespace Zenthium.Editor
             return text;
         }
 
-        private static TMP_InputField CreateInput(
+        internal static TMP_InputField CreateInput(
             Transform parent, TMP_DefaultControls.Resources resources, string placeholder, string value)
         {
             GameObject inputObject = TMP_DefaultControls.CreateInputField(resources);

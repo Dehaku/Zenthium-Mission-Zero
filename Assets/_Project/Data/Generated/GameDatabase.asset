@@ -112,6 +112,13 @@ MonoBehaviour:
     cowardChance: 0.25
     citizenFearRange: 20
     stubbornDragSlow: 0.2
+  mapConstants:
+    smallSize: 150
+    mediumSize: 250
+    largeSize: 400
+    blockSize: 68
+    streetWidth: 12
+    exitZoneSize: 10
   tiers:
     entries:
     - scale: 0

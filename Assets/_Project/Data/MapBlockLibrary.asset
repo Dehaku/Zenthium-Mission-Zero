@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c19a48634f8bab643a63cc2234742708, type: 3}
+  m_Name: MapBlockLibrary
+  m_EditorClassIdentifier: Zenthium.World::Zenthium.World.MapBlockLibrary
+  blocks:
+  - {fileID: 4638207830761014709, guid: 95dbb3b5ff9b46145aa319cf630bd616, type: 3}
+  - {fileID: 4648794351986531836, guid: 55100389f8d63b5468e74449fffd1130, type: 3}
+  - {fileID: 8098542066137154045, guid: 15f2577a2d3f3ff4da751ab601b99da4, type: 3}
+  - {fileID: 3627080863048475770, guid: f6f57edfa8078364fbdb39e27c050581, type: 3}
+  - {fileID: 4826105811340159528, guid: 8b0c23570aaff804a9a61e0ab3caaa4d, type: 3}
+  - {fileID: 8914885444961886174, guid: d82080aca2f097146b00a48ebe3027e3, type: 3}
+  - {fileID: 2247055944644158272, guid: 229578df435c90644bc06a044f2b527f, type: 3}
+  - {fileID: 1093854381467428419, guid: 9458660d77a60904d890540ce50864a0, type: 3}
+  - {fileID: 1847641413208814781, guid: 1ae966f0a3b58e849937263f568f5a7f, type: 3}
+  - {fileID: 922298811905285299, guid: 0b8fe5188a5b7c54883bd9c4a6dfcb01, type: 3}
+  - {fileID: 8444056730681011750, guid: 2a571d45df60a2c4a92d1bba25be38d0, type: 3}
+  - {fileID: 1140406976232383299, guid: f07c1685abb17a043a1d6b056d8a6b35, type: 3}
+  - {fileID: 6363912358960300604, guid: 8fe75d220878715428578876399b9e26, type: 3}
+  - {fileID: 7595466749200812495, guid: 0b364c1eed4fe6c48b672b8f6cac03f6, type: 3}
+  - {fileID: 3513804265596385560, guid: 3076fae168bda0d47b5548591752f4d8, type: 3}
+  - {fileID: 6551123943890943423, guid: 08ab19826d6e6ef4cab7e8968884b4e0, type: 3}

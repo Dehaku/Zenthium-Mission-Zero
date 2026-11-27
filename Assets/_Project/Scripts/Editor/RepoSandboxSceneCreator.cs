@@ -268,7 +268,7 @@ namespace Zenthium.Editor
         /// The AI body prefab Call for Backup spawns (it drags citizens only when its data lists Drag), and the
         /// scene's spawner, which the Module World uses.
         /// </summary>
-        private static void CreateSpawner(PlayerSandboxSceneCreator.Room room, MapBounds mapBounds, EntityData grey)
+        internal static void CreateSpawner(PlayerSandboxSceneCreator.Room room, MapBounds mapBounds, EntityData grey)
         {
             GameObject body = PlayerSandboxSceneCreator.BuildEntityBody("AI Entity", room.Database, null, grey,
                 Team.Enemy);

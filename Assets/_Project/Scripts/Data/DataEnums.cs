@@ -133,4 +133,20 @@ namespace Zenthium.Data
         Mansion,
         Park,
     }
+
+    /// <summary>Blazithion's districts (maps.md, Locations). A mission's location decides its district.</summary>
+    public enum District
+    {
+        Downtown,
+        Industrial,
+        Residential,
+    }
+
+    /// <summary>Map sizes (maps.md, Size). Their meters are in constants.csv.</summary>
+    public enum MapSize
+    {
+        Small,
+        Medium,
+        Large,
+    }
 }

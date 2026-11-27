@@ -5,8 +5,8 @@ namespace Zenthium.World
     /// <summary>
     /// The map's playable area, a rectangle on the XZ plane centered on this object. Fleeing cowards and goons
     /// carrying Valuables off the map head for its nearest edge and escape once they're within the edge margin
-    /// (enemies.md, Limits; missions.md: fleeing enemies can leave from any edge). The map builder sizes it from
-    /// Milestone 8.
+    /// (enemies.md, Limits; missions.md: fleeing enemies can leave from any edge). On an assembled map,
+    /// <see cref="MapAssembler"/> sizes it, so everything that references it follows the new map.
     /// </summary>
     public sealed class MapBounds : MonoBehaviour
     {
@@ -23,6 +23,13 @@ namespace Zenthium.World
                 Vector3 center = transform.position;
                 return new Rect(center.x - size.x * 0.5f, center.z - size.y * 0.5f, size.x, size.y);
             }
+        }
+
+        /// <summary>For a map assembled at runtime: a square of this many meters across, centered on the point.</summary>
+        public void SetArea(Vector3 center, float side)
+        {
+            transform.position = center;
+            size = new Vector2(side, side);
         }
 
         /// <summary>The nearest point on the map's edge, at the position's height.</summary>

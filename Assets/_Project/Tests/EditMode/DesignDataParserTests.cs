@@ -242,6 +242,20 @@ namespace Zenthium.Tests.EditMode
         }
 
         [Test]
+        public void Parse_MapConstants_AreRead()
+        {
+            DesignDataParseResult result = DesignDataTestCsv.Parse();
+
+            Assert.That(result.Errors, Is.Empty);
+            Assert.That(result.Data.Map.Size(MapSize.Small), Is.EqualTo(150f));
+            Assert.That(result.Data.Map.Size(MapSize.Medium), Is.EqualTo(250f));
+            Assert.That(result.Data.Map.Size(MapSize.Large), Is.EqualTo(400f));
+            Assert.That(result.Data.Map.BlockSize, Is.EqualTo(68f));
+            Assert.That(result.Data.Map.StreetWidth, Is.EqualTo(12f));
+            Assert.That(result.Data.Map.ExitZoneSize, Is.EqualTo(10f));
+        }
+
+        [Test]
         public void Parse_MaterialWithoutHp_Fails()
         {
             string constants = DesignDataTestCsv.Constants.Replace("world,material_hp.Metal,600,\n", string.Empty);

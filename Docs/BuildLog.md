@@ -1473,3 +1473,105 @@ The second half of Milestone 7: the last three Repo entities and their modules, 
 
 ### Test run (2026-11-27)
 - All 494 EditMode tests pass. The user passed the in-game checklist.
+
+## Milestone 8a: Map generation, blocks, layout and the assembler (checked by the user, 2026-11-27)
+
+The first half of Milestone 8, split as approved: the block format, the street grid layout, the runtime map builder with its NavMesh bake, sockets, exit zones and crop circles, graybox blocks, the launcher sandbox and `Docs/HowTo_AddBlock.md`. 8b does the fog of war (the custom option, chosen by the user).
+
+### Done
+- **Data (local edit, approved):** `constants.csv` gets a `map` group:
+  - `map_size_small_m` 150, `map_size_medium_m` 250 and `map_size_large_m` 400, from `maps.md`;
+  - `block_size_m` 68, `street_width_m` 12 and `exit_zone_size_m` 10, the user's choices.
+  - They're read into the new `MapConstants` (`GameDatabase.MapConstants`). New enums: `District` and `MapSize`.
+- **Layout (plain C#, World):**
+  - `LocationDistricts`: each location's district, from `maps.md`. SWIFT Tower is unique.
+  - `MapLayout`: a square grid of equal blocks with streets between and around them, so every block faces streets on all four sides.
+    - Blocks per side is the whole number nearest the target size: Small 2 × 2 (172 m), Medium 3 × 3 (252 m), Large 5 × 5 (412 m).
+    - The key block holds the mission's location and goes in a random cell.
+    - The other cells are filled from a shuffled bag of the district's blocks, so blocks repeat as little as the district allows. A unique block (SWIFT Tower) is only ever the key block.
+    - Each block is turned 0, 90, 180 or 270° at random.
+  - `SeededRandomSource` (Core): the same seed builds the same map.
+- **Sockets:**
+  - `SocketPicker`: a socket's weight for some content, weighted picks, and a socket rolling its own content.
+  - `MapSockets`, the API for Milestone 9:
+    - `TryTake(content)` picks a free socket that offers the content, weighted;
+    - `TryTake(socket)` takes a chosen socket;
+    - `TryTakeAndRoll` takes a socket and rolls its own content by its weights;
+    - `Release` frees a socket.
+- **Blocks:** `MapBlock` (component on a block prefab): its district, and its locations (its Buildings' plus extra ones, such as Park). `MapBlockLibrary` (ScriptableObject) lists the block prefabs.
+- **`MapAssembler` (component), `TryAssemble(MapRequest)`:**
+  1. lays out the map, then builds it inactive: the ground, then the blocks, handing each Structure the Module World and each Building the registry;
+  2. switches the map on and works out building neighbors;
+  3. sizes `MapBounds` (new `SetArea`), so the spawner and AI that reference it follow the map;
+  4. bakes the NavMesh at runtime (`NavMeshBuilder`, no package code). Walls, windows, props, doors and interior zones are left out of the bake, so they keep carving and opening as before. The bake time is logged and kept in `LastBakeMilliseconds`;
+  5. places exit zones;
+  6. places crop circles for a faction with `LootDestination:CropCircle`: `CropCircleRules.Count(level)` of them, in weighted sockets that offer one. It warns when there are too few sockets.
+  - A new map replaces the last one, and removes the old NavMesh.
+  - It exposes `Layout`, `Sockets`, `KeyBuilding`, `ExitZones`, `CropCircles` and `CenterCrossing`.
+- **Exit zones:** `ExitZone` (component, `Contains`) and `ExitZonePlacement` (plain C#): the zones are spread evenly round the middle of the outer street from a random start, so they sit on the map's edges.
+- **Crop circles:** `CropCircle.Configure(world, faction)` for runtime placement.
+- **Editor:**
+  - `Zenthium > Map > Create Graybox Blocks`: 16 block prefabs in `Prefabs/Blocks/Graybox/`, one per location except SWIFT Tower.
+    - Each holds its location's building and a second building from the same district, with doors, windows, arson sockets, a Valuables socket, and two open sockets (Crop Circle, Goon, Citizen).
+    - A Park holds a pond, trees and three open sockets.
+    - Lots are tinted by district; walls are Stone downtown, Metal in Industrial and Wood in Residential.
+  - `Zenthium > Map > Refresh Block Library`: fills `Assets/_Project/Data/MapBlockLibrary.asset` from `Prefabs/Blocks/` and warns about locations that no block holds.
+  - `Zenthium > Setup > Create Map Sandbox Scene` builds `Sandbox_Map`:
+    - the room's services and player, without the room, its dummies or the combat panel;
+    - the building registry, `MapBounds`, the faction spawner and `AiEntity.prefab`, and the map assembler;
+    - the ground, exit zone and crop circle prefabs in `Prefabs/Map/`;
+    - the launcher (`MapLauncherPanel`): size, location, seed, exits, rank and crop circles; it builds the map and moves the player to the crossing nearest the center, and "Spawn Grey" spawns one in the nearest free Goon socket.
+  - `WorldSandboxSceneCreator`'s building helpers are internal and can build prefabs (no room or registry, no per-wall labels). They gained `CreateSocket` with weighted options. `RepoSandboxSceneCreator.CreateSpawner`, `CombatSandboxSceneCreator.CreateInput` and `AiSandboxSceneCreator.ModuleMaterial` are internal.
+- **Docs:** `Docs/HowTo_AddBlock.md`.
+- **Checklist:** `MilestoneChecklist.txt` holds 8a's tests (10).
+- **Tests (EditMode):**
+  - New classes: `MapLayoutTests`, `SocketPickerTests`, `ExitZonePlacementTests` and `LocationDistrictsTests`.
+  - New test: `DesignDataParserTests.Parse_MapConstants_AreRead`.
+  - Fixture: `DesignDataTestCsv` has the map rows. No existing assertions changed.
+
+### Decisions (approved by the user, 2026-11-27)
+- Milestone 8 is split into 8a (maps) and 8b (fog of war).
+- Fog of war: the custom CPU visibility grid, in 8b.
+- The map numbers above go in `constants.csv`. Every block has the same square footprint.
+- Graybox blocks come from an editor command.
+- The key block goes in a fully random cell.
+
+### Choices made in code (not asked)
+- **Exit zone size:** 10 m was Claude's pick; the user confirmed it after the check.
+- **Streets** run round the outside of the map too, so exit zones sit on a street on the edge. The map comes out a little off the target size (172, 252 and 412 m).
+- **Crop circles** go only in sockets that offer one, by maps.md ("missions fill sockets ... crop circles"), not anywhere on open ground.
+- **The bake** uses physics colliders under the map, not render meshes, so labels and lot visuals stay out of it.
+- **The launcher builds a map on Start** with a random seed.
+
+### Stubs and deferred
+- **8b:** fog of war (custom grid; line of sight through windows, doors and broken walls).
+- **Milestone 9:**
+  - filling sockets with citizens, goons, Valuables, Countdown targets and Heavy Turrets;
+  - the 10% chance for a civilian to carry a Valuable, and citizens' kinds, from the spawner;
+  - exit zone counts per rank ("fewer, farther away", `difficulty.md`) and capture in exit zones;
+  - map size from rank;
+  - locked doors and their materials by rank;
+  - where the player starts (the launcher uses the center crossing).
+- **The user's blocks:** hand-built blocks, at least one per location in `maps.md` except SWIFT Tower, which replace the graybox ones over time.
+
+### Editor steps for the user
+1. **Let Unity compile.**
+2. **Run Zenthium > Data > Import Design CSVs.** `constants.csv` has the new `map` rows.
+3. **Run Zenthium > Map > Create Graybox Blocks.** It refreshes the block library too. Expect one Console warning: no block holds SwiftTower.
+4. **Run Zenthium > Setup > Create Map Sandbox Scene** and choose Replace.
+5. **Press Play in `Sandbox_Map`** and work through the checklist (Caps Lock).
+
+### What to check
+- [ ] The Console has no errors after compiling, importing, creating the blocks and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`GameDatabase`, the constants parser, `MapBounds`, `CropCircle`, the sandbox creators).
+  - New classes: `MapLayoutTests`, `SocketPickerTests`, `ExitZonePlacementTests`, `LocationDistrictsTests`.
+  - Changed: `DesignDataParserTests` (one new test) and the `DesignDataTestCsv` fixture.
+- [ ] Every item on the in-game checklist (10), including the Medium and Large NavMesh bake times.
+
+### Open questions and findings
+- **Bake time on WebGL:** the editor time is only a guide. Milestone 8's "plays smoothly in a WebGL development build" check is after 8b.
+- **Design mirror:** `constants.csv` now has the `map` group, which the design branch doesn't.
+
+### Test run (2026-11-27)
+- All 548 EditMode tests pass. The user passed the in-game checklist (10), and the user confirmed the 10 m exit zones.
+- NavMesh bake in the Editor: Medium 96, 98 and 100 ms; Large 248, 260 and 285 ms.

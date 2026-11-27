@@ -96,7 +96,13 @@ namespace Zenthium.Tests.EditMode
             "ai,coward_hp_fraction,0.2,\n" +
             "ai,coward_chance,0.25,\n" +
             "ai,citizen_fear_range_m,20,\n" +
-            "ai,stubborn_drag_slow,0.2,\n";
+            "ai,stubborn_drag_slow,0.2,\n" +
+            "map,map_size_small_m,150,\n" +
+            "map,map_size_medium_m,250,\n" +
+            "map,map_size_large_m,400,\n" +
+            "map,block_size_m,68,\n" +
+            "map,street_width_m,12,\n" +
+            "map,exit_zone_size_m,10,\n";
 
         private const string ModulesHeader =
             "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,damage_type,tags,budget_ok,notes\n";
