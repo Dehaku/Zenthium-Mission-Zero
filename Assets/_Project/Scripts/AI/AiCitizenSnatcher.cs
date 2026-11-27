@@ -93,11 +93,9 @@ namespace Zenthium.AI
             drag.ReleaseAll(released);
             foreach (IDragTarget target in released)
             {
-                if (target.Kind == DragTargetKind.Citizen && target is Component component
-                    && component.TryGetComponent(out EntityBehaviour citizen) && citizen.Entity != null
-                    && citizen.Entity.Abduct())
+                if (target.Kind == DragTargetKind.Citizen && target is IStealable citizen)
                 {
-                    citizen.gameObject.SetActive(false);
+                    citizen.Steal();
                 }
             }
 

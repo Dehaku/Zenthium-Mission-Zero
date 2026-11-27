@@ -34,6 +34,12 @@ namespace Zenthium.Modules
                     return TryCreatePull(data, PullDestination.User, true, out behaviour, out problem);
                 case DataIds.Modules.CallForBackup:
                     return TryCreateBackup(data, out behaviour, out problem);
+                case DataIds.Modules.Audit:
+                    return TryCreateNeedingRange(data, () => new AuditModule(data), out behaviour, out problem);
+                case DataIds.Modules.Notarized:
+                    return TryCreateNotarized(data, out behaviour, out problem);
+                case DataIds.Modules.TowBeam:
+                    return TryCreateNeedingRange(data, () => new TowBeamModule(data), out behaviour, out problem);
                 case DataIds.Modules.InkLash:
                     // modules.md: Ink Lash scales with Rune's Will, the summoner's.
                     return TryCreateMelee(data, true, out behaviour, out problem);
@@ -242,6 +248,20 @@ namespace Zenthium.Modules
 
             data.TryGetDamageType(out DamageType type);
             behaviour = new PullModule(data, new HitEffects(data, null, type), destination, pullsEveryOpponent);
+            return true;
+        }
+
+        private static bool TryCreateNotarized(ModuleData data, out ModuleBehaviour behaviour, out string problem)
+        {
+            behaviour = null;
+            bool hasReduction = data.Values.TryGetNumber(NotarizedPassive.DamageReductionKey, out float reduction);
+            if (!Require(data.RadiusTier.IsSet && hasReduction,
+                    "a radius tier and " + NotarizedPassive.DamageReductionKey, out problem))
+            {
+                return false;
+            }
+
+            behaviour = new NotarizedPassive(data, reduction);
             return true;
         }
 

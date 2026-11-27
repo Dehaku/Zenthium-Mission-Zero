@@ -26,7 +26,7 @@ namespace Zenthium.AI
     /// Presentation reads its state and events.
     /// </summary>
     [RequireComponent(typeof(EntityModules), typeof(EntityMotor), typeof(AiNavigator))]
-    public sealed class AiBrain : MonoBehaviour, IAwarenessReset
+    public sealed class AiBrain : MonoBehaviour, IAwarenessReset, IAwarenessReveal
     {
         private const int MaxSightHits = 16;
         private static readonly SlotType[] ActivatedSlotTypes = { SlotType.Active, SlotType.Gear };
@@ -75,6 +75,7 @@ namespace Zenthium.AI
         private AiNavigator navigator;
         private AiLooter looter;
         private AiCitizenSnatcher snatcher;
+        private AiTower tower;
         private Entity entity;
         private Awareness awareness;
         private Cowardice cowardice;
@@ -137,6 +138,15 @@ namespace Zenthium.AI
             }
         }
 
+        /// <summary>Audit: it notices at once, as from an alert, and knows where the player is (modules.md).</summary>
+        public void Reveal(Vector3 position)
+        {
+            if (entity != null && !entity.IsIncapacitated)
+            {
+                ReceiveAlert(position, true);
+            }
+        }
+
         internal bool IsNear(Vector3 point, float distance)
         {
             return navigator.IsNear(point, distance);
@@ -149,6 +159,7 @@ namespace Zenthium.AI
             navigator = GetComponent<AiNavigator>();
             TryGetComponent(out looter);
             TryGetComponent(out snatcher);
+            TryGetComponent(out tower);
         }
 
         /// <summary>
@@ -702,7 +713,53 @@ namespace Zenthium.AI
                 return false;
             }
 
-            return TryDeliverCitizens() || TryLootOrSnatch() || TryDeliverLoot();
+            return TryDeliverCitizens() || TryDeliverTow() || TryStartTow() || TryLootOrSnatch() || TryDeliverLoot();
+        }
+
+        /// <summary>Tows the nearest thing in Tow Beam's range (modules.md), when it has Tow Beam ready.</summary>
+        private bool TryStartTow()
+        {
+            if (tower == null || !tower.TryStartTow())
+            {
+                return false;
+            }
+
+            State = AiState.Looting;
+            Target = null;
+            navigator.Stop();
+            return true;
+        }
+
+        /// <summary>
+        /// Towing, it takes what it tows into a crop circle, where it's taken for good once inside, or off the map
+        /// (<see cref="LootRules.TowDelivery"/>).
+        /// </summary>
+        private bool TryDeliverTow()
+        {
+            if (tower == null || !tower.IsTowing)
+            {
+                return false;
+            }
+
+            bool hasCropCircle = TryFindCropCircle(out ILootDestination cropCircle);
+            LootDelivery delivery = LootRules.TowDelivery(hasCropCircle);
+            if (delivery != LootDelivery.CropCircle)
+            {
+                return GoTo(delivery);
+            }
+
+            State = AiState.Objective;
+            Target = null;
+            if (cropCircle.Contains(tower.TowedPosition))
+            {
+                tower.StealTowed();
+            }
+            else
+            {
+                navigator.MoveTo(cropCircle.Position, 1f);
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -886,6 +943,11 @@ namespace Zenthium.AI
             if (snatcher != null)
             {
                 snatcher.TakeCitizensOffMap();
+            }
+
+            if (tower != null)
+            {
+                tower.StealTowed();
             }
 
             if (entity.Escape())

@@ -1,2 +1,2 @@
 faction,tags,arrival,mission_weights,location_weights,values,notes
-Galactic Repo Agency,LootDestination:CropCircle,Beam,rescue=3; invasion=2; countdown=1; arson_riot=1,bank=2; museum=2; park=2,crop_circles_base=1; crop_circles_per_rank=1; crop_circles_max=5; crop_circle_radius_m=3,Factions/GalacticRepoAgency.md. Weights are relative; unlisted is 1
+Galactic Repo Agency,LootDestination:CropCircle,Beam,rescue=3; invasion=2; countdown=1; arson_riot=1,bank=2; museum=2; park=2,crop_circles_base=1; crop_circles_per_rank=1; crop_circles_max=5; crop_circle_radius_m=3; mothership_interval_s=30; mothership_countdown_s=5; mothership_damage=300; mothership_radius_m=5,Factions/GalacticRepoAgency.md. Weights are relative; unlisted is 1

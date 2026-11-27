@@ -1,25 +1,26 @@
-<b>Milestone 7a: what to test in Sandbox_Repo</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
+<b>Milestone 7b: what to test in Sandbox_Repo</b>   (Caps Lock hides this. HUD bottom left, hero select top right.)
 Reset scene (bottom right) reloads the scene. The lost Valuables count is at the top center.
-The Repo squad (GleebPeep, 2 Greys, a Tractor Drone, a Shield Bearer) patrols the north, all at rank B. Green discs
-are crop circles (east and west). Citizens: downed (1 Valuable) and Stubborn north of you, Scared to the east.
-A stash of 3 Valuables lies north-west. Labels show each entity's state and each citizen's kind.
+The Repo squad (GleebPeep, 2 Greys, Tractor Drone, Shield Bearer, Auditor, Notary) patrols the north, all at rank
+B. A Tow Saucer waits by the prop row south of you. Green discs are crop circles (east and west). The red button
+switches the Mothership Strike on and off. 7a's behavior (dragging citizens, crop circles, GleebPeep) still holds.
 
-<b>Crop circles and dragging</b>
-1. At the start, a Grey walks to the downed citizen, drags it ("Looting", then "Objective") into the nearest crop
-   circle, and the citizen vanishes for good. Its Valuable lies where it was downed.
-2. The other Grey drags the Stubborn citizen (it walks slower while dragging it) into a crop circle.
-3. Repo entities that pick up Valuables carry them into a crop circle, GleebPeep included: lost count goes up.
-4. Walk into a crop circle carrying Valuables: you lose them all (lost count goes up). You aren't abducted.
-5. Drag a citizen yourself into a crop circle: it's abducted. Come within range of a Grey dragging a citizen: it
-   stops to shoot you, still holding the citizen, and carries on to the crop circle once you back off.
+<b>Tow Saucer</b>
+1. At the start, the Tow Saucer beams the bench (the only prop light enough) and tows it into a crop circle,
+   where it vanishes. It then tows or beams up anything else in 15 m: a citizen is abducted in the circle, a
+   Valuable goes into its bag count and is lost in the circle.
+2. Hit the Tow Saucer while it tows: it lets go where it is.
+3. Defeat the Tow Saucer next to a goon and a citizen: it crashes, hurting everyone within 5 m (you, its own
+   side and citizens too), for 50 before Armor.
 
-<b>Modules (in priority order)</b>
-6. GleebPeep fights with Call for Backup (3-5 goons and 2 Champions appear around it, every 30 s), Repossess (one of
-   your Gear slots is disabled for 5 s), Final Notice (Marked for 6 s), Tractor Beam (you're pulled toward it;
-   its own goons aren't), then Tablet Slap (melee with knockback). MoreInfo shows the disabled slot.
-7. Set GleebPeep's Difficulty Level to 0 (rank D) in the Inspector before Play: it only uses Tractor Beam and
-   Tablet Slap. At 1 (rank C) it adds Repossess and Final Notice, but not Call for Backup.
-8. The Tractor Drone pulls you (or a citizen) toward the nearest crop circle. The Shield Bearer can't be knocked
-   back (Kick it), and raises its Energy Shield.
-9. Greys are Cowards from the data: below 20% HP, 1 in 4 runs for the map edge. Backup at rank B can include a Tow
-   Saucer, which does nothing yet (Milestone 7b).
+<b>Auditor and Notary</b>
+4. Let the Auditor see you from far off while the rest of the squad hasn't: every squad member within 30 m gets
+   the "!" at once and comes for you, even behind cover.
+5. Next to the Notary, squad members' labels show Notarized, and they take 25% less damage. Pull one more than 10 m from the Notary: it loses Notarized within half a second. The Notary itself
+   never has it.
+
+<b>Tractor Beam props and the Mothership</b>
+6. Stand behind a prop in line with GleebPeep: Tractor Beam pulls the prop toward it too. It doesn't break
+   (the bench too) and hurts no one on the way.
+7. Press "Mothership: off": it turns on and counts down 30 s. Then a red ring with a 5 s countdown appears where
+   you stand; anyone still inside when it lands takes 300 Energy damage before defenses. It repeats every 30 s
+   until you switch it off.

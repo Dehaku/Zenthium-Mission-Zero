@@ -121,3 +121,39 @@ MonoBehaviour:
         word: 
         value: 0
       module: {fileID: 0}
+    - key: mothership_interval_s
+      kind: 0
+      number: 30
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: mothership_countdown_s
+      kind: 0
+      number: 5
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: mothership_damage
+      kind: 0
+      number: 300
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}
+    - key: mothership_radius_m
+      kind: 0
+      number: 5
+      rangeMin: 0
+      rangeMax: 0
+      tier:
+        word: 
+        value: 0
+      module: {fileID: 0}

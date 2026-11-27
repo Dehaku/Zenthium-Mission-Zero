@@ -82,21 +82,11 @@ namespace Zenthium.World
             isLit = false;
             Vector3 origin = transform.position;
             var blast = new Hit(null, prop.Data.ExplosionDamage, DamageType.Physical);
-            world.CollectEntities(origin, prop.Data.ExplosionRadius, reachedEntities);
-            if (world.CombatRules.Pipeline != null)
-            {
-                foreach (EntityBehaviour target in reachedEntities)
-                {
-                    world.CombatRules.Pipeline.Apply(blast, target.Entity);
-                }
-            }
-
-            world.CollectStructures(origin, prop.Data.ExplosionRadius, reachedStructures);
+            AreaBlast.Detonate(world, origin, prop.Data.ExplosionRadius, blast, null, reachedEntities,
+                reachedStructures);
             FireConstants fire = world.Database.FireConstants;
             foreach (IDamageableStructure solid in reachedStructures)
             {
-                solid.TakeHit(new StructureHit(blast, StructureHitKind.Direct));
-
                 // world.md: the blast sets the vehicles in it on fire, but not buildings.
                 if (solid is Component other && other.TryGetComponent(out PropBody vehicle) && vehicle.Data != null
                     && PropRules.Explodes(vehicle.Data) && other.TryGetComponent(out PropBurning burning))

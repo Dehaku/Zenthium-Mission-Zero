@@ -1387,3 +1387,89 @@ The first half of Milestone 7, split as approved: faction data, crop circles, th
 
 ### Test run (2026-11-26)
 - All 473 EditMode tests pass. The user passed the in-game checklist.
+
+## Milestone 7b: Galactic Repo Agency, Auditor, Notary, Tow Saucer and the Mothership (checked by the user, 2026-11-27)
+
+The second half of Milestone 7: the last three Repo entities and their modules, Tractor Beam pulling props, Mothership Strike (built, off), and `Docs/HowTo_AddFaction.md`.
+
+### Done
+- **Data (local edit, approved):** the Repo row of `factions.csv` gets `mothership_interval_s=30; mothership_countdown_s=5; mothership_damage=300; mothership_radius_m=5`. Auditor, Notary and Tow Saucer already had their modules and tags from 7a.
+- **Modules (in `ModuleCatalog`):**
+  - Audit: `AuditModule`. Every entity on the Auditor's side within Long range of it, with no line of sight needed, is revealed the player through `IAwarenessReveal`. `AiBrain` implements it as an alert at the player's position: the "!" at once, then it comes for the player.
+  - Notarized: `NotarizedPassive`. Every 0.25 s, entities on the Notary's side within the Large radius, not the Notary itself, get Notarized (`damage_reduction`) for 0.5 s, so it ends soon after they leave.
+  - Tow Beam: `TowBeamModule`.
+    - It grabs the nearest prop, citizen or Valuable within range (`TowRules.CanTow`).
+    - A Valuable goes straight into the user's bag; a prop or citizen is towed 2 m behind it.
+    - Any hit that lands on the user, or the user going down, makes it let go.
+    - `StealTowed()` takes what it tows for good (`IStealable`).
+  - Tractor Beam (`PullModule`) also pulls every prop in its path through `IPullable`. `PropBody.Pull` flies like a throw but deals no damage and doesn't break.
+- **Shared code:**
+  - `AreaBlast.Detonate`: the environmental blast (every entity and structure in the radius, with no attacker). `VehicleExplosion` now uses it.
+  - `TimedCharge.Arm(world, hit, radius, fuse)`: a charge with no user, for the Mothership, that ends in an `AreaBlast`.
+  - `SideRules.IsOnUsersSide`: same team, not the user, standing and on the map.
+  - `ILootDestination.Contains`. `CropCircle` implements it and uses it for its own check.
+  - `IStealable`:
+    - `EntityDragTarget.Steal` abducts the entity and switches it off.
+    - `PropBody.Steal` switches the prop off.
+    - `AiCitizenSnatcher` uses it to take citizens off the map.
+- **World:**
+  - `CrashOnDefeat` (component): once, when the entity is defeated, an `AreaBlast` of `crash_damage` (Physical) in `crash_radius_m`, from its entities.csv values. Everyone is hit, its own side and citizens too. It does nothing without the values.
+  - `MothershipStrike` (component, off by default; `SetOn` for Milestone 11):
+    - every interval of game time it places a charge at the player;
+    - the charge counts down and deals the damage as Energy in the radius.
+  - `MothershipRules` and `MothershipTimer`.
+- **AI:**
+  - `AiTower` (component): finds the slotted Tow Beam and fires it at the nearest target in range. It does nothing without Tow Beam.
+  - `AiBrain`, while free to loot, works in this order: deliver dragged citizens, deliver what it tows, start a tow, loot or snatch, then deliver Valuables.
+    - What it tows goes into a crop circle, taken once inside, or off the map (`LootRules.TowDelivery`).
+    - Leaving at the map edge takes what it tows too.
+- **Sandbox:** `Sandbox_Repo` adds:
+  - an Auditor and a Notary in the squad;
+  - a Tow Saucer by the prop row (`WorldSandboxSceneCreator.BuildPropRow`, the World sandbox's props without its buildings);
+  - `AiTower` and `CrashOnDefeat` on every Repo entity and the spawner's prefab;
+  - the Mothership Strike with an on/off button (`MothershipToggle`).
+- **Docs:** `Docs/HowTo_AddFaction.md`.
+- **Checklist:** `MilestoneChecklist.txt` holds 7b's tests (7).
+- **Tests (EditMode):**
+  - New classes: `SideRulesTests`, `TowRulesTests` (with `LootRules.TowDelivery`), `MothershipTests` (rules and timer) and `CrashOnDefeatTests`.
+  - No existing tests changed.
+
+### Decisions (approved by the user, 2026-11-26)
+- The Mothership values go in `factions.csv`. Its damage is Energy.
+- The crash is Physical and hits everything in range, its own side and citizens included.
+- A towed prop or citizen delivered to a crop circle or the map edge vanishes. Valuables count as lost.
+- Any hit breaks a tow.
+- Notarized covers entities on the Notary's side, not the Notary itself. Audit reveals to the same set.
+- Audit's range is measured from the Auditor, with no line of sight.
+- Pulled props deal no impact damage.
+
+### Choices made in code (not asked)
+- **Audit** works as an alert: the revealed entities go through the usual "!" wait, then know where the player is. The player is the nearest player-team entity.
+- **A towed Valuable** is beamed straight into the saucer's bag, so it's delivered like looted Valuables: lost in a crop circle.
+- **A crop circle takes a towed prop** once the prop is inside its radius. A towed citizen is abducted by the circle itself.
+- **Tow Beam's targets** must be ones Drag could take: Small props only (strength), citizens, and loose Valuables.
+- **The crash** happens once per entity: a revived saucer doesn't crash again.
+- **The Mothership** targets the first standing player-team entity. Switching it on waits a full interval before the first strike.
+
+### Stubs and deferred
+- **Milestone 8:** crop circles placed by the map builder.
+- **Milestone 9:** arrival tags, the mission picker using weights, and abducted citizens counting against Rescue.
+- **Milestone 11:** switching the Mothership Strike on from rank S.
+
+### Editor steps for the user
+1. **Let Unity compile.**
+2. **Run Zenthium > Data > Import Design CSVs.** `factions.csv` changed.
+3. **Run Zenthium > Setup > Create Repo Agency Sandbox Scene** and choose Replace.
+4. **Press Play in `Sandbox_Repo`** and work through the checklist (Caps Lock).
+
+### What to check
+- [ ] The Console has no errors after compiling, importing and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (`VehicleExplosion`, `TimedCharge`, `PropBody`, `PullModule`, `AiBrain`, `ILootDestination`).
+  - New classes: `SideRulesTests`, `TowRulesTests`, `MothershipTests`, `CrashOnDefeatTests`.
+- [ ] Every item on the in-game checklist (7).
+
+### Open questions and findings
+- **Design mirror:** `factions.csv` now has the Mothership values, which the design branch doesn't.
+
+### Test run (2026-11-27)
+- All 494 EditMode tests pass. The user passed the in-game checklist.

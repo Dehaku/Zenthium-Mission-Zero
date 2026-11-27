@@ -99,6 +99,15 @@ namespace Zenthium.AI
         }
 
         /// <summary>
+        /// Where a Tow Beam user takes what it tows: a crop circle if it has the tag and the map has one, otherwise
+        /// the map edge (world.md: something that needs a destination, such as Tow Beam, uses the map edge).
+        /// </summary>
+        public static LootDelivery TowDelivery(bool hasCropCircle)
+        {
+            return hasCropCircle ? LootDelivery.CropCircle : LootDelivery.MapEdge;
+        }
+
+        /// <summary>
         /// Where an entity with Drag takes the citizens it drags: only one with a <c>LootDestination</c> tag drags
         /// them at all (enemies.md, Dragging citizens), to a crop circle or off the map. A crop circle tag with no
         /// crop circle on the map drags none.

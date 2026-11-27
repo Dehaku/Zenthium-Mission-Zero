@@ -31,6 +31,13 @@ namespace Zenthium.World
         /// <summary>Meters; 0 until it's set up.</summary>
         public float Radius => radius;
 
+        public bool Contains(Vector3 point)
+        {
+            Vector3 offset = point - transform.position;
+            offset.y = 0f;
+            return offset.sqrMagnitude <= radius * radius;
+        }
+
         private void Awake()
         {
             if (world == null || !CropCircleRules.TryCreate(faction, out CropCircleRules rules, out _))
@@ -67,9 +74,7 @@ namespace Zenthium.World
             foreach (EntityBehaviour body in inside)
             {
                 Entity entity = body.Entity;
-                Vector3 offset = body.transform.position - center;
-                offset.y = 0f;
-                if (entity == null || offset.sqrMagnitude > radius * radius)
+                if (entity == null || !Contains(body.transform.position))
                 {
                     continue;
                 }

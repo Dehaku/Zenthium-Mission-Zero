@@ -13,7 +13,7 @@ namespace Zenthium.Modules
     /// While dragged, the entity can't be hurt or knocked back, and its motor follows the carrier.
     /// </summary>
     [RequireComponent(typeof(EntityBehaviour), typeof(EntityMotor), typeof(Rigidbody))]
-    public sealed class EntityDragTarget : MonoBehaviour, IDragTarget
+    public sealed class EntityDragTarget : MonoBehaviour, IDragTarget, IStealable
     {
         private EntityBehaviour entityBehaviour;
         private EntityMotor motor;
@@ -51,6 +51,15 @@ namespace Zenthium.Modules
         public void FollowTo(Vector3 point)
         {
             motor.SetCarryPoint(point);
+        }
+
+        /// <summary>Taken to a loot destination: the entity is abducted and leaves the scene.</summary>
+        public void Steal()
+        {
+            if (entity != null && entity.Abduct())
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         public void EndDrag()

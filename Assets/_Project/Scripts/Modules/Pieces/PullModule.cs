@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using Zenthium.Data;
@@ -25,7 +26,7 @@ namespace Zenthium.Modules
     /// <list type="bullet">
     /// <item>Tractor Pull: the first entity the user can hurt, toward the loot destination.</item>
     /// <item>Tractor Beam: every opponent in its path, toward the user (only opponents: the user's decision,
-    /// Milestone 7). Walls stop it. Props aren't pulled yet.</item>
+    /// Milestone 7), and every prop, harmlessly. Walls stop it.</item>
     /// </list>
     /// </summary>
     public sealed class PullModule : ModuleBehaviour
@@ -39,6 +40,7 @@ namespace Zenthium.Modules
         private const float UserGap = 1.5f;
 
         private readonly RaycastHit[] beamHits = new RaycastHit[MaxBeamHits];
+        private readonly HashSet<IPullable> pulledProps = new HashSet<IPullable>();
         private readonly HitEffects effects;
         private readonly PullDestination destination;
         private readonly bool pullsEveryOpponent;
@@ -95,13 +97,25 @@ namespace Zenthium.Modules
         {
             int count = Physics.SphereCastNonAlloc(origin, BeamRadius, direction, beamHits, range, Physics.AllLayers,
                 QueryTriggerInteraction.Ignore);
+            pulledProps.Clear();
             float wallDistance = range;
             for (int i = 0; i < count; i++)
             {
                 RaycastHit hit = beamHits[i];
-                if (hit.collider.attachedRigidbody != Context.Body && !ModuleWorld.TryGetEntity(hit.collider, out _))
+                if (hit.collider.attachedRigidbody != Context.Body && !ModuleWorld.TryGetEntity(hit.collider, out _)
+                    && !TryGetPullable(hit.collider, out _))
                 {
                     wallDistance = Mathf.Min(wallDistance, hit.distance);
+                }
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit hit = beamHits[i];
+                if (hit.distance <= wallDistance && TryGetPullable(hit.collider, out IPullable prop)
+                    && prop is Component component)
+                {
+                    PullProp(prop, component.transform.position);
                 }
             }
 
@@ -123,6 +137,34 @@ namespace Zenthium.Modules
             }
 
             return wallDistance;
+        }
+
+        /// <summary>A prop in the path slides toward the user, harmlessly (the user's decision, Milestone 7b).</summary>
+        private void PullProp(IPullable prop, Vector3 from)
+        {
+            if (!pulledProps.Add(prop))
+            {
+                return;
+            }
+
+            Vector3 offset = Context.Position - from;
+            offset.y = 0f;
+            float distance = Mathf.Min(Data.KnockbackTier.Value, offset.magnitude - UserGap);
+            if (distance > 0f)
+            {
+                prop.Pull(offset.normalized, distance);
+            }
+        }
+
+        private static bool TryGetPullable(Collider hit, out IPullable pullable)
+        {
+            Rigidbody attached = hit.attachedRigidbody;
+            if (attached != null)
+            {
+                return attached.TryGetComponent(out pullable);
+            }
+
+            return hit.TryGetComponent(out pullable);
         }
 
         private bool IsNearestHitOf(EntityBehaviour target, int index, int count)

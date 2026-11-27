@@ -349,6 +349,12 @@ namespace Zenthium.Editor
             }
         }
 
+        /// <summary>The row of test props south of the start, without the buildings. Also used by the Repo sandbox.</summary>
+        internal static void BuildPropRow(PlayerSandboxSceneCreator.Room room)
+        {
+            BuildProps(new BuildContext { Room = room, Labels = new GameObject("Structure Labels").transform });
+        }
+
         private static void BuildProps(BuildContext context)
         {
             var root = new GameObject("Props").transform;

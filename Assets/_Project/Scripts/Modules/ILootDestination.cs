@@ -15,5 +15,8 @@ namespace Zenthium.Modules
 
         /// <summary>Its center.</summary>
         Vector3 Position { get; }
+
+        /// <summary>Whether a point is inside it, on the XZ plane, so something towed there has arrived.</summary>
+        bool Contains(Vector3 point);
     }
 }

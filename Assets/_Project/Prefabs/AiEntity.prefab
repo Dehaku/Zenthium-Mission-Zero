@@ -293,6 +293,8 @@ GameObject:
   - component: {fileID: 529615761630931842}
   - component: {fileID: 6599206091621439518}
   - component: {fileID: 2393394580316261807}
+  - component: {fileID: 9079200301676778136}
+  - component: {fileID: 7184905944590461039}
   - component: {fileID: 6109525880727893892}
   - component: {fileID: 2568338101326976459}
   - component: {fileID: 6867921862754956721}
@@ -560,6 +562,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: deceb88be0416f0488dd06055e3e69f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Zenthium.AI::Zenthium.AI.AiCitizenSnatcher
+--- !u!114 &9079200301676778136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3271588218615098662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1985725b0c434f40956d103a87cb927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.AI::Zenthium.AI.AiTower
+--- !u!114 &7184905944590461039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3271588218615098662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1d86318043a65f49ad6d19bb0955053, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.World::Zenthium.World.CrashOnDefeat
 --- !u!114 &6109525880727893892
 MonoBehaviour:
   m_ObjectHideFlags: 0

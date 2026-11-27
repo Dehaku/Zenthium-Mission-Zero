@@ -1,21 +1,26 @@
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 using Zenthium.AI;
 using Zenthium.Data;
 using Zenthium.Entities;
 using Zenthium.Modules;
+using Zenthium.Sandbox;
 using Zenthium.World;
 using static Zenthium.Editor.SerializedWiring;
 
 namespace Zenthium.Editor
 {
     /// <summary>
-    /// Builds Sandbox_Repo (Milestone 7a) on the shared 60 m room: a Galactic Repo Agency squad (GleebPeep, two
-    /// Greys, a Tractor Drone and a Shield Bearer) patrolling the north, built from entities.csv and factions.csv
+    /// Builds Sandbox_Repo (Milestone 7) on the shared 60 m room: a Galactic Repo Agency squad (GleebPeep, two
+    /// Greys, a Tractor Drone, a Shield Bearer, an Auditor and a Notary) patrolling the north and a Tow Saucer by the
+    /// prop row, built from entities.csv and factions.csv
     /// with no test kits; two crop circles; a downed, a Scared and a Stubborn citizen; a stash of Valuables and the
     /// lost counter; the map's bounds; a spawner for Call for Backup; the hero select and MoreInfo panels; and a baked
-    /// NavMesh. Every Repo entity is built for rank B, so all of GleebPeep's modules are unlocked.
+    /// NavMesh, and the Mothership Strike with its on/off button. Every Repo entity is built for rank B, so all of
+    /// GleebPeep's modules are unlocked.
     /// </summary>
     internal static class RepoSandboxSceneCreator
     {
@@ -42,6 +47,16 @@ namespace Zenthium.Editor
         private static readonly Vector3[] GreyPositions = { new Vector3(0f, Height, 22f), new Vector3(2f, Height, 20f) };
         private static readonly Vector3 DronePosition = new Vector3(-4f, Height, 22f);
         private static readonly Vector3 ShieldBearerPosition = new Vector3(6f, Height, 21f);
+
+        // Milestone 7b. The Auditor and Notary patrol with the squad; the Tow Saucer waits within Tow Beam's 15 m of
+        // the prop row's bench, south of the start.
+        private static readonly Vector3 AuditorPosition = new Vector3(-6f, Height, 24f);
+        private static readonly Vector3 NotaryPosition = new Vector3(8f, Height, 23f);
+        private static readonly Vector3 TowSaucerPosition = new Vector3(-6f, Height, -8f);
+
+        private static readonly Vector2 MothershipButtonPosition = new Vector2(-12f, 68f);
+        private static readonly Color MothershipButtonColor = new Color(0.6f, 0.15f, 0.15f, 0.9f);
+        private static readonly Vector2 CanvasReferenceResolution = new Vector2(1920f, 1080f);
 
         private static readonly Vector3[] CropCirclePositions =
         {
@@ -77,6 +92,11 @@ namespace Zenthium.Editor
             public const string SpawnerValuables = "valuables";
             public const string SpawnerPrefab = "prefab";
             public const string WorldSpawner = "entitySpawner";
+            public const string StrikeWorld = "world";
+            public const string StrikeFaction = "faction";
+            public const string ToggleStrike = "strike";
+            public const string ToggleButton = "button";
+            public const string ToggleLabel = "label";
         }
 
         [MenuItem(MenuPath)]
@@ -93,6 +113,9 @@ namespace Zenthium.Editor
                 || !database.Entities.TryGet(DataIds.Entities.Grey, out EntityData grey)
                 || !database.Entities.TryGet(DataIds.Entities.TractorDrone, out EntityData drone)
                 || !database.Entities.TryGet(DataIds.Entities.ShieldBearer, out EntityData shieldBearer)
+                || !database.Entities.TryGet(DataIds.Entities.Auditor, out EntityData auditor)
+                || !database.Entities.TryGet(DataIds.Entities.Notary, out EntityData notary)
+                || !database.Entities.TryGet(DataIds.Entities.TowSaucer, out EntityData towSaucer)
                 || !database.Modules.TryGet(DataIds.Modules.Drag, out ModuleData drag)
                 || !CropCircleRules.TryCreate(repo, out CropCircleRules cropCircles, out _))
             {
@@ -134,6 +157,12 @@ namespace Zenthium.Editor
 
             PlaceRepoEntity(room, "Tractor Drone", DronePosition, drone, drag, squad, mapBounds);
             PlaceRepoEntity(room, "Shield Bearer", ShieldBearerPosition, shieldBearer, drag, squad, mapBounds);
+            PlaceRepoEntity(room, "Auditor", AuditorPosition, auditor, drag, squad, mapBounds);
+            PlaceRepoEntity(room, "Notary", NotaryPosition, notary, drag, squad, mapBounds);
+            PlaceRepoEntity(room, "Tow Saucer", TowSaucerPosition, towSaucer, drag, null, mapBounds);
+
+            WorldSandboxSceneCreator.BuildPropRow(room);
+            CreateMothership(room, repo);
 
             AiSandboxSceneCreator.PlaceCitizen(room, $"Downed Citizen ({DownedCitizenValuables} Valuable)",
                 DownedCitizenPosition, CitizenKind.Incapacitated, DownedCitizenValuables);
@@ -171,8 +200,44 @@ namespace Zenthium.Editor
                 AddCitizenDragging(entity.gameObject, room.Database);
             }
 
+            AddRepoParts(entity.gameObject);
             AiSandboxSceneCreator.AddGoonAi(entity.gameObject, squad, mapBounds);
             return entity;
+        }
+
+        /// <summary>Towing and crashing: each does nothing on an entity without Tow Beam or crash values.</summary>
+        private static void AddRepoParts(GameObject body)
+        {
+            body.AddComponent<AiTower>();
+            body.AddComponent<CrashOnDefeat>();
+        }
+
+        /// <summary>The Mothership Strike, off, and the button that switches it on, above the Reset scene button.</summary>
+        private static void CreateMothership(PlayerSandboxSceneCreator.Room room, FactionData repo)
+        {
+            var strike = new GameObject("Mothership Strike").AddComponent<MothershipStrike>();
+            Wire(strike, so =>
+            {
+                SetReference(so, Fields.StrikeWorld, room.World);
+                SetReference(so, Fields.StrikeFaction, repo);
+            });
+
+            var canvasObject = new GameObject("Repo Sandbox Canvas", typeof(Canvas), typeof(CanvasScaler),
+                typeof(GraphicRaycaster));
+            canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = CanvasReferenceResolution;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
+
+            Button button = SandboxHudSetup.CreateButton(canvasObject.transform, "Mothership Button",
+                "Mothership: off", MothershipButtonPosition, MothershipButtonColor, out TMP_Text label);
+            Wire(button.gameObject.AddComponent<MothershipToggle>(), so =>
+            {
+                SetReference(so, Fields.ToggleStrike, strike);
+                SetReference(so, Fields.ToggleButton, button);
+                SetReference(so, Fields.ToggleLabel, label);
+            });
         }
 
         private static void AddCitizenDragging(GameObject body, GameDatabase database)
@@ -209,6 +274,7 @@ namespace Zenthium.Editor
                 Team.Enemy);
             body.AddComponent<EntityDragTarget>();
             AddCitizenDragging(body, room.Database);
+            AddRepoParts(body);
             AiSandboxSceneCreator.AddGoonAi(body, null, null);
             GameObject prefab = PlayerSandboxSceneCreator.SaveAsPrefab(body, AiEntityPrefabPath);
 

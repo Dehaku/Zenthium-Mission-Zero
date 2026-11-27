@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenthium.Combat;
 using Zenthium.Entities;
 
 namespace Zenthium.Modules
@@ -17,6 +18,8 @@ namespace Zenthium.Modules
         private readonly List<IDamageableStructure> reachedStructures = new List<IDamageableStructure>();
         private ModuleContext context;
         private HitEffects effects;
+        private ModuleWorld blastWorld;
+        private Hit blast;
         private float radius;
         private float remaining;
 
@@ -36,15 +39,30 @@ namespace Zenthium.Modules
             OnFuseChanged?.Invoke(remaining);
         }
 
+        /// <summary>
+        /// Armed with no user, such as a Mothership Strike: the blast is environmental (<see cref="AreaBlast"/>), with
+        /// no knockback.
+        /// </summary>
+        public void Arm(ModuleWorld world, Hit environmentalBlast, float blastRadius, float fuseSeconds)
+        {
+            blastWorld = world;
+            blast = environmentalBlast;
+            radius = blastRadius;
+            remaining = fuseSeconds;
+            OnArmed?.Invoke(radius);
+            OnFuseChanged?.Invoke(remaining);
+        }
+
         private void Update()
         {
-            if (context == null)
+            ModuleWorld world = context != null ? context.World : blastWorld;
+            if (world == null)
             {
                 return;
             }
 
             float realDelta = Mathf.Min(Time.unscaledDeltaTime, Time.maximumDeltaTime);
-            remaining -= context.World.Clock.Clock.GameDelta(realDelta, false);
+            remaining -= world.Clock.Clock.GameDelta(realDelta, false);
             OnFuseChanged?.Invoke(Mathf.Max(0f, remaining));
             if (remaining <= 0f)
             {
@@ -55,6 +73,13 @@ namespace Zenthium.Modules
         private void Explode()
         {
             Vector3 origin = transform.position;
+            if (context == null)
+            {
+                AreaBlast.Detonate(blastWorld, origin, radius, blast, null, reached, reachedStructures);
+                Destroy(gameObject);
+                return;
+            }
+
             context.World.CollectEntities(origin, radius, reached);
             foreach (EntityBehaviour target in reached)
             {

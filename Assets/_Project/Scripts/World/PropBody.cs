@@ -23,7 +23,7 @@ namespace Zenthium.World
     /// </list>
     /// </summary>
     [RequireComponent(typeof(Structure), typeof(Rigidbody), typeof(BoxCollider))]
-    public sealed class PropBody : MonoBehaviour, IDragTarget, IThrowable
+    public sealed class PropBody : MonoBehaviour, IDragTarget, IThrowable, IPullable, IStealable
     {
         private const int MaxSweepHits = 16;
 
@@ -54,6 +54,9 @@ namespace Zenthium.World
         private Rigidbody throwerBody;
         private Vector3 flightDirection;
         private float thrownDamage;
+
+        // A pull flies like a throw, but harmlessly: no damage where it stops, and it doesn't break on landing.
+        private bool isPulled;
 
         public event Action<IDragTarget> OnDragBroken;
 
@@ -100,6 +103,7 @@ namespace Zenthium.World
             }
 
             direction.Normalize();
+            isPulled = false;
             thrower = info.Thrower;
             throwerBody = null;
             if (structure.World != null && structure.World.TryGetBehaviour(thrower, out EntityBehaviour throwerBehaviour))
@@ -114,6 +118,35 @@ namespace Zenthium.World
             transform.position = start;
             flightDirection = direction;
             flight.Start(info.Distance);
+        }
+
+        /// <summary>Pulled, such as by Tractor Beam: it slides along the direction and stops at what's in the way.</summary>
+        public void Pull(Vector3 direction, float distance)
+        {
+            direction.y = 0f;
+            if (data == null || structure.IsBroken || carrier != null || flight.IsActive || distance <= 0f
+                || direction.sqrMagnitude <= 0f)
+            {
+                return;
+            }
+
+            isPulled = true;
+            thrower = null;
+            throwerBody = null;
+            thrownDamage = 0f;
+            flightDirection = direction.normalized;
+            flight.Start(distance);
+        }
+
+        /// <summary>Towed to a loot destination: it's taken off the map for good.</summary>
+        public void Steal()
+        {
+            if (carrier != null)
+            {
+                OnDragBroken?.Invoke(this);
+            }
+
+            gameObject.SetActive(false);
         }
 
         private void Awake()
@@ -195,6 +228,11 @@ namespace Zenthium.World
 
         private void HitSomething(ModuleWorld world, Collider other)
         {
+            if (isPulled)
+            {
+                return;
+            }
+
             var hit = new Hit(thrower, thrownDamage, DamageType.Physical);
             if (ModuleWorld.TryGetEntity(other, out EntityBehaviour target))
             {
@@ -216,6 +254,12 @@ namespace Zenthium.World
         {
             thrower = null;
             throwerBody = null;
+            if (isPulled)
+            {
+                isPulled = false;
+                return;
+            }
+
             if (data != null && PropRules.BreaksWhenThrown(data))
             {
                 structure.Break();
