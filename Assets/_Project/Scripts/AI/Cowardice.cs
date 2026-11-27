@@ -27,7 +27,9 @@ namespace Zenthium.AI
         /// <returns>True if this check made it panic.</returns>
         public bool Check(float currentHp, float maxHp, IRandomSource random)
         {
-            if (HasRolled || maxHp <= 0f || currentHp <= 0f || currentHp >= maxHp * hpFraction)
+            // The cast rounds the fraction to float. Mono can keep it at higher precision, where 20 / 100 is exactly
+            // 0.2 but the float 0.2f is a hair above it, so exactly 20% HP would count as below the threshold.
+            if (HasRolled || maxHp <= 0f || currentHp <= 0f || (float)(currentHp / maxHp) >= hpFraction)
             {
                 return false;
             }

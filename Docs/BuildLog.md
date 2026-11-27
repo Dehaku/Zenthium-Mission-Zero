@@ -1251,3 +1251,10 @@ The second half of Milestone 6, as split in 6a: Looting, Objective (carrying loo
   1. Let Unity reimport the input actions, which regenerates `InputSystem_Actions.cs`, and compile.
   2. Rebuild the sandboxes you use.
   3. Scenes that already exist and aren't rebuilt (Boot, HQ and Mission) need `CameraZoomInput` added to their camera by hand.
+
+### Test run (2026-11-26)
+- 425 of 426 EditMode tests passed. `CowardiceTests.Check_AtOrAboveThreshold_DoesNotRoll(20)` failed: a coward at exactly 20% HP rolled.
+- **Cause, in game code:** `Cowardice` compared `currentHp >= maxHp * hpFraction`, and `100 * 0.2f` rounds to slightly above 20.
+- **First fix:** compare the HP fraction instead (`currentHp / maxHp >= hpFraction`). It still failed: Mono can keep float math at higher precision, where 20 / 100 is exactly 0.2 but the float 0.2f is slightly above it.
+- **Second fix:** an explicit cast, `(float)(currentHp / maxHp) >= hpFraction`, which C# rounds to float precision. The test is unchanged.
+- **Rerun:** all 426 EditMode tests pass.
