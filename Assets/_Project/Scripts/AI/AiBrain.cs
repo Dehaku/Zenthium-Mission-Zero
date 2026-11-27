@@ -171,6 +171,12 @@ namespace Zenthium.AI
             mapBounds = newMapBounds;
         }
 
+        /// <summary>The squad it patrols with, for entities spawned in code: set it before the object activates.</summary>
+        public void SetSquad(AiSquad newSquad)
+        {
+            squad = newSquad;
+        }
+
         private void OnEnable()
         {
             // The entity may be created before or after this, and again on reset, as in EntityModules.

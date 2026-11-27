@@ -19,6 +19,9 @@ namespace Zenthium.Data
         [SerializeField] private ValuableConstants valuableConstants = new ValuableConstants();
         [SerializeField] private AiConstants aiConstants = new AiConstants();
         [SerializeField] private MapConstants mapConstants = new MapConstants();
+        [SerializeField] private MissionConstants missionConstants = new MissionConstants();
+        [SerializeField] private SpawnConstants spawnConstants = new SpawnConstants();
+        [SerializeField] private MissionFillConstants missionFillConstants = new MissionFillConstants();
         [SerializeField] private TierTables tiers = new TierTables();
         [SerializeField] private DataTable<ModuleData> modules = new DataTable<ModuleData>();
         [SerializeField] private DataTable<FactionData> factions = new DataTable<FactionData>();
@@ -39,6 +42,9 @@ namespace Zenthium.Data
         public ValuableConstants ValuableConstants => valuableConstants;
         public AiConstants AiConstants => aiConstants;
         public MapConstants MapConstants => mapConstants;
+        public MissionConstants MissionConstants => missionConstants;
+        public SpawnConstants SpawnConstants => spawnConstants;
+        public MissionFillConstants MissionFillConstants => missionFillConstants;
         public TierTables Tiers => tiers;
         public DataTable<ModuleData> Modules => modules;
         public DataTable<FactionData> Factions => factions;
@@ -71,6 +77,9 @@ namespace Zenthium.Data
             ValuableConstants newValuableConstants,
             AiConstants newAiConstants,
             MapConstants newMapConstants,
+            MissionConstants newMissionConstants,
+            SpawnConstants newSpawnConstants,
+            MissionFillConstants newMissionFillConstants,
             TierTables newTiers,
             List<ModuleData> newModules,
             List<FactionData> newFactions,
@@ -89,6 +98,9 @@ namespace Zenthium.Data
             valuableConstants = newValuableConstants;
             aiConstants = newAiConstants;
             mapConstants = newMapConstants;
+            missionConstants = newMissionConstants;
+            spawnConstants = newSpawnConstants;
+            missionFillConstants = newMissionFillConstants;
             tiers = newTiers;
             modules.SetEntries(newModules);
             factions.SetEntries(newFactions);

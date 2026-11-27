@@ -18,6 +18,9 @@ namespace Zenthium.Editor.DataImport
         public ValuableConstants Valuables { get; internal set; }
         public AiConstants Ai { get; internal set; }
         public MapConstants Map { get; internal set; }
+        public MissionConstants Mission { get; internal set; }
+        public SpawnConstants Spawn { get; internal set; }
+        public MissionFillConstants MissionFill { get; internal set; }
         public TierTables Tiers { get; internal set; }
         public List<ModuleRecord> Modules { get; } = new List<ModuleRecord>();
 

@@ -256,6 +256,23 @@ namespace Zenthium.Tests.EditMode
         }
 
         [Test]
+        public void Parse_RankFromNotARank_Fails()
+        {
+            string constants = DesignDataTestCsv.Constants.Replace("mission,locked_door_from.Metal,A,",
+                "mission,locked_door_from.Metal,Z,");
+
+            AssertFailsWithOneErrorMentioning(DesignDataTestCsv.Parse(constants: constants), "locked_door_from.Metal");
+        }
+
+        [Test]
+        public void Parse_RankTableMissingARank_Fails()
+        {
+            string constants = DesignDataTestCsv.Constants.Replace("mission,exit_zones.S,1,\n", string.Empty);
+
+            AssertFailsWithOneErrorMentioning(DesignDataTestCsv.Parse(constants: constants), "exit_zones.S");
+        }
+
+        [Test]
         public void Parse_MaterialWithoutHp_Fails()
         {
             string constants = DesignDataTestCsv.Constants.Replace("world,material_hp.Metal,600,\n", string.Empty);

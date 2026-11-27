@@ -102,7 +102,82 @@ namespace Zenthium.Tests.EditMode
             "map,map_size_large_m,400,\n" +
             "map,block_size_m,68,\n" +
             "map,street_width_m,12,\n" +
-            "map,exit_zone_size_m,10,\n";
+            "map,exit_zone_size_m,10,\n" +
+            MissionRows;
+
+        /// <summary>The mission group, with the radius tier it names.</summary>
+        public const string MissionRows =
+            "tier,radius.Huge,15,\n" +
+            "mission,map_size_from.Small,D,\n" +
+            "mission,map_size_from.Medium,C,\n" +
+            "mission,map_size_from.Large,A,\n" +
+            "mission,exit_zones.D,4,\n" +
+            "mission,exit_zones.C,3,\n" +
+            "mission,exit_zones.B,3,\n" +
+            "mission,exit_zones.A,2,\n" +
+            "mission,exit_zones.S,1,\n" +
+            "mission,leader_chance.D,0,\n" +
+            "mission,leader_chance.C,0.2,\n" +
+            "mission,leader_chance.B,0.4,\n" +
+            "mission,leader_chance.A,0.6,\n" +
+            "mission,leader_chance.S,1,\n" +
+            "mission,locked_door_from.Glass,D,\n" +
+            "mission,locked_door_from.Wood,D,\n" +
+            "mission,locked_door_from.Stone,C,\n" +
+            "mission,locked_door_from.Metal,A,\n" +
+            "mission,locked_door_from.Crystalline,S,\n" +
+            "mission,threat_budget_small,30,\n" +
+            "mission,threat_budget_medium,60,\n" +
+            "mission,threat_budget_large,100,\n" +
+            "mission,champion_share.D,0.1,\n" +
+            "mission,champion_share.C,0.3,\n" +
+            "mission,champion_share.B,0.4,\n" +
+            "mission,champion_share.A,0.5,\n" +
+            "mission,champion_share.S,0.5,\n" +
+            "mission,squad_size_min,3,\n" +
+            "mission,squad_size_max,5,\n" +
+            "mission,champion_solo_chance,0.5,\n" +
+            "mission,leader_entrance_s,30,\n" +
+            "mission,population_cap,60,\n" +
+            "mission,reinforcement_interval_s,60,\n" +
+            "mission,reinforcement_alive_fraction,0.5,\n" +
+            "mission,reinforcement_wave_fraction,0.2,\n" +
+            "mission,reinforcement_waves_at_b,3,\n" +
+            "mission,reinforcement_waves_per_rank,1,\n" +
+            "mission,wave_edge_min_distance_m,50,\n" +
+            "mission,wave_drop_min_distance_m,20,\n" +
+            "mission,wave_landing_s,10,\n" +
+            "mission,invasion_start_fraction,0.25,\n" +
+            "mission,invasion_wave_fraction,0.25,\n" +
+            "mission,rescue_targets_small,6,\n" +
+            "mission,rescue_targets_medium,10,\n" +
+            "mission,rescue_targets_large,15,\n" +
+            "mission,rescue_fail_fraction,0.25,\n" +
+            "mission,rescue_fail_fraction_per_rank,0.05,\n" +
+            "mission,countdown_s,180,\n" +
+            "mission,countdown_reduction_per_rank_s,10,\n" +
+            "mission,countdown_min_s,90,\n" +
+            "mission,countdown_guard_fraction,0.5,\n" +
+            "mission,countdown_target_hp,100,\n" +
+            "mission,arson_fail_fraction,0.5,\n" +
+            "mission,arson_fail_reduction_per_rank,0.05,\n" +
+            "mission,arson_fail_min,0.2,\n" +
+            "mission,ignite_s,5,\n" +
+            "mission,invasion_loss_s,120,\n" +
+            "mission,invasion_speedup_per_enemy,0.1,\n" +
+            "mission,invasion_radius_tier,Huge,\n" +
+            "mission,valuables_goal_fraction,0.5,\n" +
+            "mission,capture_goal_fraction,0.1,\n" +
+            "mission,valuables_bank_min,20,\n" +
+            "mission,valuables_bank_max,40,\n" +
+            "mission,valuables_store_min,5,\n" +
+            "mission,valuables_store_max,10,\n" +
+            "mission,valuables_building_chance,0.75,\n" +
+            "mission,valuables_civilian_chance,0.1,\n" +
+            "mission,heavy_turret_chance,0.15,\n" +
+            "mission,citizen_share_scared,0.6,\n" +
+            "mission,citizen_share_incapacitated,0.2,\n" +
+            "mission,citizen_share_stubborn,0.2,\n";
 
         private const string ModulesHeader =
             "module,category,stat,damage_tier,cooldown_s,resource,cost,utility,duration_tier,radius_tier,knockback_tier,range_tier,values,damage_type,tags,budget_ok,notes\n";

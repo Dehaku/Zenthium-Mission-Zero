@@ -1,25 +1,25 @@
-<b>Milestone 8b: what to test in Sandbox_Map</b>   (Caps Lock hides this. HUD bottom left, map launcher top right.)
-Reset scene (bottom right) reloads the scene and builds a new map. Alt + mouse wheel zooms the camera out.
-Body colors: you blue, allies cyan, citizens pale yellow, neutral gray; enemies red (goons), orange (Champions)
-and purple (Leaders). Labels read "Team: entity", such as "Enemy: Grey". 8a's map tests still hold.
+<b>Milestone 9a: what to test in the Mission scene</b>   (Caps Lock hides this. HUD bottom left, launcher top right.)
+Launch starts a mission; Abandon goes back to the launcher. "Random" rolls a choice the way a real mission does.
+The Console logs each mission's setup and what was spawned. Missions can't be won or lost until 9b.
 
-<b>Fog of war</b>
-1. On Play the map is black except what you can see from the crossing: the streets around you, up to 100 m,
-   stopping at walls. Building interiors you can't see into stay black.
-2. Walk along a street: what you pass becomes dimmed (explored) behind you, and stays dimmed. Black never comes
-   back to a place you've seen.
-3. Stand outside a window: you see into the building through it. Walk up to a door: it opens and you see in.
-   Break a wall: you see through the gap.
-4. Build a new map (Build or New seed): the whole new map starts black again.
-5. "Fog: off" shows the whole map and everything on it; "Fog: on" brings back the fog with what you'd explored.
+<b>Launching</b>
+1. Pick a starting hero, leave everything else on Random and rank D, and Launch: you're that hero, on a Small map,
+   in an exit zone (blue square) at the map's edge. The map is black around what you can see.
+2. Abandon, then Launch again with the same seed: the same mission, map and spawns. New seed gives a new one.
+3. The launcher remembers your choices after Abandon. Medium or Large under Size overrides the rank's size.
 
-<b>Hiding</b>
-6. Spawn Grey, then step round a corner so a wall is between you: the Grey, its label and its bars vanish, and
-   come back when it's in sight again. In dimmed areas you see the buildings but not the Grey.
-7. Stand in a doorway with the inside dimmed: you and your label never hide. (Loose Valuables hide the same way
-   as the Grey, but this map has none until Milestone 9 fills sockets.)
+<b>The map by rank</b>
+4. Rank D has 4 exit zones, rank C 3, rank A 2, rank S 1, and they keep away from the mission's location.
+5. A Countdown mission's key building has every door locked: walking up doesn't open them; break them.
+   At rank D they break like Wood or Glass; at rank C some take as long as Stone.
 
-<b>Playtest colors</b>
-8. Build the Repo Agency sandbox again (Zenthium > Setup > Create Repo Agency Sandbox Scene): GleebPeep is purple;
-   Tractor Drone, Shield Bearer, Auditor and Notary orange; Greys and the Tow Saucer red; citizens pale yellow.
-   A goon that telegraphs still flashes red and goes back to its color after.
+<b>What a mission fills</b>
+6. Greys stand in squads of 3-5 round the map and patrol between nearby spots. A rank D Small map has 30 Greys
+   and no Champions; a rank D Medium map has 60 points, and 10% of it buys one Champion.
+7. Citizens (pale yellow) stand in some open spots, mostly Scared, some down (Incapacitated) or Stubborn.
+   Now and then one carries a Valuable (money bag icon).
+8. Valuables lie in buildings: a bank holds 20-40, a store 5-10, most others 1.
+9. Rescue: the key building holds 6 citizens on a Small map (10 Medium), and squads stand near citizens.
+   Countdown: about half the squads stand round the key building. Arson Riot: squads spread out across the map.
+   Invasion: only a quarter of the force is there at the start.
+10. Leader "yes": 30 s in, GleebPeep (purple) appears at a spot at least 20 m from you.

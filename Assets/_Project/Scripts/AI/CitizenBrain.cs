@@ -49,6 +49,12 @@ namespace Zenthium.AI
 
         public CitizenKind Kind { get; private set; }
 
+        /// <summary>The kind it starts the mission as, for citizens spawned in code: set before the object activates.</summary>
+        public void SetStartingKind(CitizenKind kind)
+        {
+            startingKind = kind;
+        }
+
         public bool IsFleeing => fear != null && fear.IsFleeing;
 
         public bool TryGetCharmTarget(out CharmTarget target)

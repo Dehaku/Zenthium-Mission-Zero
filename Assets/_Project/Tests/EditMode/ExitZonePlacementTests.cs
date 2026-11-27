@@ -66,5 +66,35 @@ namespace Zenthium.Tests.EditMode
             Assert.That(points[0].x, Is.EqualTo(expectedX).Within(0.001f));
             Assert.That(points[0].y, Is.EqualTo(expectedZ).Within(0.001f));
         }
+
+        [TestCase(-80f, -80f, 80f, 80f)]
+        [TestCase(80f, 20f, -80f, -80f)]
+        [TestCase(-80f, 80f, 80f, -80f)]
+        public void PlaceAwayFrom_OneZone_GoesAcrossTheMap(float fromX, float fromZ, float expectedX, float expectedZ)
+        {
+            var points = new List<Vector2>();
+
+            ExitZonePlacement.PlaceAwayFrom(Side, Street, 1, new Vector2(fromX, fromZ), 16, points);
+
+            Assert.That(points, Has.Count.EqualTo(1));
+            Assert.That(points[0].x, Is.EqualTo(expectedX).Within(0.001f));
+            Assert.That(points[0].y, Is.EqualTo(expectedZ).Within(0.001f));
+        }
+
+        [Test]
+        public void PlaceAwayFrom_TwoZones_TurnSoNeitherIsNextToThePoint()
+        {
+            var points = new List<Vector2>();
+
+            // From the middle of the south edge, two zones opposite each other keep farthest from it at the middles
+            // of the east and west edges, 113 m away.
+            ExitZonePlacement.PlaceAwayFrom(Side, Street, 2, new Vector2(0f, -80f), 16, points);
+
+            Assert.That(points, Has.Count.EqualTo(2));
+            foreach (Vector2 point in points)
+            {
+                Assert.That(Vector2.Distance(point, new Vector2(0f, -80f)), Is.GreaterThan(100f));
+            }
+        }
     }
 }

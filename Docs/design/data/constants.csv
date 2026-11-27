@@ -113,3 +113,73 @@ map,map_size_large_m,400,Meters across a Large map (maps.md)
 map,block_size_m,68,Meters across one square city block (user decision; maps.md says a Medium map is roughly 3 x 3 blocks)
 map,street_width_m,12,Meters across the streets between and around blocks (user decision)
 map,exit_zone_size_m,10,Meters across a square exit zone on the map edge (user decision)
+mission,map_size_from.Small,D,Rank from which missions use this map size (difficulty.md)
+mission,map_size_from.Medium,C,
+mission,map_size_from.Large,A,
+mission,exit_zones.D,4,Exit zones on the map at each rank; S and up use S (user decision; difficulty.md says fewer at higher ranks and at least 1)
+mission,exit_zones.C,3,
+mission,exit_zones.B,3,
+mission,exit_zones.A,2,
+mission,exit_zones.S,1,
+mission,leader_chance.D,0,Chance a mission is led by the faction's Leader; S and up use S (difficulty.md)
+mission,leader_chance.C,0.2,
+mission,leader_chance.B,0.4,
+mission,leader_chance.A,0.6,
+mission,leader_chance.S,1,
+mission,locked_door_from.Glass,D,Rank from which locked doors can be this material (difficulty.md)
+mission,locked_door_from.Wood,D,
+mission,locked_door_from.Stone,C,
+mission,locked_door_from.Metal,A,
+mission,locked_door_from.Crystalline,S,
+mission,threat_budget_small,30,Threat budget of a Small map; it doesn't grow with rank (enemies.md)
+mission,threat_budget_medium,60,
+mission,threat_budget_large,100,
+mission,champion_share.D,0.1,Most of the threat budget Champions can use; the default for every faction; S and up use S (enemies.md)
+mission,champion_share.C,0.3,
+mission,champion_share.B,0.4,
+mission,champion_share.A,0.5,
+mission,champion_share.S,0.5,
+mission,squad_size_min,3,Goons in a squad (enemies.md)
+mission,squad_size_max,5,
+mission,champion_solo_chance,0.5,Chance a Champion spawns alone instead of leading a squad (Claude's placeholder; enemies.md says squads are sometimes led by a Champion)
+mission,leader_entrance_s,30,Game seconds into the mission before the Leader enters (enemies.md)
+mission,population_cap,60,Most standard-spawner enemies alive at once (enemies.md; adjustable in the options menu later)
+mission,reinforcement_interval_s,60,Game seconds between waves unless the alive count drops first (enemies.md)
+mission,reinforcement_alive_fraction,0.5,A wave comes early when enemies alive drop below this fraction of the starting force (enemies.md)
+mission,reinforcement_wave_fraction,0.2,Each reinforcement wave's share of the starting budget (enemies.md)
+mission,reinforcement_waves_at_b,3,Most reinforcement waves at rank B (enemies.md)
+mission,reinforcement_waves_per_rank,1,Extra waves for each rank above B (enemies.md)
+mission,wave_edge_min_distance_m,50,Waves enter from a map edge at least this far from the player (enemies.md)
+mission,wave_drop_min_distance_m,20,Waves that drop in land at a socket at least this far from the player (enemies.md)
+mission,wave_landing_s,10,Game seconds the landing area counts down before a drop-in wave lands (enemies.md)
+mission,invasion_start_fraction,0.25,Invasion's starting force as a share of the budget (user decision; enemies.md says light)
+mission,invasion_wave_fraction,0.25,Each Invasion wave's share of the budget (enemies.md)
+mission,rescue_targets_small,6,Target citizens in the key building (missions.md)
+mission,rescue_targets_medium,10,
+mission,rescue_targets_large,15,
+mission,rescue_fail_fraction,0.25,Rescue fails with fewer than this fraction of the targets rescued at rank D (missions.md)
+mission,rescue_fail_fraction_per_rank,0.05,Added to the Rescue fail fraction per rank above D (user decision)
+mission,countdown_s,180,Countdown timer at rank D (missions.md)
+mission,countdown_reduction_per_rank_s,10,Seconds taken off the timer per rank above D (missions.md)
+mission,countdown_min_s,90,The Countdown timer is never shorter (missions.md)
+mission,countdown_guard_fraction,0.5,Share of the budget guarding the Countdown target (user decision; enemies.md says a heavy guard)
+mission,countdown_target_hp,100,HP of the Countdown target structure (user decision)
+mission,arson_fail_fraction,0.5,Arson Riot fails with this fraction of buildings burning or burned out at rank D (missions.md)
+mission,arson_fail_reduction_per_rank,0.05,Taken off the Arson Riot fail fraction per rank above D (missions.md)
+mission,arson_fail_min,0.2,The Arson Riot fail fraction is never lower (missions.md)
+mission,ignite_s,5,Game seconds a goon takes at an arson socket to set a building on fire; damage resets it (missions.md)
+mission,invasion_loss_s,120,Invasion's loss timer (missions.md)
+mission,invasion_speedup_per_enemy,0.1,The loss timer runs this much faster per enemy inside the location's radius (missions.md)
+mission,invasion_radius_tier,Huge,Radius around the Invasion location that counts as inside (missions.md)
+mission,valuables_goal_fraction,0.5,The Valuables secondary goal fails once this fraction of the map's Valuables is lost (missions.md)
+mission,capture_goal_fraction,0.1,Capture secondary goals need this fraction of the mission's spawned enemies of that kind (user decision)
+mission,valuables_bank_min,20,Valuables in a bank vault (world.md)
+mission,valuables_bank_max,40,
+mission,valuables_store_min,5,Valuables in a store (world.md)
+mission,valuables_store_max,10,
+mission,valuables_building_chance,0.75,Chance every other building holds 1 Valuable (world.md)
+mission,valuables_civilian_chance,0.1,Chance a civilian carries 1 Valuable (world.md)
+mission,heavy_turret_chance,0.15,Chance per building to have a Heavy Turret from rank B (enemies.md)
+mission,citizen_share_scared,0.6,Share of spawned citizens that are Scared (user decision)
+mission,citizen_share_incapacitated,0.2,Share that are Incapacitated (user decision)
+mission,citizen_share_stubborn,0.2,Share that are Stubborn (user decision)

@@ -24,6 +24,13 @@ namespace Zenthium.AI
 
         public override EntityBehaviour Spawn(EntityData entity, Team team, int difficultyLevel, Vector3 position)
         {
+            return SpawnInSquad(entity, team, difficultyLevel, position, null);
+        }
+
+        /// <param name="squad">The squad it patrols with while Idle, such as a mission's; null for none.</param>
+        public EntityBehaviour SpawnInSquad(EntityData entity, Team team, int difficultyLevel, Vector3 position,
+            AiSquad squad)
+        {
             if (prefab == null || world == null || entity == null)
             {
                 Debug.LogError($"{name}: {nameof(FactionEntitySpawner)} needs a prefab, a Module World and an entity.",
@@ -38,6 +45,7 @@ namespace Zenthium.AI
             if (spawned.TryGetComponent(out AiBrain brain))
             {
                 brain.Configure(mapBounds);
+                brain.SetSquad(squad);
             }
 
             if (spawned.TryGetComponent(out ValuableCarrier carrier))

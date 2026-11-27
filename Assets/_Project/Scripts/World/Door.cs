@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenthium.Data;
 using Zenthium.Entities;
 
 namespace Zenthium.World
@@ -25,6 +26,17 @@ namespace Zenthium.World
         public bool IsLocked => isLocked;
         public bool IsOpen => isOpen;
         public BuildingPart Panel => panel;
+
+        /// <summary>Locks it, its panel remade in the material, for a mission (difficulty.md, Locked doors).</summary>
+        public void Lock(StructureMaterial material)
+        {
+            isLocked = true;
+            if (panel != null)
+            {
+                panel.SetMaterial(material);
+                Refresh();
+            }
+        }
 
         private void Awake()
         {

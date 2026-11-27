@@ -399,7 +399,7 @@ namespace Zenthium.Editor
         }
 
         /// <summary>Adds the carrier's icon and callout to the scene instance, not the prefab.</summary>
-        private static void AddCarrierView(ValuableCarrier carrier)
+        internal static void AddCarrierView(ValuableCarrier carrier)
         {
             TMP_Text icon = CreateFlatText(carrier.transform, "Valuables Icon", CarrierIconPosition, BagColor);
             TMP_Text callout = CreateFlatText(carrier.transform, "Ka-ching Callout", CalloutPosition, BagColor);

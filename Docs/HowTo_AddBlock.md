@@ -38,6 +38,9 @@ One block can hold several locations, such as a Bank next to a Store. Zenthium >
    - **Arson:** one 1.5 m outside every door and window, as a child of its building.
    - **Valuables** (and Citizen) inside buildings, as children of the building.
    - **Open ground:** each block needs at least one socket that offers **Crop Circle**, **Goon** and **Citizen**, with 3 m clear around it (the crop circle radius).
+   - **Patrol:** about four **Goon**-only sockets on open ground. Each squad stands at one and patrols to the Goon sockets nearest it, so a block with too few makes squads share.
+   - **Countdown Target** inside each building, as a child of the building: a Countdown mission puts its target in one in the key building.
+   - **Heavy Turret** inside each building, as a child of the building (used from rank B).
 7. **Fixed obstacles** (fences, ponds, statues): plain colliders that are taller than 0.75 m, the agents' step height. The NavMesh bake keeps them out of paths. Props with **Prop Body** carve their own holes, like walls do.
 8. **Save** it as a prefab anywhere under `Assets/_Project/Prefabs/Blocks/` (for example `Blocks/Downtown/`), then delete it from the scene.
 9. **Run Zenthium > Map > Refresh Block Library.** The Console lists the block count and warns about locations with no block.

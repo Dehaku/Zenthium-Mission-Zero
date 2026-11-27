@@ -5,7 +5,8 @@ using Zenthium.Data;
 namespace Zenthium.Editor.DataImport
 {
     /// <summary>
-    /// Reads constants.csv into the formula, entity, module, rank scaling, economy, world, AI and map constants and the tier tables.
+    /// Reads constants.csv into the formula, entity, module, rank scaling, economy, world, AI, map and mission
+    /// constants and the tier tables.
     /// Every constant the game uses must be present, and every name must be one it knows,
     /// so a typo can't go unnoticed.
     /// </summary>
@@ -23,6 +24,7 @@ namespace Zenthium.Editor.DataImport
         private const string WorldGroup = "world";
         private const string AiGroup = "ai";
         private const string MapGroup = "map";
+        private const string MissionGroup = "mission";
 
         private const string IncomeMixPrefix = "income_mix.";
         private const string MaterialHpPrefix = "material_hp.";
@@ -66,6 +68,7 @@ namespace Zenthium.Editor.DataImport
                     case WorldGroup:
                     case AiGroup:
                     case MapGroup:
+                    case MissionGroup:
                         if (name.StartsWith(IncomeMixPrefix, StringComparison.Ordinal))
                         {
                             ReadIncomeMix(row, name, incomeMixes, errors);
@@ -174,6 +177,61 @@ namespace Zenthium.Editor.DataImport
                 blockSize: reader.Float("block_size_m"),
                 streetWidth: reader.Float("street_width_m"),
                 exitZoneSize: reader.Float("exit_zone_size_m"));
+            data.Mission = new MissionConstants(
+                mapSizeFrom: reader.RanksFrom<MapSize>("map_size_from"),
+                lockedDoorFrom: reader.RanksFrom<StructureMaterial>("locked_door_from"),
+                exitZones: reader.PerRank("exit_zones"),
+                leaderChance: reader.PerRank("leader_chance"),
+                rescueTargetsSmall: reader.Int("rescue_targets_small"),
+                rescueTargetsMedium: reader.Int("rescue_targets_medium"),
+                rescueTargetsLarge: reader.Int("rescue_targets_large"),
+                rescueFailFraction: reader.Float("rescue_fail_fraction"),
+                rescueFailFractionPerRank: reader.Float("rescue_fail_fraction_per_rank"),
+                countdownSeconds: reader.Float("countdown_s"),
+                countdownReductionPerRank: reader.Float("countdown_reduction_per_rank_s"),
+                countdownMinSeconds: reader.Float("countdown_min_s"),
+                countdownGuardFraction: reader.Float("countdown_guard_fraction"),
+                countdownTargetHp: reader.Float("countdown_target_hp"),
+                arsonFailFraction: reader.Float("arson_fail_fraction"),
+                arsonFailReductionPerRank: reader.Float("arson_fail_reduction_per_rank"),
+                arsonFailMin: reader.Float("arson_fail_min"),
+                igniteSeconds: reader.Float("ignite_s"),
+                invasionLossSeconds: reader.Float("invasion_loss_s"),
+                invasionSpeedupPerEnemy: reader.Float("invasion_speedup_per_enemy"),
+                invasionRadius: reader.Tier("invasion_radius_tier", TierScale.Radius, tiers),
+                valuablesGoalFraction: reader.Float("valuables_goal_fraction"),
+                captureGoalFraction: reader.Float("capture_goal_fraction"));
+            data.Spawn = new SpawnConstants(
+                budgetSmall: reader.Float("threat_budget_small"),
+                budgetMedium: reader.Float("threat_budget_medium"),
+                budgetLarge: reader.Float("threat_budget_large"),
+                championShare: reader.PerRank("champion_share"),
+                squadSizeMin: reader.Int("squad_size_min"),
+                squadSizeMax: reader.Int("squad_size_max"),
+                championSoloChance: reader.Float("champion_solo_chance"),
+                leaderEntranceSeconds: reader.Float("leader_entrance_s"),
+                populationCap: reader.Int("population_cap"),
+                reinforcementIntervalSeconds: reader.Float("reinforcement_interval_s"),
+                reinforcementAliveFraction: reader.Float("reinforcement_alive_fraction"),
+                reinforcementWaveFraction: reader.Float("reinforcement_wave_fraction"),
+                reinforcementWavesAtB: reader.Int("reinforcement_waves_at_b"),
+                reinforcementWavesPerRank: reader.Int("reinforcement_waves_per_rank"),
+                waveEdgeMinDistance: reader.Float("wave_edge_min_distance_m"),
+                waveDropMinDistance: reader.Float("wave_drop_min_distance_m"),
+                waveLandingSeconds: reader.Float("wave_landing_s"),
+                invasionStartFraction: reader.Float("invasion_start_fraction"),
+                invasionWaveFraction: reader.Float("invasion_wave_fraction"));
+            data.MissionFill = new MissionFillConstants(
+                bankValuablesMin: reader.Int("valuables_bank_min"),
+                bankValuablesMax: reader.Int("valuables_bank_max"),
+                storeValuablesMin: reader.Int("valuables_store_min"),
+                storeValuablesMax: reader.Int("valuables_store_max"),
+                buildingValuableChance: reader.Float("valuables_building_chance"),
+                civilianValuableChance: reader.Float("valuables_civilian_chance"),
+                heavyTurretChance: reader.Float("heavy_turret_chance"),
+                scaredShare: reader.Float("citizen_share_scared"),
+                incapacitatedShare: reader.Float("citizen_share_incapacitated"),
+                stubbornShare: reader.Float("citizen_share_stubborn"));
             reader.ReportUnused();
         }
 
@@ -300,6 +358,52 @@ namespace Zenthium.Editor.DataImport
                 return TryTake(name, out CsvRow row)
                     ? CellReader.Int(row, ValueColumn, true, errors).GetValueOrDefault()
                     : 0;
+            }
+
+            /// <summary>Rows <c>prefix.Rank</c>, one for every rank.</summary>
+            public RankTable PerRank(string prefix)
+            {
+                var ranks = (Rank[])Enum.GetValues(typeof(Rank));
+                var values = new float[ranks.Length];
+                for (int i = 0; i < ranks.Length; i++)
+                {
+                    values[i] = Float(prefix + NamePartSeparator + ranks[i]);
+                }
+
+                return new RankTable(values);
+            }
+
+            /// <summary>
+            /// Rows <c>prefix.Value</c>, one for every value of the enum, each holding the rank it's used from. Returned
+            /// as difficulty levels, in the enum's order.
+            /// </summary>
+            public int[] RanksFrom<T>(string prefix) where T : struct, Enum
+            {
+                var keys = (T[])Enum.GetValues(typeof(T));
+                var levels = new int[keys.Length];
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    levels[i] = (int)RankValue(prefix + NamePartSeparator + keys[i]);
+                }
+
+                return levels;
+            }
+
+            private Rank RankValue(string name)
+            {
+                if (!TryTake(name, out CsvRow row))
+                {
+                    return default;
+                }
+
+                string text = row.Get(ValueColumn);
+                if (!CellReader.TryParseEnum(text, out Rank rank))
+                {
+                    errors.Add($"{row.Location}: '{name}' should be a rank from: "
+                        + string.Join(", ", Enum.GetNames(typeof(Rank))) + $", not '{text}'.");
+                }
+
+                return rank;
             }
 
             public TierValue Tier(string name, TierScale scale, TierTables tiers)

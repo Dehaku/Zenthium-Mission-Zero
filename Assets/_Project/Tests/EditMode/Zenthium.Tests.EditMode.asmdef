@@ -14,7 +14,8 @@
         "Zenthium.Movement",
         "Zenthium.Modules",
         "Zenthium.World",
-        "Zenthium.AI"
+        "Zenthium.AI",
+        "Zenthium.Missions"
     ],
     "includePlatforms": [
         "Editor"

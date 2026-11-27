@@ -119,6 +119,81 @@ MonoBehaviour:
     blockSize: 68
     streetWidth: 12
     exitZoneSize: 10
+  missionConstants:
+    mapSizeFrom: 000000000100000003000000i
+    lockedDoorFrom: 0000000000000000010000000300000004000000i
+    exitZones:
+      values:
+      - 4
+      - 3
+      - 3
+      - 2
+      - 1
+    leaderChance:
+      values:
+      - 0
+      - 0.2
+      - 0.4
+      - 0.6
+      - 1
+    rescueTargetsSmall: 6
+    rescueTargetsMedium: 10
+    rescueTargetsLarge: 15
+    rescueFailFraction: 0.25
+    rescueFailFractionPerRank: 0.05
+    countdownSeconds: 180
+    countdownReductionPerRank: 10
+    countdownMinSeconds: 90
+    countdownGuardFraction: 0.5
+    countdownTargetHp: 100
+    arsonFailFraction: 0.5
+    arsonFailReductionPerRank: 0.05
+    arsonFailMin: 0.2
+    igniteSeconds: 5
+    invasionLossSeconds: 120
+    invasionSpeedupPerEnemy: 0.1
+    invasionRadius:
+      word: Huge
+      value: 15
+    valuablesGoalFraction: 0.5
+    captureGoalFraction: 0.1
+  spawnConstants:
+    budgetSmall: 30
+    budgetMedium: 60
+    budgetLarge: 100
+    championShare:
+      values:
+      - 0.1
+      - 0.3
+      - 0.4
+      - 0.5
+      - 0.5
+    squadSizeMin: 3
+    squadSizeMax: 5
+    championSoloChance: 0.5
+    leaderEntranceSeconds: 30
+    populationCap: 60
+    reinforcementIntervalSeconds: 60
+    reinforcementAliveFraction: 0.5
+    reinforcementWaveFraction: 0.2
+    reinforcementWavesAtB: 3
+    reinforcementWavesPerRank: 1
+    waveEdgeMinDistance: 50
+    waveDropMinDistance: 20
+    waveLandingSeconds: 10
+    invasionStartFraction: 0.25
+    invasionWaveFraction: 0.25
+  missionFillConstants:
+    bankValuablesMin: 20
+    bankValuablesMax: 40
+    storeValuablesMin: 5
+    storeValuablesMax: 10
+    buildingValuableChance: 0.75
+    civilianValuableChance: 0.1
+    heavyTurretChance: 0.15
+    scaredShare: 0.6
+    incapacitatedShare: 0.2
+    stubbornShare: 0.2
   tiers:
     entries:
     - scale: 0

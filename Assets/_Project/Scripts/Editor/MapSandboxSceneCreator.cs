@@ -4,6 +4,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using Zenthium.AI;
 using Zenthium.Data;
 using Zenthium.Entities;
 using Zenthium.Sandbox;
@@ -122,7 +123,31 @@ namespace Zenthium.Editor
                 return;
             }
 
-            // The map replaces the room, its dummies and the combat panel that inspects them.
+            MapServices map = CreateMapServices(room, grey);
+            CreateLauncher(room, map.Assembler, repo, grey, map.FogView, map.FogHiding);
+            EditorSceneManager.SaveScene(room.Scene, ScenePath);
+            Debug.Log($"Created {ScenePath} and the map prefabs in {MapPrefabFolder}. " + LibraryReport(map.Library));
+        }
+
+        /// <summary>What <see cref="CreateMapServices"/> made, for scenes that build maps.</summary>
+        internal sealed class MapServices
+        {
+            public MapBlockLibrary Library;
+            public BuildingRegistry Registry;
+            public MapBounds Bounds;
+            public FactionEntitySpawner Spawner;
+            public MapAssembler Assembler;
+            public FogOfWarView FogView;
+            public FogHiding FogHiding;
+        }
+
+        /// <summary>
+        /// Replaces the room with what builds maps at runtime: removes the room, its dummies and the combat panel that
+        /// inspects them, refreshes the block library, saves the ground, exit zone and crop circle prefabs, and adds
+        /// the building registry, map bounds, faction spawner, map assembler and the fog of war.
+        /// </summary>
+        internal static MapServices CreateMapServices(PlayerSandboxSceneCreator.Room room, EntityData grey)
+        {
             Object.DestroyImmediate(room.Geometry.gameObject);
             foreach (EntityBehaviour dummy in room.Dummies)
             {
@@ -132,39 +157,41 @@ namespace Zenthium.Editor
             room.Dummies.Clear();
             Object.DestroyImmediate(room.DebugPanel.GetComponentInParent<Canvas>().gameObject);
 
-            MapBlockLibrary library = MapBlockLibraryRefresher.Refresh();
+            var map = new MapServices { Library = MapBlockLibraryRefresher.Refresh() };
             MapBlockLibraryRefresher.EnsureFolder(MapPrefabFolder);
             GameObject ground = PlayerSandboxSceneCreator.SaveAsPrefab(BuildGround(), GroundPrefabPath);
             GameObject exitZone = PlayerSandboxSceneCreator.SaveAsPrefab(BuildExitZone(), ExitZonePrefabPath);
             GameObject cropCircle = PlayerSandboxSceneCreator.SaveAsPrefab(BuildCropCircle(), CropCirclePrefabPath);
 
-            var registry = new GameObject("Building Registry").AddComponent<BuildingRegistry>();
-            Wire(registry, so =>
+            map.Registry = new GameObject("Building Registry").AddComponent<BuildingRegistry>();
+            Wire(map.Registry, so =>
             {
-                SetReference(so, RegistryFields.Database, database);
+                SetReference(so, RegistryFields.Database, room.Database);
                 SetReference(so, RegistryFields.World, room.World);
             });
-            var mapBounds = new GameObject("Map Bounds").AddComponent<MapBounds>();
-            RepoSandboxSceneCreator.CreateSpawner(room, mapBounds, grey);
+            map.Bounds = new GameObject("Map Bounds").AddComponent<MapBounds>();
+            map.Spawner = RepoSandboxSceneCreator.CreateSpawner(room, map.Bounds, grey);
 
-            var assembler = new GameObject("Map Assembler").AddComponent<MapAssembler>();
-            Wire(assembler, so =>
+            map.Assembler = new GameObject("Map Assembler").AddComponent<MapAssembler>();
+            Wire(map.Assembler, so =>
             {
                 SetReference(so, AssemblerFields.World, room.World);
-                SetReference(so, AssemblerFields.Registry, registry);
-                SetReference(so, AssemblerFields.MapBounds, mapBounds);
-                SetReference(so, AssemblerFields.Library, library);
+                SetReference(so, AssemblerFields.Registry, map.Registry);
+                SetReference(so, AssemblerFields.MapBounds, map.Bounds);
+                SetReference(so, AssemblerFields.Library, map.Library);
                 SetReference(so, AssemblerFields.GroundPrefab, ground.transform);
                 SetReference(so, AssemblerFields.ExitZonePrefab, exitZone.GetComponent<ExitZone>());
                 SetReference(so, AssemblerFields.CropCirclePrefab, cropCircle.GetComponent<CropCircle>());
             });
 
-            (FogOfWarView fogView, FogHiding fogHiding) = CreateFog(room, assembler);
-            CreateLauncher(room, assembler, repo, grey, fogView, fogHiding);
-            EditorSceneManager.SaveScene(room.Scene, ScenePath);
-            Debug.Log($"Created {ScenePath} and the map prefabs in {MapPrefabFolder}. "
-                + (library.Blocks.Count == 0 ? "The block library is empty: run Zenthium > Map > Create Graybox Blocks."
-                    : $"The block library has {library.Blocks.Count} blocks."));
+            (map.FogView, map.FogHiding) = CreateFog(room, map.Assembler);
+            return map;
+        }
+
+        internal static string LibraryReport(MapBlockLibrary library)
+        {
+            return library.Blocks.Count == 0 ? "The block library is empty: run Zenthium > Map > Create Graybox Blocks."
+                : $"The block library has {library.Blocks.Count} blocks.";
         }
 
         /// <summary>A box 1 m across, its top at Y 0, which the builder scales to the map.</summary>
@@ -265,22 +292,26 @@ namespace Zenthium.Editor
             return AiSandboxSceneCreator.MakeTransparent(material);
         }
 
-        /// <summary>The launcher panel at the top right.</summary>
-        private static void CreateLauncher(PlayerSandboxSceneCreator.Room room, MapAssembler assembler,
-            FactionData repo, EntityData grey, FogOfWarView fogView, FogHiding fogHiding)
+        /// <summary>A screen overlay canvas that scales with the screen.</summary>
+        internal static Transform CreateOverlayCanvas(string canvasName)
         {
-            var canvasObject = new GameObject("Map Launcher Canvas", typeof(Canvas), typeof(CanvasScaler),
+            var canvasObject = new GameObject(canvasName, typeof(Canvas), typeof(CanvasScaler),
                 typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = ReferenceResolution;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Shrink;
+            return canvasObject.transform;
+        }
 
-            var panelObject = new GameObject("Map Launcher", typeof(RectTransform), typeof(Image),
+        /// <summary>A dark panel at the top right whose rows stack downwards and size it.</summary>
+        internal static Transform CreatePanel(Transform canvas, string panelName)
+        {
+            var panelObject = new GameObject(panelName, typeof(RectTransform), typeof(Image),
                 typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             var panelRect = (RectTransform)panelObject.transform;
-            panelRect.SetParent(canvasObject.transform, false);
+            panelRect.SetParent(canvas, false);
             panelRect.anchorMin = Vector2.one;
             panelRect.anchorMax = Vector2.one;
             panelRect.pivot = Vector2.one;
@@ -295,8 +326,31 @@ namespace Zenthium.Editor
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
             panelObject.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            return panelObject.transform;
+        }
 
-            Transform panel = panelObject.transform;
+        /// <summary>A button that shows or hides the fog of war and the hiding of what's out of sight.</summary>
+        internal static Button CreateFogButton(Transform row, TMP_DefaultControls.Resources tmpResources,
+            FogOfWarView fogView, FogHiding fogHiding)
+        {
+            Button fogButton = CombatSandboxSceneCreator.CreateButton(row, tmpResources, "Fog: on");
+            Wire(fogButton.gameObject.AddComponent<FogToggle>(), so =>
+            {
+                SetReference(so, FogToggleFields.View, fogView);
+                SetReference(so, FogToggleFields.Hiding, fogHiding);
+                SetReference(so, FogToggleFields.Button, fogButton);
+                SetReference(so, FogToggleFields.Label, fogButton.GetComponentInChildren<TMP_Text>());
+            });
+            return fogButton;
+        }
+
+        /// <summary>The launcher panel at the top right.</summary>
+        private static void CreateLauncher(PlayerSandboxSceneCreator.Room room, MapAssembler assembler,
+            FactionData repo, EntityData grey, FogOfWarView fogView, FogHiding fogHiding)
+        {
+            Transform canvas = CreateOverlayCanvas("Map Launcher Canvas");
+            Transform panel = CreatePanel(canvas, "Map Launcher");
+            GameObject panelObject = panel.gameObject;
             TMP_DefaultControls.Resources tmpResources = CombatSandboxSceneCreator.TmpResources();
             DefaultControls.Resources uiResources = CombatSandboxSceneCreator.UiResources();
 
@@ -318,14 +372,7 @@ namespace Zenthium.Editor
 
             Transform spawnRow = CombatSandboxSceneCreator.CreateRow(panel, "Spawn Row");
             Button spawnButton = CombatSandboxSceneCreator.CreateButton(spawnRow, tmpResources, "Spawn Grey");
-            Button fogButton = CombatSandboxSceneCreator.CreateButton(spawnRow, tmpResources, "Fog: on");
-            Wire(fogButton.gameObject.AddComponent<FogToggle>(), so =>
-            {
-                SetReference(so, FogToggleFields.View, fogView);
-                SetReference(so, FogToggleFields.Hiding, fogHiding);
-                SetReference(so, FogToggleFields.Button, fogButton);
-                SetReference(so, FogToggleFields.Label, fogButton.GetComponentInChildren<TMP_Text>());
-            });
+            CreateFogButton(spawnRow, tmpResources, fogView, fogHiding);
 
             TMP_Text status = CombatSandboxSceneCreator.CreateText(panel, tmpResources, "Status");
 

@@ -34,6 +34,44 @@ namespace Zenthium.World
             }
         }
 
+        /// <summary>
+        /// Spread evenly as in <see cref="Place"/>, turned round the map so the zone nearest a point is as far from it
+        /// as it can be: missions keep exits away from the objective (difficulty.md, Exits: farther away).
+        /// </summary>
+        /// <param name="awayFrom">The point to keep away from, relative to the map's center.</param>
+        /// <param name="steps">How many starts to try; more is closer to the best.</param>
+        public static void PlaceAwayFrom(float side, float streetWidth, int count, Vector2 awayFrom, int steps,
+            List<Vector2> results)
+        {
+            results.Clear();
+            if (count <= 0)
+            {
+                return;
+            }
+
+            // The pattern repeats every 1 / count of the way round, so only starts within that need trying.
+            float bestStart = 0f;
+            float bestNearest = -1f;
+            for (int step = 0; step < Mathf.Max(1, steps); step++)
+            {
+                float start = step / (float)(Mathf.Max(1, steps) * count);
+                Place(side, streetWidth, count, start, results);
+                float nearest = float.MaxValue;
+                foreach (Vector2 point in results)
+                {
+                    nearest = Mathf.Min(nearest, (point - awayFrom).sqrMagnitude);
+                }
+
+                if (nearest > bestNearest)
+                {
+                    bestNearest = nearest;
+                    bestStart = start;
+                }
+            }
+
+            Place(side, streetWidth, count, bestStart, results);
+        }
+
         /// <summary>A point a distance round the square, counterclockwise seen from above, from its -X, -Z corner.</summary>
         private static Vector2 PointOnSquare(float half, float distance)
         {

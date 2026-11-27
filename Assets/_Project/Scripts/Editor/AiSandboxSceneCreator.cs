@@ -367,17 +367,23 @@ namespace Zenthium.Editor
             Wire(citizen.GetComponent<ValuableCarrier>(), so =>
                 Find(so, StartingValuablesField).intValue = valuables);
 
-            citizen.gameObject.AddComponent<AiNavigator>();
-            var brain = citizen.gameObject.AddComponent<CitizenBrain>();
+            CitizenBrain brain = AddCitizenParts(citizen.gameObject);
             Wire(brain, so => Find(so, CitizenFields.StartingKind).enumValueIndex = (int)kind);
+        }
 
-            TextMeshPro label = FlatText(citizen.transform, "Citizen State", StateLabelPosition, StateFontSize,
+        /// <summary>A citizen's navigation, brain and state label, on a scene body or a prefab's.</summary>
+        internal static CitizenBrain AddCitizenParts(GameObject body)
+        {
+            body.AddComponent<AiNavigator>();
+            var brain = body.AddComponent<CitizenBrain>();
+            TextMeshPro label = FlatText(body.transform, "Citizen State", StateLabelPosition, StateFontSize,
                 Color.white);
             Wire(label.gameObject.AddComponent<CitizenStateLabel>(), so =>
             {
                 SetReference(so, CitizenLabelFields.Citizen, brain);
                 SetReference(so, CitizenLabelFields.Label, label);
             });
+            return brain;
         }
 
         /// <summary>A stash of loose Valuables around a point.</summary>
@@ -474,7 +480,7 @@ namespace Zenthium.Editor
             return visual.transform;
         }
 
-        private static TextMeshPro FlatText(Transform parent, string objectName, Vector3 localPosition, float fontSize,
+        internal static TextMeshPro FlatText(Transform parent, string objectName, Vector3 localPosition, float fontSize,
             Color color)
         {
             var textObject = new GameObject(objectName, typeof(RectTransform), typeof(TextMeshPro));

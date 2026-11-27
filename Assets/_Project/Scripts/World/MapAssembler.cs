@@ -67,6 +67,9 @@ namespace Zenthium.World
         [Tooltip("1 m across at scale 1; scaled to the faction's crop circle size from factions.csv.")]
         [SerializeField] private CropCircle cropCirclePrefab;
 
+        [Tooltip("How many turns of the exit zones round the map to try, to keep them away from the key building.")]
+        [SerializeField, Min(1)] private int exitPlacementSteps = 16;
+
         private readonly List<ExitZone> exitZones = new List<ExitZone>();
         private readonly List<CropCircle> cropCircles = new List<CropCircle>();
         private readonly List<MapBlockOption> options = new List<MapBlockOption>();
@@ -93,6 +96,30 @@ namespace Zenthium.World
 
         /// <summary>Real milliseconds the last NavMesh bake took, to check it isn't too slow on WebGL.</summary>
         public float LastBakeMilliseconds { get; private set; }
+
+        /// <summary>
+        /// The middle of the mission's location, on the ground: its key building's floor, or the key block for an
+        /// outdoor location such as a Park.
+        /// </summary>
+        public Vector3 KeyPoint
+        {
+            get
+            {
+                if (Layout == null)
+                {
+                    return transform.position;
+                }
+
+                if (KeyBuilding != null && KeyBuilding.Zones.Count > 0 && KeyBuilding.Zones[0] != null)
+                {
+                    Vector2 floor = KeyBuilding.Zones[0].Footprint.center;
+                    return new Vector3(floor.x, transform.position.y, floor.y);
+                }
+
+                Vector2 block = Layout.Blocks[Layout.KeyBlock].Area.center;
+                return transform.position + new Vector3(block.x, 0f, block.y);
+            }
+        }
 
         /// <summary>The street crossing nearest the map's center, on the ground.</summary>
         public Vector3 CenterCrossing
@@ -161,7 +188,7 @@ namespace Zenthium.World
             registry.RebuildNeighbors();
             mapBounds.SetArea(transform.position, layout.Side);
             BakeNavMesh(layout.Side);
-            PlaceExitZones(layout.Side, constants, request.ExitZones, random);
+            PlaceExitZones(layout.Side, constants, request.ExitZones);
             PlaceCropCircles(request);
             Debug.Log($"Map: {request.Size} {LocationDistricts.Of(request.Location)} ({layout.BlocksPerSide} x "
                 + $"{layout.BlocksPerSide} blocks, {layout.Side} m) around a {request.Location}, seed {request.Seed}. "
@@ -269,9 +296,13 @@ namespace Zenthium.World
             }
         }
 
-        private void PlaceExitZones(float side, MapConstants constants, int count, IRandomSource random)
+        /// <summary>Spread evenly round the edge, turned to keep them away from the mission's location.</summary>
+        private void PlaceExitZones(float side, MapConstants constants, int count)
         {
-            ExitZonePlacement.Place(side, constants.StreetWidth, count, random.Value01(), exitPoints);
+            Vector3 key = KeyPoint - transform.position;
+            ExitZonePlacement.PlaceAwayFrom(side, constants.StreetWidth, count, new Vector2(key.x, key.z),
+                exitPlacementSteps, exitPoints);
+
             foreach (Vector2 point in exitPoints)
             {
                 ExitZone zone = Instantiate(exitZonePrefab, mapRoot.transform, false);

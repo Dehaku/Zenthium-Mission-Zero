@@ -31,6 +31,18 @@ namespace Zenthium.AI
         private int current;
         private float pauseLeft;
 
+        /// <summary>
+        /// Sets up a squad made in code, such as a mission's: add it to an inactive object, configure it, then activate
+        /// it. The first socket is where it starts.
+        /// </summary>
+        public void Configure(GameClockDriver newClock, IReadOnlyList<MapSocket> newSockets)
+        {
+            clock = newClock;
+            sockets.Clear();
+            sockets.AddRange(newSockets);
+            current = 0;
+        }
+
         /// <summary>Where a member stands at the current socket.</summary>
         public Vector3 PatrolPoint(AiBrain member)
         {

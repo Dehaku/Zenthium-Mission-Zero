@@ -37,13 +37,28 @@ namespace Zenthium.World
             Apply();
         }
 
+        /// <summary>
+        /// Remakes it in another material at full HP, such as a mission's locked doors (difficulty.md). Call it before
+        /// it's hit.
+        /// </summary>
+        public void SetMaterial(StructureMaterial newMaterial)
+        {
+            material = newMaterial;
+            ConfigureHp();
+        }
+
         private void Awake()
         {
             structure = GetComponent<Structure>();
             colliders = GetComponents<Collider>();
             renderers = GetComponents<Renderer>();
             TryGetComponent(out obstacle);
-            if (structure.World == null)
+            ConfigureHp();
+        }
+
+        private void ConfigureHp()
+        {
+            if (structure == null || structure.World == null)
             {
                 return;
             }

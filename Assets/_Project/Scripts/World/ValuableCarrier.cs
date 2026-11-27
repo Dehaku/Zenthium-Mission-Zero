@@ -46,6 +46,12 @@ namespace Zenthium.World
             service = newService;
         }
 
+        /// <summary>What it holds when its entity is first made, such as a civilian's Valuable: set before it activates.</summary>
+        public void SetStartingValuables(int count)
+        {
+            startingValuables = Mathf.Max(0, count);
+        }
+
         public void Add(int amount)
         {
             if (amount > 0)

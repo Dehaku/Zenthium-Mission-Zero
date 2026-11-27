@@ -12,7 +12,7 @@ namespace Zenthium.Editor
     /// <summary>
     /// Zenthium > Map > Create Graybox Blocks: one placeholder block prefab per location in maps.md, except SWIFT
     /// Tower, so maps can be built before the real blocks exist. Each block holds its location's building and a second
-    /// building from the same district (a Park holds a pond and trees instead), weighted sockets, and a tinted lot.
+    /// building from the same district (a Park holds a pond and trees instead), weighted sockets (open, patrol, Valuables, Countdown and turret), and a tinted lot.
     /// Hand-built blocks (<c>Docs/HowTo_AddBlock.md</c>) go next to them and replace them over time.
     /// </summary>
     internal static class GrayboxBlockCreator
@@ -29,6 +29,12 @@ namespace Zenthium.Editor
         private const float FillerSetback = 6f;
         private const float LotThickness = 0.02f;
         private const float BuildingLabelOffset = 1.5f;
+
+        // Patrol sockets sit this fraction of half a block from an open quarter's middle, along its diagonal.
+        private const float PatrolSocketOffset = 0.25f;
+
+        // The Countdown and turret sockets sit this fraction of a building's width either side of its middle.
+        private const float InnerSocketOffset = 0.25f;
 
         // The Park's pond is taller than an agent's step, so the bake treats it as an obstacle.
         private static readonly Vector3 PondSize = new Vector3(14f, 1f, 10f);
@@ -138,7 +144,22 @@ namespace Zenthium.Editor
             WorldSandboxSceneCreator.CreateSocket(root.transform, "Open Socket (SW)",
                 new Vector3(-half * 0.5f, 0f, -half * 0.5f), new SocketOption(SocketContent.Citizen, 2f),
                 new SocketOption(SocketContent.Goon, 1f), new SocketOption(SocketContent.CropCircle, 1f));
+            CreatePatrolSockets(root.transform, new Vector2(half * 0.5f, half * 0.5f), half);
+            CreatePatrolSockets(root.transform, new Vector2(-half * 0.5f, -half * 0.5f), half);
             return root;
+        }
+
+        /// <summary>
+        /// Two Goon-only sockets either side of an open quarter's middle, so squads have somewhere to stand and patrol
+        /// between (enemies.md, Squads).
+        /// </summary>
+        private static void CreatePatrolSockets(Transform block, Vector2 quarterCenter, float half)
+        {
+            float offset = half * PatrolSocketOffset;
+            WorldSandboxSceneCreator.CreateSocket(block, "Patrol Socket",
+                new Vector3(quarterCenter.x - offset, 0f, quarterCenter.y + offset), SocketContent.Goon);
+            WorldSandboxSceneCreator.CreateSocket(block, "Patrol Socket",
+                new Vector3(quarterCenter.x + offset, 0f, quarterCenter.y - offset), SocketContent.Goon);
         }
 
         /// <summary>
@@ -176,6 +197,11 @@ namespace Zenthium.Editor
             WorldSandboxSceneCreator.CreateSocket(root, "Valuables Socket",
                 new Vector3(area.center.x, 0f, area.center.y), new SocketOption(SocketContent.Valuables, 2f),
                 new SocketOption(SocketContent.Citizen, 1f));
+            float inset = area.width * InnerSocketOffset;
+            WorldSandboxSceneCreator.CreateSocket(root, "Countdown Socket",
+                new Vector3(area.center.x + inset, 0f, area.center.y), SocketContent.CountdownTarget);
+            WorldSandboxSceneCreator.CreateSocket(root, "Turret Socket",
+                new Vector3(area.center.x - inset, 0f, area.center.y), SocketContent.HeavyTurret);
         }
 
         /// <summary>A pond in the -X, +Z quarter, trees in the others, and three open sockets.</summary>
@@ -207,6 +233,7 @@ namespace Zenthium.Editor
                 WorldSandboxSceneCreator.CreateSocket(block, "Open Socket", new Vector3(center.x, 0f, center.y),
                     new SocketOption(SocketContent.Citizen, 2f), new SocketOption(SocketContent.Goon, 1f),
                     new SocketOption(SocketContent.CropCircle, 1f));
+                CreatePatrolSockets(block, center, half);
             }
         }
 

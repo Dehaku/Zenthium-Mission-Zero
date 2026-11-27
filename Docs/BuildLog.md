@@ -1641,3 +1641,169 @@ The second half of Milestone 8: the fog of war (the custom CPU grid), hiding wha
 ### Test run (2026-11-27)
 - All 556 EditMode tests pass. The user passed the in-game checklist (8).
 - A Medium map plays smoothly in a WebGL development build, with no issues.
+
+## Milestone 9a: Missions, setup, filling the map and the Mission scene (checked by the user, 2026-11-27)
+
+The first of three parts of Milestone 9, split as approved:
+- **9a:** rolls a mission, builds its map for the rank, and fills it: the objective, Valuables, citizens and the starting force. It runs in the Mission scene with a debug launcher.
+- **9b:** the four mission types' goals and fail checks, arrivals, reinforcements, capture in exit zones and the results screen.
+- **9c:** secondary goals and the start sequence.
+
+### Done
+- **Data (local edit, approved):** `constants.csv` gets a `mission` group, read into three new classes in `GameDatabase`:
+  - `MissionConstants`:
+    - map size and locked-door materials from rank;
+    - exit zones and Leader chance per rank;
+    - the goal numbers for Rescue, Countdown, Arson Riot, Invasion, Valuables and capture.
+  - `SpawnConstants`:
+    - threat budgets, the Champion share per rank, squad sizes and the Champion solo chance;
+    - the Leader's entrance and the population cap;
+    - reinforcements, wave distances, and Invasion's start and wave shares.
+  - `MissionFillConstants`: Valuables per bank, store and building, the civilian's Valuable, the Heavy Turret chance and citizens' kind shares.
+  - Row formats:
+    - Rank rows are `name.Rank` (`RankTable`); S2 and up use S.
+    - Rows that hold a rank, such as `locked_door_from.Stone,C`, are read as difficulty levels.
+    - `invasion_radius_tier` is a radius tier (Huge).
+- **New assembly `Zenthium.Missions`** (approved), referenced by Sandbox, Editor and the EditMode tests:
+  - **The setup:** `MissionSetup` holds the type, faction, location, rank, size, Leader and seed. `MissionLaunch` adds the hero and unlocked slots, and `PendingMission` carries it into the Mission scene.
+  - **`MissionRoller`:**
+    - rolls the type at random, then the faction by Mission Weight, then the location by Location Weight, then the Leader;
+    - weights come from `MissionWeights`, with keys such as `arson_riot`; unlisted is 1;
+    - each step is public, so the launcher can choose some parts.
+  - **`FactionRoster`:** the faction's goons and Champions that have a budget cost and spawn at the rank, plus its Leader.
+  - **`ThreatBudgetSpender`:**
+    - buys Champions at random up to their share, then goons with the rest;
+    - groups goons into squads of 3-5, sized so none is left under 3;
+    - each Champion leads a squad or, on the solo roll, stands alone.
+  - **`MissionFillRules`:** Valuables per building, the civilian's Valuable and a citizen's kind.
+  - **`MissionPopulator`** fills the map in this order:
+    1. the Countdown socket, in the key building, and the key building's doors locked;
+    2. Valuables in every building's Valuables socket;
+    3. Rescue's targets inside the key building, or round an outdoor location;
+    4. citizens in free sockets that roll one (sockets that roll something else are released for goons);
+    5. the starting force (Invasion: a quarter of the budget), placed by the mission type's profile:
+       - Rescue: each squad next to a random citizen;
+       - Countdown: the first half, by cost, next to the target;
+       - Arson Riot: each squad as far as possible from the others;
+       - Invasion: at random.
+       - With no free Goon socket left, squads share the nearest one.
+  - **`MissionEnemySpawner`:**
+    - spawns each squad round its socket, with an `AiSquad` patrolling that socket and its 2 nearest Goon sockets;
+    - keeps to the population cap, holding back what doesn't fit (`Held`, for 9b's reinforcements);
+    - spawns the Leader.
+  - **`CitizenSpawner`:** spawns citizens from `Prefabs/Citizen.prefab` with their kind and Valuable.
+  - **`MissionDirector`:**
+    - takes the pending mission on Start and sets the hero;
+    - builds the map with the rank's exit zones, fills it, and puts the player in the exit zone farthest from the objective;
+    - drops the Leader in 30 game seconds in, at a Goon socket at least 20 m from the player;
+    - exposes `Setup`, `Map`, `ElapsedSeconds` and events. `MissionMap` holds the objective point, the Countdown socket, the target and all citizens, the locked doors, the Valuables placed and the budgets.
+  - **`MissionSceneLoader`:** reloads the scene (by path in the Editor).
+- **World:**
+  - `ExitZonePlacement.PlaceAwayFrom` keeps exit zones evenly spread, turned so the nearest is as far from the location as it can be. `MapAssembler` uses it for every map, Sandbox_Map's too, and gains `KeyPoint`.
+  - `Door.Lock(material)` and `BuildingPart.SetMaterial`.
+  - `ValuableCarrier.SetStartingValuables`.
+- **AI:** `AiSquad.Configure`, `AiBrain.SetSquad`, `CitizenBrain.SetStartingKind` and `FactionEntitySpawner.SpawnInSquad`.
+- **Graybox blocks:**
+  - Each building gets a Countdown socket and a Heavy Turret socket.
+  - Each open quarter, and each Park quarter, gets two Goon-only patrol sockets.
+  - `Docs/HowTo_AddBlock.md` lists them.
+- **Editor:**
+  - `Zenthium > Setup > Create Mission Scene` rebuilds `Mission.unity` from the shared room, like `Sandbox_Map`. It adds the map services, the fog, the citizen prefab and spawner, the enemy spawner, the director and the launcher.
+  - Shared helpers:
+    - `MapSandboxSceneCreator.CreateMapServices`, `CreateOverlayCanvas`, `CreatePanel` and `CreateFogButton` are shared;
+    - `RepoSandboxSceneCreator.CreateSpawner` returns the spawner;
+    - `AiSandboxSceneCreator.AddCitizenParts` and `PlayerSandboxSceneCreator.AddCarrierView` are internal.
+- **Sandbox:** `MissionLauncherPanel`:
+  - type, faction, location, size, rank, Leader (roll, yes or no), hero, slots and seed; "Random" rolls that part as a real mission would;
+  - Launch reloads the scene with the mission pending. While a mission runs, a bar shows the setup, with Abandon and the fog toggle;
+  - it remembers its choices.
+- **Checklist:** `MilestoneChecklist.txt` holds 9a's tests (10).
+- **Tests (EditMode):**
+  - New classes: `MissionRollerTests`, `ThreatBudgetSpenderTests`, `FactionRosterTests`, `MissionFillRulesTests` and `MissionConstantsTests`.
+  - New tests:
+    - `ExitZonePlacementTests`: two;
+    - `DesignDataParserTests`: `Parse_RankFromNotARank_Fails` and `Parse_RankTableMissingARank_Fails`.
+  - Fixtures:
+    - `DesignDataTestCsv` has the mission rows and `tier,radius.Huge`;
+    - `TestFactions` gains `FactionWithWeights` and a budget cost on `Entity`.
+  - No existing assertions changed.
+
+### Decisions (approved by the user, 2026-11-27)
+- **Structure:** Milestone 9 is split into 9a, 9b and 9c. The numbers above go in `constants.csv`'s `mission` group, and missions get a new `Zenthium.Missions` asmdef.
+- **Exit zones:** D 4, C 3, B 3, A 2, S 1, kept away from the objective. The player starts in the exit zone farthest from it.
+- **Ending a mission:**
+  - It ends as soon as it's won or failed.
+  - A downed hero fails it if the Defiance roll fails.
+  - A debug Abandon button (9b makes it a fail).
+- **Rescue:**
+  - The targets are in the key building; citizens outside don't count.
+  - It's won once every target is rescued, dead or abducted.
+  - It fails under 25% rescued, 5% more per rank.
+- **Invasion:** the loss timer always runs; the starting force is 25% of the budget.
+- **Countdown:**
+  - The target is a Structure with 100 HP.
+  - Half the budget guards it.
+  - Every door of the key building is locked.
+- **Citizens:** each socket that rolls Citizen gets one: 60% Scared, 20% Incapacitated, 20% Stubborn.
+- **Secondary goals (9c):**
+  - They get graybox props and entities.
+  - Capture goals need about 10% of the mission's spawned enemies of that kind.
+  - Their rewards wait for Milestone 11.
+- **Leader:** at rank D the chance is 0%, so the launcher's "Leader: yes" tests the entrance.
+- **Champions:** some stand alone.
+- **Invasion flavor text:** stays in code for now; it can move into faction data later.
+- **Commits:** the user's uncommitted WebGL build settings may be committed.
+
+### Choices made in code (not asked)
+- **Champion solo chance 0.5** is Claude's placeholder (`champion_solo_chance`); the design only says squads are "sometimes" led by a Champion. Confirm or change it.
+- **Locked door material:** each locked door picks at random among the materials the rank allows. Each rank keeps the ones below it (difficulty.md).
+- **Citizens use the Grey's data** on the Civilian team, like the sandboxes' citizens, since entities.csv has no citizen row.
+- **Valuables in a building** drop round its Valuables socket, or round the middle of its floor if it has none.
+- **Squads patrol** their socket and its 2 nearest Goon sockets (an Inspector field).
+- **The fill uses its own seed** (the mission's plus a constant), so the same seed gives the same spawns.
+- **The Leader** spawns at a random Goon socket at least `wave_drop_min_distance_m` from the player, and counts toward the population cap.
+- **The Mission scene keeps the sandboxes' debug parts** (the checklist, the HUD and the Reset button) until HQ and the real HUD exist.
+
+### Stubs and deferred
+- **9b:**
+  - Goals:
+    - the four types' goals and fail checks;
+    - Ignite;
+    - the Countdown target structure, placed in `MissionMap.CountdownSocket`;
+    - Invasion's waves, bought from `MissionMap.WaveBudget`.
+  - Arrivals (`ArrivalStub`) and reinforcements, which also send in `MissionEnemySpawner.Held`.
+  - Counting rules:
+    - capture in exit zones;
+    - abducted citizens counting against Rescue;
+    - escaped enemies counting as defeated;
+    - the Leader fleeing once it holds enough to fail the Valuables goal.
+  - The mission's end and the results screen.
+- **9c:** secondary goals, the start sequence, and the scene and mission flow wording for `CLAUDE.md`.
+- **Milestone 11:** Heavy Turrets. Their sockets are placed, but entities.csv lists no module or tags for the Heavy Turret, and no mission reaches rank B before HQ.
+
+### Editor steps for the user
+1. **Let Unity compile.**
+2. **Run Zenthium > Data > Import Design CSVs.** `constants.csv` has the new `mission` rows.
+3. **Run Zenthium > Map > Create Graybox Blocks.** The blocks gain patrol, Countdown and turret sockets. Expect the usual SwiftTower warning.
+4. **Run Zenthium > Setup > Create Mission Scene** and choose Replace. It replaces the placeholder `Mission.unity`.
+5. **Press Play in `Mission`** and work through the checklist (Caps Lock).
+6. **Optional:** rebuild `Sandbox_Map` (Zenthium > Setup > Create Map Sandbox Scene). Its exit zones now keep away from the key building too.
+
+### What to check
+- [ ] The Console has no errors after compiling, importing, creating the blocks and building the scene.
+- [ ] Run the whole EditMode suite, since shared code changed (the constants parser, `GameDatabase`, `MapAssembler`, `ExitZonePlacement`, `FactionEntitySpawner`, the sandbox creators).
+  - New classes: `MissionRollerTests`, `ThreatBudgetSpenderTests`, `FactionRosterTests`, `MissionFillRulesTests`, `MissionConstantsTests`.
+  - Changed: `ExitZonePlacementTests`, `DesignDataParserTests`, and the `DesignDataTestCsv` and `TestFactions` fixtures.
+- [ ] Every item on the in-game checklist (10).
+
+### Open questions and findings
+- **Design mirror:** `constants.csv` now has the `mission` group, which the design branch doesn't.
+- **Champion solo chance:** a placeholder until you confirm it (above).
+
+### Test run (2026-11-27)
+- All 646 EditMode tests pass. The user passed the in-game checklist (10).
+
+### Additions after the test run (asked by the user, 2026-11-27)
+- **Doors stand out:** graybox door panels are teal, whatever their material (`WorldSandboxSceneCreator.CreateDoor`), so they don't blend into the walls.
+- **Locked label:** `LockedDoorLabel` (Sandbox, presentation) shows a red "LOCKED" over a locked door while the player is within 10 m (an Inspector field), until the door breaks. It lies flat facing the camera however the block is turned. `AiSandboxSceneCreator.FlatText` is internal.
+- Not checked yet. Editor steps: run Zenthium > Map > Create Graybox Blocks, then Zenthium > Setup > Create Mission Scene (Replace). The World sandbox gets the door color and label when it's rebuilt.
