@@ -503,7 +503,12 @@ namespace Zenthium.Editor
         /// <summary>A saved flat-color material that lets its alpha show through (URP Lit, transparent surface).</summary>
         internal static Material TransparentMaterial(string materialName, Color color)
         {
-            Material material = ModuleMaterial(materialName, color);
+            return MakeTransparent(ModuleMaterial(materialName, color));
+        }
+
+        /// <summary>Switches a saved URP Lit or Unlit material to a transparent surface that lets its alpha show through.</summary>
+        internal static Material MakeTransparent(Material material)
+        {
             material.SetFloat(UrpLit.Surface, 1f);
             material.SetFloat(UrpLit.SourceBlend, (float)BlendMode.SrcAlpha);
             material.SetFloat(UrpLit.DestinationBlend, (float)BlendMode.OneMinusSrcAlpha);

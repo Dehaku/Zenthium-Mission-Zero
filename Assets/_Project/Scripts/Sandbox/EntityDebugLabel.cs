@@ -8,7 +8,7 @@ using Zenthium.Statuses;
 namespace Zenthium.Sandbox
 {
     /// <summary>
-    /// A small in-world label over an entity for sandbox scenes: its team, HP, whether it's Incapacitated or
+    /// A small in-world label over an entity for sandbox scenes: its team and entity name, HP, whether it's Incapacitated or
     /// captured, dragged or Invulnerable, and its statuses (hidden markers included). Test tool only; the real HUD
     /// comes in Milestone 10.
     /// </summary>
@@ -96,7 +96,13 @@ namespace Zenthium.Sandbox
             shownInvulnerable = entity.IsInvulnerable;
 
             text.Clear();
-            text.Append(entity.Team).Append('\n');
+            text.Append(entity.Team);
+            if (target.FactionEntity != null)
+            {
+                text.Append(": ").Append(target.FactionEntity.Id);
+            }
+
+            text.Append('\n');
 
             // Rounded up, so a sliver of HP never reads as 0.
             text.Append("HP ").Append(Mathf.CeilToInt(entity.Health.Current))

@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 7800377467134068663}
   - component: {fileID: 8519507834732460766}
   - component: {fileID: 9044511757726249296}
+  - component: {fileID: 2875487068304448866}
   - component: {fileID: 6288120947838434953}
   m_Layer: 0
   m_Name: TrainingDummy
@@ -239,6 +240,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Zenthium.World::Zenthium.World.ValuableCarrier
   service: {fileID: 0}
   startingValuables: 0
+--- !u!114 &2875487068304448866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1377774910006779722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 540d58e0755a8b04d93dd038d71565a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Zenthium.Sandbox::Zenthium.Sandbox.EntityRoleColorView
+  target: {fileID: 6415813934360766120}
+  body: {fileID: 5296575204418896986}
+  playerColor: {r: 0.2, g: 0.5, b: 1, a: 1}
+  allyColor: {r: 0.3, g: 0.9, b: 0.9, a: 1}
+  civilianColor: {r: 1, g: 0.9, b: 0.55, a: 1}
+  neutralColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  goonColor: {r: 0.9, g: 0.3, b: 0.3, a: 1}
+  championColor: {r: 1, g: 0.6, b: 0.1, a: 1}
+  leaderColor: {r: 0.65, g: 0.25, b: 0.85, a: 1}
 --- !u!114 &6288120947838434953
 MonoBehaviour:
   m_ObjectHideFlags: 0

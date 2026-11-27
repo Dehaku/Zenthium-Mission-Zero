@@ -124,6 +124,12 @@ namespace Zenthium.Editor
             public const string Label = "label";
         }
 
+        private static class RoleColorFields
+        {
+            public const string Target = "target";
+            public const string Body = "body";
+        }
+
         private static class CarrierFields
         {
             public const string Service = "service";
@@ -363,6 +369,11 @@ namespace Zenthium.Editor
             body.AddComponent<KnockbackImpacts>();
             body.AddComponent<DamageOverTimeTicks>();
             body.AddComponent<ValuableCarrier>();
+            Wire(body.AddComponent<EntityRoleColorView>(), so =>
+            {
+                SetReference(so, RoleColorFields.Target, entity);
+                SetReference(so, RoleColorFields.Body, body.GetComponent<Renderer>());
+            });
             return body;
         }
 

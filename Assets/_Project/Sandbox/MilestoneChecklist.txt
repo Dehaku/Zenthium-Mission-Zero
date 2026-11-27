@@ -1,23 +1,25 @@
-<b>Milestone 8a: what to test in Sandbox_Map</b>   (Caps Lock hides this. HUD bottom left, map launcher top right.)
+<b>Milestone 8b: what to test in Sandbox_Map</b>   (Caps Lock hides this. HUD bottom left, map launcher top right.)
 Reset scene (bottom right) reloads the scene and builds a new map. Alt + mouse wheel zooms the camera out.
-Lot colors show the district: gray Downtown (Stone walls), brown Industrial (Metal), green Residential (Wood).
-Blue squares are exit zones, green discs crop circles. Each building's name floats above it.
+Body colors: you blue, allies cyan, citizens pale yellow, neutral gray; enemies red (goons), orange (Champions)
+and purple (Leaders). Labels read "Team: entity", such as "Enemy: Grey". 8a's map tests still hold.
 
-<b>Building maps</b>
-1. On Play, a Medium map builds around a Bank, with you on the street crossing nearest its center. The launcher
-   reads 3 x 3 blocks, 252 m, key building Bank. The Console has one "Map:" line and no errors.
-2. Pick Small and press Build: 2 x 2 blocks, 172 m. Pick Large: 5 x 5 blocks, 412 m. Build each a few times
-   (New seed): blocks never overlap, every block has streets on all four sides, and blocks appear turned.
-3. Pick Lab: every block is Industrial (brown). Pick House: every block is Residential (green). Pick Park: the
-   key building reads "none (outdoor)" and the map has a pond-and-trees block.
-4. Note the seed, press Build again: the same map. Press New seed: a different one.
-5. Pick SWIFT Tower and Build: the launcher says no Downtown block holds it, and the old map stays.
+<b>Fog of war</b>
+1. On Play the map is black except what you can see from the crossing: the streets around you, up to 100 m,
+   stopping at walls. Building interiors you can't see into stay black.
+2. Walk along a street: what you pass becomes dimmed (explored) behind you, and stays dimmed. Black never comes
+   back to a place you've seen.
+3. Stand outside a window: you see into the building through it. Walk up to a door: it opens and you see in.
+   Break a wall: you see through the gap.
+4. Build a new map (Build or New seed): the whole new map starts black again.
+5. "Fog: off" shows the whole map and everything on it; "Fog: on" brings back the fog with what you'd explored.
 
-<b>Exits, crop circles and the NavMesh</b>
-6. The exit count sets how many blue squares appear, spread round the outer street on the map's edges.
-7. With Crop circles ticked, rank D gives 1 green disc, B gives 3 and S gives 5, each on open ground in a block.
-   Untick it: none.
-8. Press Spawn Grey: a Grey appears on the open ground nearest you (one per press, each in a new spot). Once it
-   notices you, it walks to you along streets and through doorways, round ponds and trees, never through walls.
-9. Break a building wall, then stand inside: a Grey now paths through the gap.
-10. Build a Large map and note the NavMesh bake time in the launcher. Tell Claude the Medium and Large times.
+<b>Hiding</b>
+6. Spawn Grey, then step round a corner so a wall is between you: the Grey, its label and its bars vanish, and
+   come back when it's in sight again. In dimmed areas you see the buildings but not the Grey.
+7. Stand in a doorway with the inside dimmed: you and your label never hide. (Loose Valuables hide the same way
+   as the Grey, but this map has none until Milestone 9 fills sockets.)
+
+<b>Playtest colors</b>
+8. Build the Repo Agency sandbox again (Zenthium > Setup > Create Repo Agency Sandbox Scene): GleebPeep is purple;
+   Tractor Drone, Shield Bearer, Auditor and Notary orange; Greys and the Tow Saucer red; citizens pale yellow.
+   A goon that telegraphs still flashes red and goes back to its color after.

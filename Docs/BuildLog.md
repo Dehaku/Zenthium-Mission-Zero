@@ -1575,3 +1575,69 @@ The first half of Milestone 8, split as approved: the block format, the street g
 ### Test run (2026-11-27)
 - All 548 EditMode tests pass. The user passed the in-game checklist (10), and the user confirmed the 10 m exit zones.
 - NavMesh bake in the Editor: Medium 96, 98 and 100 ms; Large 248, 260 and 285 ms.
+
+## Milestone 8b: Map generation, fog of war and playtest colors (checked by the user, 2026-11-27)
+
+The second half of Milestone 8: the fog of war (the custom CPU grid), hiding what's out of sight, and, at the user's request, body colors by role and entity names on the sandbox labels.
+
+### Done
+- **Shared code:** `LineOfSight.ClearDistance` gives how far sight reaches in a direction. It shares one blocking rule with `IsClear`: entities, triggers and see-through structures don't block.
+- **Fog of war (World):**
+  - `VisibilityGrid` (plain C#): square cells over the map, each Unexplored, Explored or Visible.
+    - Each update is `BeginUpdate`, `RevealRay` for each ray, then `EndUpdate`. Cells a ray reaches become Visible; Visible cells no ray reached become Explored.
+    - `Version` goes up only when a cell changes. `RevealAll()` turns every unexplored cell Explored, for buying the map's intel in Milestone 11.
+  - `FogOfWar` (component, logic):
+    - It makes a new, all-black grid for each map, on `MapAssembler.OnAssembled`.
+    - Every 0.1 real seconds it casts 720 rays from the hero the player controls, at 1 m height, out to `vision_range` (100 m). Each stops half a cell past the first thing that blocks sight.
+    - The cell size (1 m), ray count, interval and eye height are Inspector fields.
+  - `FogOfWarView` (component, presentation): a flat quad 4 m up, with an unlit, transparent black material.
+    - Its texture's alpha is 1 where unexplored, 0.55 where explored and 0 in sight, with bilinear filtering, so the edges are soft.
+    - It uploads the texture only when the grid's `Version` changes.
+  - `FogHiding` (component, presentation): hides enemies, neutral entities, citizens and loose Valuables that are out of sight. It sets `Renderer.forceRenderingOff` (so views that toggle `enabled` keep working) and switches world-space label canvases off. The player's side is never hidden.
+- **Playtest colors and names (Sandbox):**
+  - `EntityRoleColorView`, added to every body `PlayerSandboxSceneCreator.BuildEntityBody` builds, colors the body:
+    - the player blue, allies cyan, citizens pale yellow, neutral gray;
+    - enemies by rank tier: goons red, Champions orange, Leaders purple.
+    - It follows team changes such as Charm.
+    - It colors its own material copy, so the telegraph flash's property block still shows and clears back.
+  - `EntityDebugLabel` reads "Team: entity", such as "Enemy: Grey". Heroes show the team only.
+- **Sandbox:** `Sandbox_Map` gets the fog (`Fog of War` object with its quad) and a "Fog: on/off" button (`FogToggle`) that shows or hides the fog and the hiding. `AiSandboxSceneCreator.MakeTransparent` is split out of `TransparentMaterial` for the fog's Unlit material (`Prefabs/Materials/FogOfWar.mat`).
+- **Checklist:** `MilestoneChecklist.txt` holds 8b's tests (8).
+- **Tests (EditMode):** new class `VisibilityGridTests`. No existing tests changed.
+
+### Decisions (approved by the user, 2026-11-27)
+- Three states: unexplored black, explored dimmed, in sight clear. Explored areas stay dimmed, so players don't explore the same places twice.
+- Enemies, citizens and loose Valuables out of sight are hidden.
+- The fog reaches `vision_range`, and only the hero the player controls reveals it.
+- The map always starts hidden, rank D included. Revealing the map is intel players can pay for (Milestone 11 uses `RevealAll`).
+- Smoke doesn't block the fog.
+- Bodies are colored by role and labels show the entity's name, for playtesting.
+
+### Choices made in code (not asked)
+- **Updates** run on real time, 10 a second, so slowed time doesn't slow the fog.
+- **The face of a wall** shows: each ray reaches half a cell past what blocks it.
+- **Neutral entities** (Heavy Turrets) are hidden like enemies.
+- **The Combat sandbox** (`CombatSandboxSceneCreator`) builds its own bodies, so it gets no role colors.
+
+### Stubs and deferred
+- **Milestone 9:** the mission scene uses `FogOfWar`, `FogOfWarView` and `FogHiding` with the hero the player picked.
+- **Milestone 11:** buying the map's intel calls `VisibilityGrid.RevealAll()`.
+- **Milestone 8's WebGL check:** a Medium map in a WebGL development build, with the fog on.
+
+### Editor steps for the user
+1. **Let Unity compile.**
+2. **Run Zenthium > Setup > Create Map Sandbox Scene** and choose Replace.
+3. **Press Play in `Sandbox_Map`** and work through the checklist (Caps Lock).
+4. **For item 8, run Zenthium > Setup > Create Repo Agency Sandbox Scene** and choose Replace.
+5. **Make a WebGL development build** with `Sandbox_Map` as its only scene, build a Medium map, and check that it plays smoothly. Remove the scene from the build list after.
+
+### What to check
+- [ ] The Console has no errors after compiling and building the scenes.
+- [ ] Run the whole EditMode suite, since shared code changed (`LineOfSight`, the entity body builder).
+  - New class: `VisibilityGridTests`.
+- [ ] Every item on the in-game checklist (8).
+- [ ] A Medium map plays smoothly in a WebGL development build (Milestone 8's last *You check*).
+
+### Test run (2026-11-27)
+- All 556 EditMode tests pass. The user passed the in-game checklist (8).
+- A Medium map plays smoothly in a WebGL development build, with no issues.

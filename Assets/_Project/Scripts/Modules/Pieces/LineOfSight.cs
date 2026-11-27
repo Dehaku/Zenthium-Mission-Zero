@@ -23,14 +23,40 @@ namespace Zenthium.Modules
                 QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
-                Collider hit = buffer[i].collider;
-                if (!ModuleWorld.TryGetEntity(hit, out _) && !hit.TryGetComponent(out SeeThrough _))
+                if (BlocksSight(buffer[i].collider))
                 {
                     return false;
                 }
             }
 
             return true;
+        }
+
+        /// <summary>How far sight reaches from a point in a direction, by the same rule as <see cref="IsClear"/>.</summary>
+        /// <param name="direction">Normalized.</param>
+        /// <param name="buffer">Reused for the raycast, so a check allocates nothing.</param>
+        /// <returns>The distance to the first thing that blocks sight, or the maximum if nothing does.</returns>
+        public static float ClearDistance(Vector3 from, Vector3 direction, float maxDistance, RaycastHit[] buffer)
+        {
+            int count = Physics.RaycastNonAlloc(from, direction, buffer, maxDistance, Physics.AllLayers,
+                QueryTriggerInteraction.Ignore);
+
+            // The hits come unsorted.
+            float nearest = maxDistance;
+            for (int i = 0; i < count; i++)
+            {
+                if (buffer[i].distance < nearest && BlocksSight(buffer[i].collider))
+                {
+                    nearest = buffer[i].distance;
+                }
+            }
+
+            return nearest;
+        }
+
+        private static bool BlocksSight(Collider hit)
+        {
+            return !ModuleWorld.TryGetEntity(hit, out _) && !hit.TryGetComponent(out SeeThrough _);
         }
     }
 }

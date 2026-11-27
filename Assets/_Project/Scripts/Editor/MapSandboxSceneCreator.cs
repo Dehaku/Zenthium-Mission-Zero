@@ -2,6 +2,7 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 using Zenthium.Data;
 using Zenthium.Entities;
@@ -13,10 +14,10 @@ namespace Zenthium.Editor
 {
     /// <summary>
     /// Builds Sandbox_Map (Milestone 8): the Player sandbox's services and player with no room, a map builder that
-    /// lays out the block library at runtime, and the launcher panel (size, location, seed, exits, rank, crop circles,
-    /// and a goon to spawn). Saves the ground, exit zone and crop circle prefabs the builder uses, and refreshes the
-    /// block library. The map's NavMesh is baked when it's built, so the scene has none. Sandbox scenes stay out of
-    /// the build's scene list.
+    /// lays out the block library at runtime, the fog of war, and the launcher panel (size, location, seed, exits,
+    /// rank, crop circles, a goon to spawn, and the fog on or off). Saves the ground, exit zone and crop circle prefabs
+    /// the builder uses, and refreshes the block library. The map's NavMesh is baked when it's built, so the scene has
+    /// none. Sandbox scenes stay out of the build's scene list.
     /// </summary>
     internal static class MapSandboxSceneCreator
     {
@@ -27,6 +28,8 @@ namespace Zenthium.Editor
         private const string GroundPrefabPath = MapPrefabFolder + "/MapGround.prefab";
         private const string ExitZonePrefabPath = MapPrefabFolder + "/ExitZone.prefab";
         private const string CropCirclePrefabPath = MapPrefabFolder + "/CropCircle.prefab";
+        private const string FogMaterialPath = PlayerSandboxSceneCreator.PrefabFolder + "/Materials/FogOfWar.mat";
+        private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
 
         // The ground's top is at Y 0.
         private const float GroundThickness = 0.2f;
@@ -62,6 +65,24 @@ namespace Zenthium.Editor
             public const string GroundPrefab = "groundPrefab";
             public const string ExitZonePrefab = "exitZonePrefab";
             public const string CropCirclePrefab = "cropCirclePrefab";
+        }
+
+        private static class FogFields
+        {
+            public const string World = "world";
+            public const string Assembler = "assembler";
+            public const string Viewer = "viewer";
+            public const string Fog = "fog";
+            public const string Quad = "quad";
+            public const string Valuables = "valuables";
+        }
+
+        private static class FogToggleFields
+        {
+            public const string View = "view";
+            public const string Hiding = "hiding";
+            public const string Button = "button";
+            public const string Label = "label";
         }
 
         private static class LauncherFields
@@ -138,7 +159,8 @@ namespace Zenthium.Editor
                 SetReference(so, AssemblerFields.CropCirclePrefab, cropCircle.GetComponent<CropCircle>());
             });
 
-            CreateLauncher(room, assembler, repo, grey);
+            (FogOfWarView fogView, FogHiding fogHiding) = CreateFog(room, assembler);
+            CreateLauncher(room, assembler, repo, grey, fogView, fogHiding);
             EditorSceneManager.SaveScene(room.Scene, ScenePath);
             Debug.Log($"Created {ScenePath} and the map prefabs in {MapPrefabFolder}. "
                 + (library.Blocks.Count == 0 ? "The block library is empty: run Zenthium > Map > Create Graybox Blocks."
@@ -187,9 +209,65 @@ namespace Zenthium.Editor
             return circle;
         }
 
+        /// <summary>
+        /// The fog of war, revealed by the player: its logic, the quad it's drawn on (no collider, so aim and sight
+        /// rays pass), and the hiding of what's out of sight.
+        /// </summary>
+        private static (FogOfWarView View, FogHiding Hiding) CreateFog(PlayerSandboxSceneCreator.Room room,
+            MapAssembler assembler)
+        {
+            var fogObject = new GameObject("Fog of War");
+            var fog = fogObject.AddComponent<FogOfWar>();
+            Wire(fog, so =>
+            {
+                SetReference(so, FogFields.World, room.World);
+                SetReference(so, FogFields.Assembler, assembler);
+                SetReference(so, FogFields.Viewer, room.Player);
+            });
+
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = "Fog Quad";
+            Object.DestroyImmediate(quad.GetComponent<Collider>());
+            quad.transform.SetParent(fogObject.transform, false);
+            var quadRenderer = quad.GetComponent<Renderer>();
+            quadRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            quadRenderer.receiveShadows = false;
+            quadRenderer.sharedMaterial = FogMaterial();
+            quadRenderer.enabled = false;
+
+            var view = fogObject.AddComponent<FogOfWarView>();
+            Wire(view, so =>
+            {
+                SetReference(so, FogFields.Fog, fog);
+                SetReference(so, FogFields.Quad, quadRenderer);
+            });
+            var hiding = fogObject.AddComponent<FogHiding>();
+            Wire(hiding, so =>
+            {
+                SetReference(so, FogFields.Fog, fog);
+                SetReference(so, FogFields.World, room.World);
+                SetReference(so, FogFields.Valuables, room.Valuables);
+            });
+            return (view, hiding);
+        }
+
+        /// <summary>Unlit and black, so only the fog texture's alpha shows.</summary>
+        private static Material FogMaterial()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(FogMaterialPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find(UnlitShaderName));
+                AssetDatabase.CreateAsset(material, FogMaterialPath);
+            }
+
+            material.color = Color.black;
+            return AiSandboxSceneCreator.MakeTransparent(material);
+        }
+
         /// <summary>The launcher panel at the top right.</summary>
         private static void CreateLauncher(PlayerSandboxSceneCreator.Room room, MapAssembler assembler,
-            FactionData repo, EntityData grey)
+            FactionData repo, EntityData grey, FogOfWarView fogView, FogHiding fogHiding)
         {
             var canvasObject = new GameObject("Map Launcher Canvas", typeof(Canvas), typeof(CanvasScaler),
                 typeof(GraphicRaycaster));
@@ -240,6 +318,14 @@ namespace Zenthium.Editor
 
             Transform spawnRow = CombatSandboxSceneCreator.CreateRow(panel, "Spawn Row");
             Button spawnButton = CombatSandboxSceneCreator.CreateButton(spawnRow, tmpResources, "Spawn Grey");
+            Button fogButton = CombatSandboxSceneCreator.CreateButton(spawnRow, tmpResources, "Fog: on");
+            Wire(fogButton.gameObject.AddComponent<FogToggle>(), so =>
+            {
+                SetReference(so, FogToggleFields.View, fogView);
+                SetReference(so, FogToggleFields.Hiding, fogHiding);
+                SetReference(so, FogToggleFields.Button, fogButton);
+                SetReference(so, FogToggleFields.Label, fogButton.GetComponentInChildren<TMP_Text>());
+            });
 
             TMP_Text status = CombatSandboxSceneCreator.CreateText(panel, tmpResources, "Status");
 
